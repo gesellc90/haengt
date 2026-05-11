@@ -1,5 +1,5 @@
 import express, { type Express } from 'express';
-import pinoHttp from 'pino-http';
+import { pinoHttp } from 'pino-http';
 import type { Logger } from 'pino';
 import { healthRouter } from './routes/health.js';
 

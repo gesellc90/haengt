@@ -30,14 +30,14 @@
     "@eslint/js": "^9.0.0",
     "concurrently": "^9.0.0",
     "eslint": "^9.0.0",
-    "eslint-plugin-react": "^7.34.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "globals": "^15.0.0",
     "husky": "^9.0.0",
     "lint-staged": "^15.0.0",
     "prettier": "^3.0.0",
     "typescript": "^5.4.0",
-    "typescript-eslint": "^7.10.0"
+    "typescript-eslint": "^8.10.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

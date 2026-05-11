@@ -1,6 +1,6 @@
-# Getränkeabrechnung
+# Hängt! - Jeder Strich zählt!
 
-Lokale Web-App zur Getränkeabrechnung eines Vereins. Mitglieder buchen ihre Getränke per Self-Service, Admins verwalten Stammdaten und exportieren Monatsabrechnungen als PDF oder CSV. Die Anwendung läuft auf einem Raspberry Pi im Vereins-WLAN — keine Cloud, keine externen Abhängigkeiten zur Laufzeit.
+Lokale Web-App zur Getränkeabrechnung einer Verbindung. Mitglieder buchen ihre Getränke per Self-Service, Admins verwalten Stammdaten und exportieren Monatsabrechnungen als PDF oder CSV. Die Anwendung läuft auf einem Raspberry Pi im Vereins-WLAN — keine Cloud, keine externen Abhängigkeiten zur Laufzeit.
 
 ## Features
 

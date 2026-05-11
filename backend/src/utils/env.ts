@@ -8,9 +8,9 @@ import { z } from 'zod';
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
-  LOG_LEVEL: z
-    .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
-    .default('info'),
+  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
+  /** Pfad zur SQLite-Datei. `:memory:` ist gültig (für Tests). */
+  DB_PATH: z.string().default('./data/getraenke.db'),
   // JWT-Felder bleiben optional, bis M3 sie scharf schaltet.
   JWT_SECRET: z.string().min(16).optional(),
   JWT_EXPIRES_IN: z.string().default('8h'),

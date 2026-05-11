@@ -2,15 +2,15 @@
 
 Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jeder Meilenstein liefert einen demonstrierbaren Mehrwert und kann in 3–7 Tagen abgeschlossen werden.
 
-| #  | Titel                              | Dauer (geschätzt) | Abhängigkeiten |
-|----|------------------------------------|-------------------|----------------|
-| M1 | Projekt-Setup & Tooling            | 2–3 Tage          | —              |
-| M2 | Datenbankschicht & Migrationen     | 2–3 Tage          | M1             |
-| M3 | Authentifizierung & Sicherheit     | 3–4 Tage          | M2             |
-| M4 | API / Backend-Logik                | 5–7 Tage          | M3             |
-| M5 | Frontend (React)                   | 5–7 Tage          | M4 (parallel ab M3 möglich) |
-| M6 | Reporting & Export (PDF/CSV)       | 3–4 Tage          | M4             |
-| M7 | CI/CD, Deployment & E2E-Tests      | 3–4 Tage          | M5, M6         |
+| #   | Titel                          | Dauer (geschätzt) | Abhängigkeiten              |
+| --- | ------------------------------ | ----------------- | --------------------------- |
+| M1  | Projekt-Setup & Tooling        | 2–3 Tage          | —                           |
+| M2  | Datenbankschicht & Migrationen | 2–3 Tage          | M1                          |
+| M3  | Authentifizierung & Sicherheit | 3–4 Tage          | M2                          |
+| M4  | API / Backend-Logik            | 5–7 Tage          | M3                          |
+| M5  | Frontend (React)               | 5–7 Tage          | M4 (parallel ab M3 möglich) |
+| M6  | Reporting & Export (PDF/CSV)   | 3–4 Tage          | M4                          |
+| M7  | CI/CD, Deployment & E2E-Tests  | 3–4 Tage          | M5, M6                      |
 
 ---
 
@@ -41,13 +41,13 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] `better-sqlite3` integrieren, WAL-Mode aktivieren
-- [ ] Migrations-Runner (selbstgebaut, < 100 LoC, oder `node-pg-migrate`-Light-Variante)
-- [ ] Migrationen 001–005: `members`, `drinks`, `drink_prices`, `bookings`, `audit_log`
-- [ ] Seed-Skript mit Demo-Daten (Admin, 2 Mitglieder, 4 Getränke, Preise)
-- [ ] Repository-Pattern: `MembersRepo`, `DrinksRepo`, `BookingsRepo`
-- [ ] Backup-Skript (`scripts/backup-db.sh`) + Doku
-- [ ] **Tests:** Unit-Tests für jedes Repo (in-memory SQLite via `:memory:`)
+- [x] `better-sqlite3` integrieren, WAL-Mode aktivieren
+- [x] Migrations-Runner (selbstgebaut, < 100 LoC, oder `node-pg-migrate`-Light-Variante)
+- [x] Migrationen 001–005: `members`, `drinks`, `drink_prices`, `bookings`, `audit_log`
+- [x] Seed-Skript mit Demo-Daten (Admin, 2 Mitglieder, 4 Getränke, Preise)
+- [x] Repository-Pattern: `MembersRepo`, `DrinksRepo`, `BookingsRepo`
+- [x] Backup-Skript (`scripts/backup-db.sh`) + Doku
+- [x] **Tests:** Unit-Tests für jedes Repo (in-memory SQLite via `:memory:`)
 
 **Definition of Done:** `npm run db:migrate && npm run db:seed` legt eine konsistente DB an. Repos sind unit-getestet (≥ 80 % Coverage auf Repo-Layer).
 
@@ -185,12 +185,12 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ## Rollen-Matrix (für Solo- oder Kleinteam-Setup)
 
-| Rolle               | Verantwortung                                  |
-|---------------------|------------------------------------------------|
-| Tech Lead           | Architektur-Entscheidungen, PR-Reviews         |
-| Backend Dev         | M2, M3, M4, M6                                 |
-| Frontend Dev        | M5                                             |
-| DevOps / Pi-Admin   | M1 (Tooling), M7                               |
-| QA / Tester         | begleitend ab M3 (E2E-Skripte ab M5)           |
+| Rolle             | Verantwortung                          |
+| ----------------- | -------------------------------------- |
+| Tech Lead         | Architektur-Entscheidungen, PR-Reviews |
+| Backend Dev       | M2, M3, M4, M6                         |
+| Frontend Dev      | M5                                     |
+| DevOps / Pi-Admin | M1 (Tooling), M7                       |
+| QA / Tester       | begleitend ab M3 (E2E-Skripte ab M5)   |
 
 In einem Solo-Setup übernimmt eine Person alle Rollen — der Plan ändert sich nicht, aber die Zeitschätzungen verdoppeln sich realistisch.

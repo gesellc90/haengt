@@ -61,14 +61,14 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] `bcrypt`-Password-Hashing (cost factor 10)
-- [ ] `POST /auth/login` mit Zod-Validierung
-- [ ] JWT-Issuance (HS256, 8h), Secret aus ENV
-- [ ] `auth`-Middleware + `requireRole`-Middleware
-- [ ] `GET /auth/me`, `POST /auth/logout` (Token-Blocklist via SQLite)
-- [ ] Rate-Limit auf `/auth/login` (5 Versuche / 15 Min / IP)
-- [ ] Audit-Log-Einträge für Logins (Erfolg + Fehlschlag)
-- [ ] **Tests:** Supertest-Integrationstests für Login-Flow (happy path, falsches PW, gesperrter User, Rate-Limit)
+- [x] `bcrypt`-Password-Hashing (cost factor 10) — `bcryptjs` mit Timing-Safe-Dummy-Vergleich
+- [x] `POST /auth/login` mit Zod-Validierung
+- [x] JWT-Issuance (HS256, 8h), Secret aus ENV
+- [x] `auth`-Middleware + `requireRole`-Middleware
+- [x] `GET /auth/me`, `POST /auth/logout` (Token-Blocklist via SQLite, JTI-basiert)
+- [x] Rate-Limit auf `/auth/login` (5 Versuche / 15 Min / IP)
+- [x] Audit-Log-Einträge für Logins (Erfolg + Fehlschlag)
+- [x] **Tests:** Supertest-Integrationstests für Login-Flow (happy path, falsches PW, gesperrter User, Rate-Limit)
 
 **Definition of Done:** Mit Postman/curl: Login → Token erhalten → Token an geschützten Endpunkt schicken → 200. Falsches Token → 401.
 

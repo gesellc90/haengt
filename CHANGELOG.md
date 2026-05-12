@@ -8,6 +8,7 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ## [Unreleased]
 
 ### Added
+
 - Initiale Projektstruktur (Backend, Frontend, Doku, CI)
 - Architekturdokumentation (`ARCHITECTURE.md`)
 - Contribution Guide (`CONTRIBUTING.md`)
@@ -21,20 +22,37 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   - ESLint Flat-Config (zentral im Root) + Prettier + Husky pre-commit + lint-staged
   - `npm run dev` startet Backend und Frontend parallel via `concurrently`
   - `.gitignore`, `.editorconfig`, `.nvmrc` (Node 20)
+- **M3 — Authentifizierung & Sicherheit**
+  - `bcryptjs`-Passwort-Hashing (Cost 10) mit Timing-Safe-Dummy-Vergleich bei unbekannten Usern
+  - `AuthService`: Login, JWT-Issuance (HS256, 8h, JTI via `crypto.randomUUID`)
+  - `POST /api/v1/auth/login` mit Zod-Validierung, Rate-Limit (5 Versuche / 15 Min / IP)
+  - `GET /api/v1/auth/me` — gibt eigene Daten zurück (geschützt)
+  - `POST /api/v1/auth/logout` — invalidiert Token via JTI-Blocklist in SQLite (geschützt)
+  - `authenticate`-Middleware (Bearer-Token) + `requireRole`-Middleware
+  - Migration 006: `token_blocklist`-Tabelle mit automatischem Cleanup abgelaufener Einträge
+  - `AuditLogRepo` + `TokenBlocklistRepo`
+  - Audit-Log-Einträge für Login-Erfolg und -Fehlschlag (mit IP und User-Agent)
+  - `JWT_SECRET` in `env.ts` als required (min. 32 Zeichen)
+  - Migrationen werden beim Serverstart automatisch ausgeführt
 
 ### Changed
+
 - `ARCHITECTURE.md`: Verzeichnisstruktur auf TypeScript (`.ts`/`.tsx`) umgestellt, Build- und Run-Strategie-Tabelle ergänzt (Dev: `tsx watch` / `vite`, Prod: `tsc → dist/` / `vite build`)
 
 ### Deprecated
+
 - _Noch nichts deprecatet_
 
 ### Removed
+
 - _Noch nichts entfernt_
 
 ### Fixed
+
 - _Noch keine Fixes_
 
 ### Security
+
 - _Keine sicherheitsrelevanten Änderungen bisher_
 
 ---

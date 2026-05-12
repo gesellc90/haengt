@@ -11,8 +11,8 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   /** Pfad zur SQLite-Datei. `:memory:` ist gültig (für Tests). */
   DB_PATH: z.string().default('./data/getraenke.db'),
-  // JWT-Felder bleiben optional, bis M3 sie scharf schaltet.
-  JWT_SECRET: z.string().min(16).optional(),
+  /** Mindestens 32 Zeichen – zufälliger String, nie in die Versionskontrolle! */
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET muss mindestens 32 Zeichen lang sein'),
   JWT_EXPIRES_IN: z.string().default('8h'),
 });
 

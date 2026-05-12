@@ -1,10 +1,17 @@
 import { createApp } from './app.js';
 import { loadEnv } from './utils/env.js';
 import { createLogger } from './utils/logger.js';
+import { getDatabase } from './db/client.js';
+import { runMigrations } from './db/migrate.js';
 
 const env = loadEnv();
 const logger = createLogger(env.LOG_LEVEL);
-const app = createApp({ logger });
+const db = getDatabase(env.DB_PATH);
+
+// Migrationen beim Start automatisch ausführen
+runMigrations(db);
+
+const app = createApp({ logger, db, env });
 
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, 'Backend ist bereit');

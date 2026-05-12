@@ -1,0 +1,8 @@
+import { z } from 'zod';
+
+export const loginSchema = z.object({
+  username: z.string().min(1, 'Benutzername darf nicht leer sein').max(64),
+  password: z.string().min(1, 'Passwort darf nicht leer sein').max(256),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;

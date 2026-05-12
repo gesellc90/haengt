@@ -8,7 +8,7 @@ import { z } from 'zod';
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
-  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
+  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
   /** Pfad zur SQLite-Datei. `:memory:` ist gültig (für Tests). */
   DB_PATH: z.string().default('./data/getraenke.db'),
   /** Mindestens 32 Zeichen – zufälliger String, nie in die Versionskontrolle! */

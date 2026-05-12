@@ -46,7 +46,7 @@ export class BookingsRepo {
       params.push(beforeId);
     }
 
-    sql += ' ORDER BY booked_at DESC LIMIT ?';
+    sql += ' ORDER BY booked_at DESC, id DESC LIMIT ?';
     params.push(limit + 1); // +1 um hasMore zu erkennen
 
     const rows = this.db.prepare<unknown[], BookingRow>(sql).all(...params);
@@ -83,7 +83,7 @@ export class BookingsRepo {
       .prepare<
         unknown[],
         BookingRow
-      >(`SELECT * FROM bookings ${where} ORDER BY booked_at DESC LIMIT ?`)
+      >(`SELECT * FROM bookings ${where} ORDER BY booked_at DESC, id DESC LIMIT ?`)
       .all(...params);
   }
 

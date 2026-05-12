@@ -1,0 +1,945 @@
+openapi: 3.1.0
+
+info:
+  title: Hängt! – Getränkeabrechnungs-API
+  version: 0.1.0
+  description: |
+    REST-API für die vereinsinterne Getränkeabrechnung.
+    Alle geschützten Endpunkte erwarten einen JWT im `Authorization`-Header.
+
+servers:
+  - url: /api/v1
+    description: Lokaler Dev-Server (http://localhost:3001/api/v1)
+
+# ---------------------------------------------------------------------------
+# Sicherheit
+# ---------------------------------------------------------------------------
+
+securitySchemes: {}
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # ---------------------------------------------------------------------------
+  # Wiederverwendbare Schemas
+  # ---------------------------------------------------------------------------
+
+  schemas:
+    # -- Fehler ----------------------------------------------------------------
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: Mitglied nicht gefunden
+        code:
+          type: string
+          example: NOT_FOUND
+        details:
+          type: object
+          description: Zod-Flatten-Ausgabe bei Validierungsfehlern
+
+    # -- Member ----------------------------------------------------------------
+
+    Member:
+      type: object
+      required: [id, username, display_name, role, is_active, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: max.mustermann
+        display_name:
+          type: string
+          example: Max Mustermann
+        role:
+          type: string
+          enum: [admin, member]
+          example: member
+        is_active:
+          type: integer
+          enum: [0, 1]
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateMemberRequest:
+      type: object
+      required: [username, display_name, password]
+      properties:
+        username:
+          type: string
+          minLength: 2
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9._-]+$'
+          example: max.mustermann
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Max Mustermann
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+          example: sicheresPasswort1
+        role:
+          type: string
+          enum: [admin, member]
+          default: member
+
+    UpdateMemberRequest:
+      type: object
+      minProperties: 1
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Max Mustermann
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+        role:
+          type: string
+          enum: [admin, member]
+
+    # -- Drink -----------------------------------------------------------------
+
+    Drink:
+      type: object
+      required: [id, name, is_available, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Cola
+        is_available:
+          type: integer
+          enum: [0, 1]
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DrinkWithPrice:
+      allOf:
+        - $ref: '#/components/schemas/Drink'
+        - type: object
+          properties:
+            current_price_cents:
+              type: integer
+              nullable: true
+              example: 150
+              description: Aktuell gültiger Preis in Cent. null wenn kein Preis hinterlegt.
+
+    DrinkPrice:
+      type: object
+      required: [id, drink_id, price_cents, valid_from, created_at]
+      properties:
+        id:
+          type: integer
+          example: 1
+        drink_id:
+          type: integer
+          example: 1
+        price_cents:
+          type: integer
+          example: 150
+          description: Preis in Cent (150 = 1,50 €)
+        valid_from:
+          type: string
+          format: date-time
+          description: Ab wann dieser Preis gilt
+        created_at:
+          type: string
+          format: date-time
+
+    CreateDrinkRequest:
+      type: object
+      required: [name, price_cents]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Cola
+        price_cents:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          example: 150
+
+    UpdateDrinkRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Cola Zero
+        is_available:
+          type: integer
+          enum: [0, 1]
+
+    AddPriceRequest:
+      type: object
+      required: [price_cents]
+      properties:
+        price_cents:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          example: 175
+        valid_from:
+          type: string
+          format: date-time
+          description: |
+            Optionaler Gültigkeitsbeginn (ISO 8601).
+            Fehlt das Feld, gilt der Preis ab sofort.
+
+    # -- Booking ---------------------------------------------------------------
+
+    Booking:
+      type: object
+      required: [id, member_id, drink_id, price_cents_snapshot, booked_at, voided_at, void_reason]
+      properties:
+        id:
+          type: integer
+          example: 42
+        member_id:
+          type: integer
+          example: 3
+        drink_id:
+          type: integer
+          example: 1
+        price_cents_snapshot:
+          type: integer
+          example: 150
+          description: Preis zum Buchungszeitpunkt – unveränderlich
+        booked_at:
+          type: string
+          format: date-time
+        voided_at:
+          type: string
+          format: date-time
+          nullable: true
+        void_reason:
+          type: string
+          nullable: true
+          example: Versehen
+
+    PaginatedBookings:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Booking'
+        hasMore:
+          type: boolean
+          description: Gibt es weitere Seiten?
+
+    CreateBookingRequest:
+      type: object
+      required: [drink_id]
+      properties:
+        drink_id:
+          type: integer
+          minimum: 1
+          example: 1
+
+    VoidBookingRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 255
+          example: Versehen
+
+    # -- Auth ------------------------------------------------------------------
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: max.mustermann
+        password:
+          type: string
+          example: geheim123
+
+    LoginResponse:
+      type: object
+      required: [token, member]
+      properties:
+        token:
+          type: string
+          description: JWT (HS256, 8h Gültigkeit)
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        member:
+          type: object
+          required: [id, username, display_name, role]
+          properties:
+            id:
+              type: integer
+            username:
+              type: string
+            display_name:
+              type: string
+            role:
+              type: string
+              enum: [admin, member]
+
+  # ---------------------------------------------------------------------------
+  # Wiederverwendbare Responses
+  # ---------------------------------------------------------------------------
+
+  responses:
+    Unauthorized:
+      description: Kein oder ungültiges Token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Kein Authentifizierungstoken angegeben
+
+    Forbidden:
+      description: Nicht ausreichende Berechtigung
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Unzureichende Berechtigung
+
+    NotFound:
+      description: Ressource nicht gefunden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Mitglied nicht gefunden
+            code: NOT_FOUND
+
+    BadRequest:
+      description: Ungültige Eingabe (Validierungsfehler)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+# ---------------------------------------------------------------------------
+# Endpunkte
+# ---------------------------------------------------------------------------
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ==========================================================================
+  # Health
+  # ==========================================================================
+
+  /health:
+    get:
+      tags: [System]
+      summary: Health-Check
+      description: Gibt 200 zurück wenn der Server läuft. Kein Auth erforderlich.
+      security: []
+      responses:
+        '200':
+          description: Server ist bereit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  uptime:
+                    type: number
+
+  # ==========================================================================
+  # Auth
+  # ==========================================================================
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      description: |
+        Prüft Username + Passwort und gibt einen JWT zurück.
+        Rate-Limit: 5 Versuche pro IP und 15 Minuten.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login erfolgreich
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Ungültige Anmeldedaten oder Konto deaktiviert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalid_credentials:
+                  value:
+                    error: Ungültige Anmeldedaten
+                    code: INVALID_CREDENTIALS
+                account_inactive:
+                  value:
+                    error: Konto ist deaktiviert
+                    code: ACCOUNT_INACTIVE
+        '429':
+          description: Zu viele Login-Versuche
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Eigenes Profil
+      description: Gibt den JWT-Payload des eingeloggten Benutzers zurück.
+      responses:
+        '200':
+          description: Eigenes Profil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  username:
+                    type: string
+                  role:
+                    type: string
+                    enum: [admin, member]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout
+      description: Invalidiert das aktuelle Token serverseitig (JTI-Blocklist).
+      responses:
+        '204':
+          description: Erfolgreich ausgeloggt
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ==========================================================================
+  # Members
+  # ==========================================================================
+
+  /members:
+    get:
+      tags: [Members]
+      summary: Alle Mitglieder
+      description: Gibt alle Mitglieder zurück. Nur für Admins.
+      parameters:
+        - name: includeInactive
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Wenn true, werden auch deaktivierte Mitglieder zurückgegeben.
+      responses:
+        '200':
+          description: Liste der Mitglieder (ohne password_hash)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Members]
+      summary: Mitglied anlegen
+      description: Legt ein neues Vereinsmitglied an. Nur für Admins.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMemberRequest'
+      responses:
+        '201':
+          description: Mitglied angelegt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Username bereits vergeben
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Username bereits vergeben
+                code: USERNAME_TAKEN
+
+  /members/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+
+    get:
+      tags: [Members]
+      summary: Einzelnes Mitglied
+      responses:
+        '200':
+          description: Mitglied gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Members]
+      summary: Mitglied aktualisieren
+      description: Aktualisiert Display-Name, Passwort und/oder Rolle. Mindestens ein Feld erforderlich.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberRequest'
+      responses:
+        '200':
+          description: Mitglied aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Members]
+      summary: Mitglied deaktivieren (Soft-Delete)
+      description: |
+        Setzt `is_active = 0`. Das Mitglied kann sich danach nicht mehr einloggen.
+        Ein Admin kann sich nicht selbst deaktivieren.
+      responses:
+        '204':
+          description: Mitglied deaktiviert
+        '400':
+          description: Selbst-Deaktivierung nicht erlaubt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Eigenes Konto kann nicht deaktiviert werden
+                code: SELF_DEACTIVATION
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Mitglied ist bereits deaktiviert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Mitglied ist bereits deaktiviert
+                code: ALREADY_INACTIVE
+
+  # ==========================================================================
+  # Drinks
+  # ==========================================================================
+
+  /drinks:
+    get:
+      tags: [Drinks]
+      summary: Getränkeliste
+      description: |
+        **Member:** Nur verfügbare Getränke mit aktuellem Preis (`DrinkWithPrice`).
+        **Admin:** Alle Getränke inkl. deaktivierter (`Drink`, ohne Preis).
+      responses:
+        '200':
+          description: Getränkeliste
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/DrinkWithPrice'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Drink'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Drinks]
+      summary: Getränk anlegen
+      description: Legt ein neues Getränk mit Initialpreis an. Nur für Admins.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDrinkRequest'
+      responses:
+        '201':
+          description: Getränk angelegt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Drink'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /drinks/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+
+    patch:
+      tags: [Drinks]
+      summary: Getränk aktualisieren
+      description: Ändert Name und/oder Verfügbarkeit. Mindestens ein Feld erforderlich.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDrinkRequest'
+      responses:
+        '200':
+          description: Getränk aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Drink'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /drinks/{id}/prices:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+
+    get:
+      tags: [Drinks]
+      summary: Preishistorie
+      description: Gibt alle Preiseinträge eines Getränks zurück (neueste zuerst). Nur für Admins.
+      responses:
+        '200':
+          description: Preishistorie
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DrinkPrice'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Drinks]
+      summary: Neuen Preis setzen
+      description: |
+        Fügt einen neuen Preis zur Historie hinzu. Der alte Preis bleibt erhalten.
+        Ohne `valid_from` gilt der neue Preis ab sofort.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddPriceRequest'
+      responses:
+        '201':
+          description: Preis gesetzt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DrinkPrice'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==========================================================================
+  # Bookings
+  # ==========================================================================
+
+  /bookings:
+    get:
+      tags: [Bookings]
+      summary: Alle Buchungen (Admin)
+      description: Gibt alle Buchungen mit optionalen Filtern zurück. Nur für Admins.
+      parameters:
+        - name: member_id
+          in: query
+          schema:
+            type: integer
+          description: Nur Buchungen dieses Mitglieds
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Buchungen ab diesem Zeitpunkt (inklusiv)
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Buchungen bis zu diesem Zeitpunkt (inklusiv)
+        - name: include_voided
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Stornierte Buchungen einschließen
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        '200':
+          description: Buchungsliste
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Bookings]
+      summary: Buchung anlegen
+      description: |
+        Bucht ein Getränk für den eingeloggten Nutzer.
+        Der Preis wird als Snapshot gespeichert und bleibt auch bei späteren
+        Preisänderungen unveränderlich.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Buchung angelegt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Getränk nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Getränk nicht verfügbar oder kein Preis hinterlegt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unavailable:
+                  value:
+                    error: Getränk ist nicht verfügbar
+                    code: DRINK_UNAVAILABLE
+                no_price:
+                  value:
+                    error: Kein gültiger Preis für dieses Getränk hinterlegt
+                    code: NO_PRICE
+
+  /bookings/me:
+    get:
+      tags: [Bookings]
+      summary: Eigene Buchungen (paginiert)
+      description: |
+        Gibt die eigenen aktiven Buchungen zurück, neueste zuerst.
+        Cursor-basierte Pagination über den `before`-Parameter (ID der letzten geladenen Buchung).
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: before
+          in: query
+          schema:
+            type: integer
+          description: Nur Buchungen mit ID kleiner als dieser Wert (Cursor)
+      responses:
+        '200':
+          description: Paginierte Buchungsliste
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBookings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /bookings/{id}/void:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+
+    post:
+      tags: [Bookings]
+      summary: Buchung stornieren
+      description: |
+        Storniert eine Buchung (setzt `voided_at`).
+
+        **Member:** Nur eigene Buchungen, maximal 5 Minuten nach der Buchung.
+        **Admin:** Beliebige Buchungen, kein Zeitlimit.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoidBookingRequest'
+      responses:
+        '200':
+          description: Buchung storniert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Keine Berechtigung (fremde Buchung)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Keine Berechtigung diese Buchung zu stornieren
+                code: FORBIDDEN
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Bereits storniert oder Fenster abgelaufen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                already_voided:
+                  value:
+                    error: Buchung ist bereits storniert
+                    code: ALREADY_VOIDED
+                window_expired:
+                  value:
+                    error: Buchung kann nicht mehr storniert werden (5-Minuten-Fenster abgelaufen)
+                    code: VOID_WINDOW_EXPIRED

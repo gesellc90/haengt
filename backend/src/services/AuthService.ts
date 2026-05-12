@@ -89,7 +89,8 @@ export class AuthService {
     }
 
     const jti = randomUUID();
-    const payload: JwtPayload = {
+    // exp und iat werden von jwt.sign gesetzt – daher Omit
+    const payload: Omit<JwtPayload, 'exp' | 'iat'> = {
       sub: String(member.id),
       username: member.username,
       role: member.role,

@@ -57,6 +57,30 @@ export class DrinksRepo {
     return this.findById(drinkId)!;
   }
 
+  /**
+   * Aktualisiert Name und/oder Verfügbarkeit eines Getränks.
+   * Gibt das aktualisierte Getränk zurück (undefined wenn nicht gefunden).
+   */
+  update(id: number, input: { name?: string; is_available?: 0 | 1 }): DrinkRow {
+    const existing = this.findById(id);
+    if (!existing) throw new Error(`Drink ${id} not found`);
+
+    this.db
+      .prepare(
+        `UPDATE drinks
+         SET name         = @name,
+             is_available = @is_available
+         WHERE id = @id`,
+      )
+      .run({
+        id,
+        name: input.name ?? existing.name,
+        is_available: input.is_available ?? existing.is_available,
+      });
+
+    return this.findById(id)!;
+  }
+
   /** Deaktiviert ein Getränk (Soft-Delete). */
   deactivate(id: number): boolean {
     const result = this.db.prepare('UPDATE drinks SET is_available = 0 WHERE id = ?').run(id);

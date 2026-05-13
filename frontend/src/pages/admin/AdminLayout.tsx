@@ -33,6 +33,9 @@ export default function AdminLayout() {
         <NavLink to="/admin/buchungen" className={adminNavClass}>
           Buchungen
         </NavLink>
+        <NavLink to="/admin/berichte" className={adminNavClass}>
+          Berichte
+        </NavLink>
       </nav>
 
       {/* Unter-Seite */}

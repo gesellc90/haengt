@@ -1,39 +1,47 @@
-import { Routes, Route, Link } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext.js';
+import { ToastProvider } from './contexts/ToastContext.js';
+import ProtectedRoute from './components/ProtectedRoute.js';
+import Layout from './components/Layout.js';
+import LoginPage from './pages/LoginPage.js';
+import BookingPage from './pages/BookingPage.js';
+import ProfilePage from './pages/ProfilePage.js';
+import AdminLayout from './pages/admin/AdminLayout.js';
+import MembersPage from './pages/admin/MembersPage.js';
+import DrinksPage from './pages/admin/DrinksPage.js';
+import AdminBookingsPage from './pages/admin/BookingsPage.js';
 
-function Home(): JSX.Element {
+export default function App() {
   return (
-    <section className="space-y-2">
-      <h2 className="text-xl font-semibold">Willkommen</h2>
-      <p className="text-slate-600">
-        Dies ist der M1-Platzhalter. Login und Buchungen folgen ab M3/M5.
-      </p>
-    </section>
-  );
-}
-
-function NotFound(): JSX.Element {
-  return (
-    <section className="space-y-2">
-      <h2 className="text-xl font-semibold">Seite nicht gefunden</h2>
-      <Link to="/" className="text-blue-600 underline">
-        Zurück zur Startseite
-      </Link>
-    </section>
-  );
-}
-
-export default function App(): JSX.Element {
-  return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">Hängt! – Jeder Strich zählt!</h1>
-      </header>
-      <main>
+    <ToastProvider>
+      <AuthProvider>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="*" element={<NotFound />} />
+          {/* Öffentliche Route */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* Geschützte Routen — für alle eingeloggten User */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout />}>
+              <Route index element={<Navigate to="/buchen" replace />} />
+              <Route path="/buchen" element={<BookingPage />} />
+              <Route path="/profil" element={<ProfilePage />} />
+
+              {/* Admin-Bereich — nur für Admins */}
+              <Route element={<ProtectedRoute role="admin" />}>
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<Navigate to="/admin/mitglieder" replace />} />
+                  <Route path="mitglieder" element={<MembersPage />} />
+                  <Route path="getraenke" element={<DrinksPage />} />
+                  <Route path="buchungen" element={<AdminBookingsPage />} />
+                </Route>
+              </Route>
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/buchen" replace />} />
+            </Route>
+          </Route>
         </Routes>
-      </main>
-    </div>
+      </AuthProvider>
+    </ToastProvider>
   );
 }

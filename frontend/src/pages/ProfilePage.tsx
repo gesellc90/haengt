@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { bookingsApi } from '../api/bookings.js';
+import { drinksApi } from '../api/drinks.js';
 import { useAuth } from '../contexts/AuthContext.js';
 import { useToast } from '../contexts/ToastContext.js';
 import Spinner from '../components/Spinner.js';
-import type { BookingRow } from '../types/api.js';
+import type { BookingRow, DrinkWithCurrentPrice } from '../types/api.js';
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktionen
@@ -32,9 +33,18 @@ export default function ProfilePage() {
   const { showToast } = useToast();
 
   const [bookings, setBookings] = useState<BookingRow[]>([]);
+  const [drinks, setDrinks] = useState<DrinkWithCurrentPrice[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // Getränke für Namens-Mapping laden (verfügbare + ggf. deaktivierte via Fallback)
+  useEffect(() => {
+    drinksApi
+      .getAvailable()
+      .then(setDrinks)
+      .catch(() => undefined);
+  }, []);
 
   const loadBookings = useCallback(
     async (beforeId?: number) => {
@@ -80,6 +90,9 @@ export default function ProfilePage() {
   });
   const monthTotal = thisMonth.reduce((sum, b) => sum + b.price_cents_snapshot, 0);
   const monthLabel = now.toLocaleString('de-DE', { month: 'long', year: 'numeric' });
+
+  // Drink-ID → Name (deaktivierte Getränke fallen auf "Getränk #ID" zurück)
+  const drinkNameMap = new Map(drinks.map((d) => [d.id, d.name]));
 
   // -------------------------------------------------------------------------
 
@@ -144,7 +157,7 @@ export default function ProfilePage() {
                         <p
                           className={`text-sm font-medium ${voided ? 'line-through' : ''} text-slate-800 dark:text-slate-200`}
                         >
-                          Getränk #{b.drink_id}
+                          {drinkNameMap.get(b.drink_id) ?? `Getränk #${b.drink_id}`}
                         </p>
                         <p className="text-xs text-slate-400">
                           {formatDateTime(b.booked_at)}

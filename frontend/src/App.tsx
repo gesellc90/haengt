@@ -10,6 +10,7 @@ import AdminLayout from './pages/admin/AdminLayout.js';
 import MembersPage from './pages/admin/MembersPage.js';
 import DrinksPage from './pages/admin/DrinksPage.js';
 import AdminBookingsPage from './pages/admin/BookingsPage.js';
+import ReportPage from './pages/admin/ReportPage.js';
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
                   <Route path="mitglieder" element={<MembersPage />} />
                   <Route path="getraenke" element={<DrinksPage />} />
                   <Route path="buchungen" element={<AdminBookingsPage />} />
+                  <Route path="berichte" element={<ReportPage />} />
                 </Route>
               </Route>
 

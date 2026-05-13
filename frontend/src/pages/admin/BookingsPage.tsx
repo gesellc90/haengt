@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { bookingsApi } from '../../api/bookings.js';
+import { drinksApi } from '../../api/drinks.js';
 import { membersApi } from '../../api/members.js';
 import { ApiError } from '../../api/client.js';
 import { useToast } from '../../contexts/ToastContext.js';
 import Spinner from '../../components/Spinner.js';
-import type { BookingRow, PublicMember } from '../../types/api.js';
+import type { BookingRow, DrinkRow, PublicMember } from '../../types/api.js';
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktionen
@@ -33,6 +34,7 @@ export default function AdminBookingsPage() {
 
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [members, setMembers] = useState<PublicMember[]>([]);
+  const [drinkRows, setDrinkRows] = useState<DrinkRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [voidingId, setVoidingId] = useState<number | null>(null);
 
@@ -42,11 +44,15 @@ export default function AdminBookingsPage() {
   const [filterTo, setFilterTo] = useState('');
   const [filterIncludeVoided, setFilterIncludeVoided] = useState(false);
 
-  // Mitglieder für Dropdown laden
+  // Mitglieder + Getränke für Dropdown und Namens-Mapping laden
   useEffect(() => {
     membersApi
       .getAll(true)
       .then(setMembers)
+      .catch(() => undefined);
+    drinksApi
+      .getAll()
+      .then(setDrinkRows)
       .catch(() => undefined);
   }, []);
 
@@ -87,6 +93,7 @@ export default function AdminBookingsPage() {
   }
 
   const memberMap = new Map(members.map((m) => [m.id, m]));
+  const drinkMap = new Map(drinkRows.map((d) => [d.id, d.name]));
   const total = bookings
     .filter((b) => b.voided_at === null)
     .reduce((s, b) => s + b.price_cents_snapshot, 0);
@@ -159,7 +166,7 @@ export default function AdminBookingsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left dark:border-slate-700">
-                {['Mitglied', 'Getränk #', 'Zeitpunkt', 'Preis', 'Status', 'Aktionen'].map((h) => (
+                {['Mitglied', 'Getränk', 'Zeitpunkt', 'Preis', 'Status', 'Aktionen'].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400"
@@ -178,7 +185,9 @@ export default function AdminBookingsPage() {
                     <td className="px-4 py-2.5 font-medium text-slate-700 dark:text-slate-300">
                       {member?.display_name ?? `#${b.member_id}`}
                     </td>
-                    <td className="px-4 py-2.5 text-slate-500">#{b.drink_id}</td>
+                    <td className="px-4 py-2.5 text-slate-500">
+                      {drinkMap.get(b.drink_id) ?? `#${b.drink_id}`}
+                    </td>
                     <td className="px-4 py-2.5 text-slate-500">{formatDateTime(b.booked_at)}</td>
                     <td className="px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300">
                       {formatCents(b.price_cents_snapshot)}

@@ -1,6 +1,18 @@
 import type { Db } from '../client.js';
 import type { BookingRow } from '../types.js';
 
+// ---------------------------------------------------------------------------
+// Report-spezifischer Typ (JOIN mit drinks)
+// ---------------------------------------------------------------------------
+
+export interface BookingWithDrinkName {
+  booking_id: number;
+  booked_at: string;
+  drink_id: number;
+  drink_name: string;
+  price_cents: number;
+}
+
 export interface CreateBookingInput {
   member_id: number;
   drink_id: number;
@@ -113,6 +125,30 @@ export class BookingsRepo {
       .run({ id, reason: reason ?? null });
 
     return result.changes > 0;
+  }
+
+  /**
+   * Gibt alle nicht-storni­erten Buchungen eines Mitglieds in einem halboffenen
+   * Zeitraum [fromDate, toDate) zurück, angereichert mit dem Getränkenamen.
+   * Wird ausschließlich vom ReportService verwendet.
+   */
+  findWithDrinkName(memberId: number, fromDate: string, toDate: string): BookingWithDrinkName[] {
+    return this.db
+      .prepare<[number, string, string], BookingWithDrinkName>(
+        `SELECT b.id                   AS booking_id,
+                b.booked_at,
+                b.drink_id,
+                d.name                 AS drink_name,
+                b.price_cents_snapshot AS price_cents
+         FROM bookings b
+         JOIN drinks d ON d.id = b.drink_id
+         WHERE b.member_id = ?
+           AND b.booked_at >= ?
+           AND b.booked_at <  ?
+           AND b.voided_at IS NULL
+         ORDER BY b.booked_at ASC, b.id ASC`,
+      )
+      .all(memberId, fromDate, toDate);
   }
 
   /** Aggregation für Reporting: Summe pro Getränk in einem Zeitraum. */

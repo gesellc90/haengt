@@ -16,6 +16,10 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **M7 Hälfte B (in Arbeit)**
   - systemd-Service-Unit `scripts/getraenke.service` mit gehärtetem Sandbox-Profil (NoNewPrivileges, ProtectSystem=strict, ProtectHome, PrivateTmp, PrivateDevices, RestrictAddressFamilies, SystemCallFilter, leeres CapabilityBoundingSet, MemoryMax=512M, StateDirectory=getraenke)
   - Deployment-Doku `docs/DEPLOYMENT.md` mit Verzeichnis-Layout, EnvironmentFile-Beispiel, Service-Account und Verifikations-Befehlen (`systemd-analyze verify`/`security`)
+  - GitHub Actions Workflow `.github/workflows/deploy.yml` (Trigger auf SemVer-Tag `v*.*.*`): Build auf `ubuntu-latest`, Deploy auf `[self-hosted, raspberry-pi]` mit DB-Backup → Migration → atomarem Symlink-Swap (`ln -sfn` + `mv -Tf`) → Restart → Smoke-Test gegen `/api/v1/health`. Automatischer Rollback bei Fehlern nach Swap, Aufbewahrung der letzten 5 Releases
+  - sudoers-Snippet `scripts/getraenke-deploy.sudoers` (minimaler NOPASSWD-Eintrag für `systemctl restart/status/is-active` + Migration als App-User)
+  - Wrapper-Skript `scripts/deploy-migrate.sh` für DB-Migrationen während des Deploys (lädt `/etc/getraenke/env`, ruft `migrate-cli.js` als App-User `getraenke` auf)
+  - CI-Erweiterung in `.github/workflows/ci.yml`: neuer Job `lint-deploy` mit `systemd-analyze verify`, `visudo -cf` und `bash -n` für alle Skripte
 - **M1 — Projekt-Setup & Tooling**
   - Mono-Repo mit npm-Workspaces (`backend/`, `frontend/`)
   - Backend-Skeleton: Express, pino, Zod, `/api/v1/health`-Route, graceful Shutdown auf SIGTERM/SIGINT

@@ -1,9 +1,9 @@
 # Deployment
 
 Dieses Dokument beschreibt, wie die App auf den Vereins-Raspberry-Pi
-deployed wird. Es deckt aktuell die **systemd-Service-Unit** (PR 1) ab.
-Der automatisierte Deploy-Workflow (PR 2) und die Pi-Grundeinrichtung
-(PR 4) folgen in separaten Patches und werden hier hinzugefügt.
+deployed wird. Es deckt aktuell die **systemd-Service-Unit** (PR 1) und den
+**automatisierten Deploy-Workflow** (PR 2) ab. Die Pi-Grundeinrichtung (PR 4)
+folgt in einem separaten Patch.
 
 ## Verzeichnis-Layout auf dem Pi
 
@@ -86,6 +86,38 @@ EOF
 > (Caddy/nginx) davor kommt, kann die App auf `127.0.0.1` umgestellt werden
 > (erfordert kleine Anpassung in `backend/src/server.ts`).
 
+## Runner-User und sudoers
+
+Der GitHub-Actions-Self-Hosted-Runner läuft als **eigener User** (nicht als
+`getraenke`), damit Deploy-Operationen klar vom App-User getrennt sind:
+
+```bash
+# Runner-User anlegen (Mitglied der Gruppe getraenke → kann ENV-File lesen
+# und DB für Backup mounten).
+sudo useradd --system --create-home --groups getraenke --shell /bin/bash getraenke-runner
+
+# Verzeichnis-Eigentum: Runner darf Release-Dir und Backup-Dir schreiben,
+# Gruppe getraenke darf lesen.
+sudo install -d -m 0775 -o getraenke-runner -g getraenke /opt/getraenke
+sudo install -d -m 0775 -o getraenke-runner -g getraenke /opt/getraenke/releases
+sudo install -d -m 0775 -o getraenke-runner -g getraenke /var/backups/getraenke
+```
+
+Der Runner braucht **NOPASSWD-sudo** für genau drei Befehle:
+
+- `systemctl restart getraenke.service`
+- `systemctl status getraenke.service`
+- DB-Migration als App-User `getraenke` (`sudo -u getraenke … migrate-cli.js`)
+
+Die Datei `scripts/getraenke-deploy.sudoers` enthält das passende Snippet —
+keine Wildcards außerhalb des Tag-Anteils im Release-Pfad, kein freies `env`:
+
+```bash
+sudo install -m 0440 -o root -g root scripts/getraenke-deploy.sudoers \
+    /etc/sudoers.d/getraenke-deploy
+sudo visudo -cf /etc/sudoers.d/getraenke-deploy    # muss „parsed OK" sagen
+```
+
 ## Service installieren
 
 ```bash
@@ -145,8 +177,77 @@ sudo journalctl -u getraenke.service -f -o cat | npx pino-pretty
 | Service startet, aber `curl /health` → connection refused | `PORT` weicht von `3001` ab              | EnvironmentFile prüfen, Firewall (`ufw`) prüfen              |
 | `Failed to set up StateDirectory`                         | systemd zu alt (< 235)                   | Pi OS Bookworm bringt systemd 252 — OK                       |
 
+## Deploy-Workflow
+
+Ein Release wird durch das Pushen eines SemVer-Tags ausgelöst:
+
+```bash
+# CHANGELOG.md aktualisieren, package.json-Versionen bumpen, dann:
+git tag -a v0.1.0 -m "Release 0.1.0"
+git push origin v0.1.0
+```
+
+`.github/workflows/deploy.yml` reagiert auf `v*.*.*`-Tags und durchläuft zwei
+Jobs:
+
+1. **`build` auf `ubuntu-latest`** — `npm ci`, `npm run build` für Backend
+   (`tsc`) und Frontend (`vite`). Das Tarball enthält nur `*/dist/`, die
+   Package-Manifests und `scripts/deploy-migrate.sh` — KEINE `node_modules`,
+   weil `better-sqlite3` auf dem Pi nativ für ARM kompiliert werden muss.
+2. **`deploy` auf `[self-hosted, raspberry-pi]`** — übernimmt das Artefakt und
+   führt diese Schritte aus (jeder einzelne kann abbrechen, alle nach dem
+   Symlink-Swap lösen ggf. Rollback aus):
+   1. _Snapshot:_ aktuelles Ziel von `current` merken (Rollback-Anker).
+   2. _DB-Backup_ via `sqlite3 .backup` →
+      `/var/backups/getraenke/<tag>-<utc-timestamp>.sqlite`.
+      WAL-sicher; Service muss nicht gestoppt werden.
+   3. _Tarball entpacken_ nach `/opt/getraenke/releases/<tag>/`.
+   4. _`npm ci --omit=dev --workspace=backend`_ im Release-Dir — kompiliert
+      `better-sqlite3` für ARM.
+   5. _Migrationen_ via `scripts/deploy-migrate.sh`. Liest
+      `/etc/getraenke/env` und ruft `migrate-cli.js` als App-User
+      `getraenke` auf. Bei Fehler: Abbruch, alte App läuft weiter.
+   6. _Symlink-Swap_ mit `ln -sfn` + `mv -Tf` (atomar auf Linux).
+   7. _Service-Restart_ via `sudo systemctl restart getraenke.service`,
+      gefolgt von 5× `is-active`-Check à 2 s.
+   8. _Smoke-Test_ `curl -fsS --max-time 10 http://localhost:3001/api/v1/health`,
+      ebenfalls 5× retry.
+   9. _Rollback_ (nur wenn Swap erfolgt war + ein späterer Step gescheitert):
+      Symlink auf vorheriges Release zurück + erneuter Restart, Workflow
+      wird trotzdem rot abgeschlossen.
+
+3. _Aufbewahrung:_ ältere Releases als die letzten 5 werden gelöscht
+   (das aktive Release wird nie gelöscht, auch wenn es theoretisch
+   „raus" sortiert würde).
+
+## Manueller Rollback
+
+Wenn ein Deploy stumm Probleme erzeugt (Smoke-Test grün, aber Endnutzer
+melden Fehler), kann jederzeit manuell zurückgerollt werden:
+
+```bash
+# Auf dem Pi:
+ls -dt /opt/getraenke/releases/v*/        # neueste zuerst
+# Beispiel: zurück auf v0.1.4
+sudo -u getraenke-runner ln -sfn /opt/getraenke/releases/v0.1.4 /opt/getraenke/current.rollback
+sudo -u getraenke-runner mv -Tf /opt/getraenke/current.rollback /opt/getraenke/current
+sudo systemctl restart getraenke.service
+curl -fsS http://localhost:3001/api/v1/health
+```
+
+> **Achtung:** ein manueller Rollback rollt **nur den Code** zurück. Die
+> Datenbank bleibt auf dem Schema-Stand der neuesten Migration. Falls eine
+> Migration nicht backward-compatible war, muss zusätzlich das DB-Backup aus
+> `/var/backups/getraenke/<tag>-<ts>.sqlite` zurückgespielt werden:
+>
+> ```bash
+> sudo systemctl stop getraenke.service
+> sudo -u getraenke cp /var/backups/getraenke/<tag>-<ts>.sqlite \
+>     /var/lib/getraenke/getraenke.db
+> sudo systemctl start getraenke.service
+> ```
+
 ## Folge-PRs
 
-- **PR 2 (Deploy-Workflow):** `.github/workflows/deploy.yml`, `scripts/getraenke-deploy.sudoers`, Rollback-Prozedur.
 - **PR 3 (E2E-Suite):** Playwright-Tests gegen einen lokalen Backend-Build, `docs/TESTING.md`.
 - **PR 4 (Pi-Setup):** `docs/RASPBERRY-PI-SETUP.md` (OS-Hardening, Node 20, sqlite3), `docs/RUNNER-SETUP.md` (GitHub Actions Self-Hosted Runner).

@@ -13,6 +13,9 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Architekturdokumentation (`ARCHITECTURE.md`)
 - Contribution Guide (`CONTRIBUTING.md`)
 - Meilensteinplan (`docs/MILESTONES.md`)
+- **M7 Hälfte B (in Arbeit)**
+  - systemd-Service-Unit `scripts/getraenke.service` mit gehärtetem Sandbox-Profil (NoNewPrivileges, ProtectSystem=strict, ProtectHome, PrivateTmp, PrivateDevices, RestrictAddressFamilies, SystemCallFilter, leeres CapabilityBoundingSet, MemoryMax=512M, StateDirectory=getraenke)
+  - Deployment-Doku `docs/DEPLOYMENT.md` mit Verzeichnis-Layout, EnvironmentFile-Beispiel, Service-Account und Verifikations-Befehlen (`systemd-analyze verify`/`security`)
 - **M1 — Projekt-Setup & Tooling**
   - Mono-Repo mit npm-Workspaces (`backend/`, `frontend/`)
   - Backend-Skeleton: Express, pino, Zod, `/api/v1/health`-Route, graceful Shutdown auf SIGTERM/SIGINT

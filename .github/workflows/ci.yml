@@ -1,0 +1,201 @@
+# Continuous Integration für Hängt! – Jeder Strich zählt!
+#
+# Strategie (siehe MILESTONES.md, M7):
+#   1. Lint (Root)
+#   2. TypeCheck Backend + Frontend (parallel, sobald Lint grün)
+#   3. Tests Backend + Frontend (parallel, sobald TypeCheck grün)
+#   4. Build-Artefakte (nur auf main, sobald Tests grün)
+#
+# Pipeline läuft auf jedem Push (alle Branches) und auf jedem Pull Request.
+# Mehrere Pushes auf denselben Branch brechen ältere Runs ab (Concurrency).
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Ältere Runs für denselben Branch abbrechen, sobald ein neuer Push ankommt.
+# Für PRs (github.ref = refs/pull/<n>/merge) wirkt das auch je PR.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Minimale Default-Berechtigungen für alle Jobs.
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1) Lint (Root) – läuft zuerst, bricht früh ab, falls Code-Stil verletzt ist.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint (Root)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node ${{ env.NODE_VERSION }} einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Dependencies installieren
+        run: npm ci
+
+      - name: ESLint (Flat-Config) ausführen
+        run: npm run lint
+
+  # ---------------------------------------------------------------------------
+  # 2a) TypeCheck Backend – parallel zu typecheck-frontend.
+  # ---------------------------------------------------------------------------
+  typecheck-backend:
+    name: TypeCheck Backend
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node ${{ env.NODE_VERSION }} einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Dependencies installieren
+        run: npm ci
+
+      - name: tsc --noEmit (Backend)
+        run: npm run typecheck --workspace=backend
+
+  # ---------------------------------------------------------------------------
+  # 2b) TypeCheck Frontend – parallel zu typecheck-backend.
+  # ---------------------------------------------------------------------------
+  typecheck-frontend:
+    name: TypeCheck Frontend
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node ${{ env.NODE_VERSION }} einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Dependencies installieren
+        run: npm ci
+
+      - name: tsc --noEmit (Frontend)
+        run: npm run typecheck --workspace=frontend
+
+  # ---------------------------------------------------------------------------
+  # 3a) Unit- & Integrationstests Backend (Vitest + Supertest).
+  #
+  # better-sqlite3 baut bei `npm ci` auf ubuntu-latest/Node 20 ein passendes
+  # natives Binary; ein expliziter Rebuild ist nicht nötig.
+  #
+  # JWT_SECRET wird aus dem GitHub-Secret gezogen. Falls das Secret (z. B. in
+  # einem Fork-PR) nicht verfügbar ist, fällt ein nicht-produktionsrelevanter
+  # Dummy ein – die Tests selbst lesen process.env.JWT_SECRET in der Regel
+  # nicht zwingend, aber das App-Bootstrap im Test setzt es voraus.
+  # ---------------------------------------------------------------------------
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    needs: [typecheck-backend, typecheck-frontend]
+    env:
+      NODE_ENV: test
+      JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-dummy-secret-not-for-production' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node ${{ env.NODE_VERSION }} einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Dependencies installieren
+        run: npm ci
+
+      - name: Vitest (Backend)
+        run: npm run test --workspace=backend
+
+  # ---------------------------------------------------------------------------
+  # 3b) Unit-Tests Frontend (Vitest + React Testing Library).
+  # ---------------------------------------------------------------------------
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    needs: [typecheck-backend, typecheck-frontend]
+    env:
+      NODE_ENV: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node ${{ env.NODE_VERSION }} einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Dependencies installieren
+        run: npm ci
+
+      - name: Vitest (Frontend)
+        run: npm run test --workspace=frontend
+
+  # ---------------------------------------------------------------------------
+  # 4) Build-Artefakte – nur auf Push nach main, damit PRs keine Zeit
+  #    verschwenden. Erzeugt backend/dist (tsc) und frontend/dist (vite build).
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build (nur main)
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node ${{ env.NODE_VERSION }} einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Dependencies installieren
+        run: npm ci
+
+      - name: Backend bauen (tsc)
+        run: npm run build --workspace=backend
+
+      - name: Frontend bauen (vite)
+        run: npm run build --workspace=frontend
+
+      - name: Build-Artefakte hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ github.sha }}
+          path: |
+            backend/dist
+            frontend/dist
+          if-no-files-found: error
+          retention-days: 14

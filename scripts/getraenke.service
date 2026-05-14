@@ -1,0 +1,127 @@
+# scripts/getraenke.service
+#
+# systemd-Service-Unit für die Getränkeabrechnungs-App
+# „Hängt! – Jeder Strich zählt!" auf dem Vereins-Raspberry-Pi.
+#
+# ----------------------------------------------------------------------------
+# Installation (einmalig pro Host)
+# ----------------------------------------------------------------------------
+#   sudo cp scripts/getraenke.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now getraenke.service
+#
+# Vorausgesetzte Pfade (Anlage siehe docs/DEPLOYMENT.md):
+#   /opt/getraenke/current      → Symlink auf das aktive Release-Verzeichnis
+#   /etc/getraenke/env          → EnvironmentFile (JWT_SECRET, PORT, DB_PATH, …)
+#   /var/lib/getraenke/         → SQLite-DB (wird automatisch via StateDirectory= angelegt)
+#
+# Vorausgesetzter Service-Account:
+#   User getraenke              → unprivilegiert, kein Login-Shell (`/usr/sbin/nologin`)
+#   Gruppe getraenke            → gleicher Name
+#
+# ----------------------------------------------------------------------------
+# Verifikation nach Änderungen
+# ----------------------------------------------------------------------------
+#   sudo systemd-analyze verify scripts/getraenke.service     # Syntax
+#   sudo systemd-analyze security getraenke.service           # Härtungs-Score (Ziel: < 3.0 „OK")
+#   sudo journalctl -u getraenke.service -f                   # Live-Logs (pino-JSON)
+#
+# Reload nach Edit dieser Datei:
+#   sudo cp scripts/getraenke.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl restart getraenke.service
+#
+# ----------------------------------------------------------------------------
+
+[Unit]
+Description=Hängt! – Getränkeabrechnung des Vereins
+Documentation=https://github.com/gesellc90/h-ngt/blob/main/docs/DEPLOYMENT.md
+# Netzwerk muss bereit sein, bevor der Service startet (Pi hängt am DHCP).
+Wants=network-online.target
+After=network-online.target
+# Endlos-Crash-Loop bremsen: max. 5 Restarts in 60 s.
+# (Gehört in [Unit], nicht in [Service] — neuere systemd-Versionen weigern sich.)
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+[Service]
+Type=simple
+
+# --- Identität --------------------------------------------------------------
+User=getraenke
+Group=getraenke
+
+# --- Pfade ------------------------------------------------------------------
+# WorkingDirectory ist der Symlink → wird beim Deploy atomar geswappt.
+WorkingDirectory=/opt/getraenke/current
+EnvironmentFile=/etc/getraenke/env
+
+# Backend-Build liegt unter <release>/backend/dist/server.js.
+# Node ist via NodeSource-Paket installiert (siehe RASPBERRY-PI-SETUP.md).
+ExecStart=/usr/bin/node backend/dist/server.js
+
+# --- Lifecycle --------------------------------------------------------------
+Restart=on-failure
+RestartSec=5
+# Sauberes Shutdown: SIGTERM, 15 s Gnadenfrist, dann SIGKILL.
+# server.ts hat einen SIGTERM-Handler, der express.close() abwartet.
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+# --- State-Verzeichnis (DB) -------------------------------------------------
+# systemd legt /var/lib/getraenke automatisch an, owner=User=getraenke,
+# Mode 0750. Spart Manual-Setup und ist read-write für den Service.
+StateDirectory=getraenke
+StateDirectoryMode=0750
+
+# --- Ressourcen-Limits ------------------------------------------------------
+# Pi 4 hat 4 GB; eine SQLite-Node-App braucht typischerweise < 200 MB.
+# Hard-Limit als Sicherheitsnetz gegen Memory-Leaks.
+MemoryMax=512M
+TasksMax=256
+
+# --- Sandbox-Hardening (Reihenfolge: systemd-analyze security) --------------
+# Verhindert Privilege-Escalation via setuid-Binaries.
+NoNewPrivileges=true
+# Dateisystem ist read-only, außer den explizit gelisteten Pfaden
+# (StateDirectory= wird automatisch als ReadWrite aufgenommen).
+ProtectSystem=strict
+# Home-Verzeichnisse sind unsichtbar.
+ProtectHome=true
+# Eigener /tmp-Namespace pro Service-Start.
+PrivateTmp=true
+# Keine Block- und Character-Devices außer den Standards.
+PrivateDevices=true
+# Kernel-Schnittstellen abschotten.
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+# Keine Capabilities — wir binden auf Port 3001 (>1024), brauchen also kein NET_BIND_SERVICE.
+CapabilityBoundingSet=
+AmbientCapabilities=
+# Keine SUID/SGID-Übergänge.
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+# Nur lokale + IPv4/IPv6-Sockets. Kein AF_NETLINK, AF_PACKET, AF_BLUETOOTH, …
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# Standard-Syscall-Set für Web-Services. better-sqlite3 läuft damit problemlos.
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+UMask=0027
+
+# --- Logging ----------------------------------------------------------------
+# pino schreibt strukturiertes JSON auf stdout → journald übernimmt.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=getraenke
+
+[Install]
+WantedBy=multi-user.target

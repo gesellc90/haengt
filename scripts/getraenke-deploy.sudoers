@@ -1,0 +1,46 @@
+# /etc/sudoers.d/getraenke-deploy
+#
+# Erlaubt dem GitHub-Actions-Runner-User auf dem Pi GENAU die für Deployments
+# nötigen Befehle ohne Passworteingabe. Alles andere bleibt verboten.
+#
+# Installation auf dem Pi:
+#   sudo install -m 0440 -o root -g root scripts/getraenke-deploy.sudoers \
+#       /etc/sudoers.d/getraenke-deploy
+#   sudo visudo -cf /etc/sudoers.d/getraenke-deploy   # MUSS „parsed OK" sagen
+#
+# Annahmen über Dateirechte (siehe docs/DEPLOYMENT.md):
+#   - Runner-User       getraenke-runner   (Member der Gruppe getraenke)
+#   - App-User          getraenke          (führt den systemd-Service)
+#   - /opt/getraenke/   gehört  getraenke-runner:getraenke   (Mode 0775)
+#   - /var/backups/getraenke/ gehört getraenke-runner:getraenke (Mode 0775)
+#   - /etc/getraenke/env  Mode 0640, root:getraenke (Runner kann lesen)
+#   - DB-Datei /var/lib/getraenke/getraenke.db gehört getraenke:getraenke
+#     mit Mode 0640 (Runner kann lesen für Backups, NICHT schreiben).
+#
+# Deshalb braucht der Runner nur sudo für:
+#   1) Service-Lifecycle (systemctl restart/status/is-active)
+#   2) DB-Migration als App-User getraenke (Schreibzugriff auf die DB)
+#
+# Symlink-Swap, Tarball-Extract und sqlite3 .backup laufen OHNE sudo, weil
+# der Runner selbst Eigentümer der relevanten Verzeichnisse ist.
+
+# `requiretty` würde non-interaktive sudo-Aufrufe blockieren.
+Defaults:getraenke-runner   !requiretty
+
+# `env_reset` ist Default und gewollt — Runner-ENV soll NICHT zum Root-Cmd
+# durchgereicht werden. Im deploy-migrate.sh-Wrapper benutzen wir `env KEY=...`,
+# um explizit zu übergeben, was nötig ist.
+
+# Cmnd-Alias für Service-Steuerung — Pfade absolut, kein Wildcard.
+Cmnd_Alias GETRAENKE_SVC = /usr/bin/systemctl restart getraenke.service, \
+                           /usr/bin/systemctl status  getraenke.service, \
+                           /usr/bin/systemctl is-active getraenke.service
+
+# Cmnd-Alias für Migration — Wildcard nur für den Tag-Anteil im Pfad.
+# WICHTIG: ohne Wildcard bei `env`, sonst kann ein bösartiger Runner-Job
+# beliebige Env-Variablen einschmuggeln. Wir whitelisten die Env-Keys hart.
+Cmnd_Alias GETRAENKE_MIGRATE = /usr/bin/env NODE_ENV=* DB_PATH=* JWT_SECRET=* JWT_EXPIRES_IN=* LOG_LEVEL=* PORT=* /usr/bin/node /opt/getraenke/releases/*/backend/dist/db/migrate-cli.js
+
+# Regeln.
+getraenke-runner ALL=(root)      NOPASSWD: GETRAENKE_SVC
+getraenke-runner ALL=(getraenke) NOPASSWD: GETRAENKE_MIGRATE

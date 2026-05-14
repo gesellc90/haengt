@@ -1,0 +1,89 @@
+# End-to-End-Tests (Playwright) — Hängt! – Jeder Strich zählt!
+#
+# Trigger: jeder Push, jeder Pull Request. Läuft ausschließlich auf
+# ubuntu-latest (nicht auf dem Pi).
+#
+# Eigener Workflow statt Job in ci.yml: E2E ist deutlich langsamer als
+# Unit-/Integrationstests, ein E2E-Fehler soll die schnelle CI-Pipeline
+# nicht visuell „blockieren". Beide Workflows laufen parallel.
+
+name: E2E
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  playwright:
+    name: Playwright (Chromium / Pixel 5)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node ${{ env.NODE_VERSION }} einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Dependencies installieren
+        run: npm ci
+
+      - name: Playwright-Browser cachen
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('e2e/package.json', 'package-lock.json') }}
+
+      - name: Playwright-Browser installieren (Chromium + Systemabhängigkeiten)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+        working-directory: e2e
+
+      - name: Playwright-System-Deps sicherstellen (auch bei Cache-Hit)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+        working-directory: e2e
+
+      - name: Backend bauen
+        run: npm run build --workspace=backend
+
+      - name: Frontend bauen
+        run: npm run build --workspace=frontend
+
+      - name: E2E-Tests ausführen
+        run: npm run test:e2e
+        env:
+          CI: 'true'
+
+      - name: Playwright-Report hochladen
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: e2e/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Trace + Screenshots bei Fehler hochladen
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results-${{ github.run_id }}
+          path: e2e/test-results
+          if-no-files-found: ignore
+          retention-days: 14

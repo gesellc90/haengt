@@ -20,6 +20,14 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   - sudoers-Snippet `scripts/getraenke-deploy.sudoers` (minimaler NOPASSWD-Eintrag für `systemctl restart/status/is-active` + Migration als App-User)
   - Wrapper-Skript `scripts/deploy-migrate.sh` für DB-Migrationen während des Deploys (lädt `/etc/getraenke/env`, ruft `migrate-cli.js` als App-User `getraenke` auf)
   - CI-Erweiterung in `.github/workflows/ci.yml`: neuer Job `lint-deploy` mit `systemd-analyze verify`, `visudo -cf` und `bash -n` für alle Skripte
+  - Playwright-E2E-Suite (`e2e/`) als eigener npm-Workspace `@getraenke/e2e`. Globaler Setup-Hook startet gebautes Backend + `vite preview` gegen eine temporäre SQLite-DB, seedet Test-Daten (bcrypt-Hashes für admin/anna/bernd, „alte" Buchung für Storno-Negativ-Test). Fünf Specs: Login, Buchung, Storno (positiv + negativ), Admin-Mitgliederanlage, PDF-Report-Download
+  - GitHub Actions Workflow `.github/workflows/e2e.yml` (Trigger auf Push/PR, Playwright-Browser-Cache, Trace-Upload bei Fehler)
+  - Neue Doku `docs/TESTING.md` (Test-Schichten, lokale Befehle, Trace-Viewer, Test-Daten-Schema)
+  - `frontend/vite.config.ts`: neuer `preview`-Block mit `/api`-Proxy auf `E2E_BACKEND_PORT` (Default 3101)
+
+### Fixed
+
+- **Backend-Build:** Migrations-`.sql`-Dateien werden jetzt via `backend/scripts/copy-migrations.mjs` nach `dist/db/migrations/` kopiert. Ohne diesen Schritt würde `node dist/db/migrate-cli.js` (genutzt in PR 2 vom Pi-Deploy) zur Laufzeit keine Migrationen finden, weil `tsc` Nicht-TS-Files ignoriert
 - **M1 — Projekt-Setup & Tooling**
   - Mono-Repo mit npm-Workspaces (`backend/`, `frontend/`)
   - Backend-Skeleton: Express, pino, Zod, `/api/v1/health`-Route, graceful Shutdown auf SIGTERM/SIGINT

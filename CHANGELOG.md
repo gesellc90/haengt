@@ -24,6 +24,8 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   - GitHub Actions Workflow `.github/workflows/e2e.yml` (Trigger auf Push/PR, Playwright-Browser-Cache, Trace-Upload bei Fehler)
   - Neue Doku `docs/TESTING.md` (Test-Schichten, lokale Befehle, Trace-Viewer, Test-Daten-Schema)
   - `frontend/vite.config.ts`: neuer `preview`-Block mit `/api`-Proxy auf `E2E_BACKEND_PORT` (Default 3101)
+  - Pi-Grundeinrichtungs-Doku `docs/RASPBERRY-PI-SETUP.md`: OS-Flash via Imager, Production-Hardening (SSH-Key-Only, ufw, fail2ban, unattended-upgrades, timesyncd), Node 20 via NodeSource, build-essential für `better-sqlite3`-ARM-Build, User- und Verzeichnis-Layout, Cron-Backup, Smoke-Test, Troubleshooting-Tabelle
+  - Runner-Installation-Doku `docs/RUNNER-SETUP.md`: ARM64-Tarball-Download mit Integritäts-Check, `config.sh` mit Labels `self-hosted,raspberry-pi,arm64`, `svc.sh install` als systemd-Service, Sicherheits-Hinweise
 
 ### Fixed
 

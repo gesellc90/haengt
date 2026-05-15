@@ -247,7 +247,8 @@ curl -fsS http://localhost:3001/api/v1/health
 > sudo systemctl start getraenke.service
 > ```
 
-## Folge-PRs
+## Weiterführende Doku
 
-- **PR 3 (E2E-Suite):** Playwright-Tests gegen einen lokalen Backend-Build, `docs/TESTING.md`.
-- **PR 4 (Pi-Setup):** `docs/RASPBERRY-PI-SETUP.md` (OS-Hardening, Node 20, sqlite3), `docs/RUNNER-SETUP.md` (GitHub Actions Self-Hosted Runner).
+- [`RASPBERRY-PI-SETUP.md`](./RASPBERRY-PI-SETUP.md) — Pi-Grundeinrichtung (OS-Flash, Hardening, Node 20, User/Verzeichnis-Layout, Cron-Backup).
+- [`RUNNER-SETUP.md`](./RUNNER-SETUP.md) — Registrierung des GitHub-Actions-Self-Hosted-Runners auf dem Pi.
+- [`TESTING.md`](./TESTING.md) — Test-Schichten, Playwright-E2E lokal ausführen, Trace-Viewer.

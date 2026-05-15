@@ -55,6 +55,8 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Changed
 
 - `ARCHITECTURE.md`: Verzeichnisstruktur auf TypeScript (`.ts`/`.tsx`) umgestellt, Build- und Run-Strategie-Tabelle ergänzt (Dev: `tsx watch` / `vite`, Prod: `tsc → dist/` / `vite build`)
+- `backend/src/db/seed.ts`: veralteter Header-Kommentar („Passwörter werden ab M3 durch bcrypt-Hashes ersetzt") an die M3-Realität angepasst — der Seed lässt `password_hash` bewusst NULL, Initial-Passwort muss von einem Admin gesetzt werden; E2E-Setup übernimmt das Hashing in `e2e/seed/test-seed.mjs`
+- `docs/DEPLOYMENT.md`: neue Sektion „Bekannte Limitierungen" mit den zwei offenen Code-Folge-Issues aus M7 Hälfte B (HOST-Binding wird ignoriert, Frontend wird nicht via `express.static` ausgeliefert)
 
 ### Deprecated
 

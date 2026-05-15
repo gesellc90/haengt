@@ -59,12 +59,15 @@ test.describe('Storno (5-Minuten-Fenster)', () => {
     );
     expect(stale, 'Test-Seed hat keine „alte" Buchung erzeugt').toBeDefined();
 
-    // Storno-Versuch — erwartet 403 (Service-Layer: VOID_WINDOW_EXPIRED o. ä.).
+    // Storno-Versuch — erwartet 409 (Service-Layer: VOID_WINDOW_EXPIRED).
+    // Der Backend-AppError verwendet 409 (Conflict), weil der Zustand der
+    // Buchung (abgelaufenes Zeitfenster) den Request ablehnt — kein Berechtigungs-
+    // problem (das wäre 403), sondern ein State-Conflict.
     const voidRes = await ctx.post(`/api/v1/bookings/${stale!.id}/void`, {
       headers: { Authorization: `Bearer ${token}` },
       data: { reason: 'soll fehlschlagen' },
     });
-    expect(voidRes.status()).toBe(403);
+    expect(voidRes.status()).toBe(409);
 
     await ctx.dispose();
   });

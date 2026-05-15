@@ -17,7 +17,9 @@ test.describe('Admin: PDF-Report herunterladen', () => {
     const year = now.getUTCFullYear();
     const month = now.getUTCMonth() + 1; // 1-12
 
-    const pdf = await ctx.get(`/api/v1/reports/monthly?year=${year}&month=${month}&format=pdf`, {
+    // /reports/all liefert das Sammel-PDF aller Mitglieder und benötigt
+    // kein memberId — das ist der natürliche Admin-Download-Endpunkt.
+    const pdf = await ctx.get(`/api/v1/reports/all?year=${year}&month=${month}&format=pdf`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(pdf.status(), 'Erwartet 200 OK für PDF-Report').toBe(200);

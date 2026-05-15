@@ -94,6 +94,9 @@ export default async function globalSetup(): Promise<void> {
     JWT_SECRET: jwtSecret,
     JWT_EXPIRES_IN: '8h',
     LOG_LEVEL: 'warn',
+    // Rate-Limiter deaktivieren: alle E2E-Requests kommen von 127.0.0.1
+    // und würden nach 5 Logins den gemeinsamen Bucket erschöpfen.
+    DISABLE_RATE_LIMIT: 'true',
   };
 
   // --- Backend starten (Migrationen laufen beim Boot automatisch) -----------

@@ -46,11 +46,14 @@ test.describe('Storno (5-Minuten-Fenster)', () => {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(list.ok()).toBeTruthy();
-    const bookings = (await list.json()) as Array<{
-      id: number;
-      booked_at: string;
-      voided_at: string | null;
-    }>;
+    const { items: bookings } = (await list.json()) as {
+      items: Array<{
+        id: number;
+        booked_at: string;
+        voided_at: string | null;
+      }>;
+      hasMore: boolean;
+    };
     const stale = bookings.find(
       (b) => b.voided_at === null && Date.now() - Date.parse(b.booked_at) > 5 * 60 * 1000,
     );

@@ -81,6 +81,17 @@ export default tseslint.config(
     },
   },
 
+  // ── Node.js-Hilfsskripte (.mjs): build-Skripte wie copy-migrations ─────────
+  {
+    files: ['**/*.mjs'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
+
   // ── Konfig-Dateien dürfen require/console/etc. ─────────────────────────────
   {
     files: ['**/*.config.{js,ts}', '**/.prettierrc.{js,cjs,mjs}'],

@@ -9,9 +9,14 @@
  * Das Skript ist idempotent: Läuft es ein zweites Mal, werden keine
  * Duplikate angelegt (INSERT OR IGNORE auf username/name).
  *
- * WICHTIG: Passwörter hier sind Demo-Klartextplatzhalter.
- * Ab M3 werden sie durch bcrypt-Hashes ersetzt; bis dahin ist die
- * Anmeldefunktion noch nicht aktiv.
+ * HINWEIS zu Passwörtern: Dieser Seed legt Members OHNE `password_hash` an —
+ * das Schema (Migration 001) erlaubt NULL für Bestands-Daten und initiale
+ * Setups. Vor dem ersten Login muss ein Admin manuell ein Passwort setzen,
+ * entweder direkt per SQL oder über `PATCH /api/v1/members/:id` mit
+ * `password` im Body.
+ *
+ * Für die E2E-Suite werden die bcrypt-Hashes anschließend von
+ * `e2e/seed/test-seed.mjs` gesetzt — dort liegen auch die Test-Passwörter.
  */
 
 import { loadEnv } from '../utils/env.js';

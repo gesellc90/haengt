@@ -1,3 +1,83 @@
+@import './styles/tokens.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Globaler Reset ── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Verhindert Font-Boosting auf mobilen Browsern */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg);           /* Pergament #f4ead5 */
+  color: var(--fg);                      /* Tinte #1a120b */
+  font-family: var(--font-sans);
+  font-size: var(--fs-16);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Focus-States: Korps-Rot statt Browser-Blau ── */
+
+:focus-visible {
+  outline: 2px solid var(--korps-rot);
+  outline-offset: 2px;
+}
+
+/* Browser-Default-Outlines abschalten — NUR wenn :focus-visible verfügbar */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Basiselemente ── */
+
+a {
+  color: var(--korps-rot);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+/* ── Scrollbar (Webkit) — dezent getönt ── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--pergament-tief);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: var(--r-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tinte-4);
+}

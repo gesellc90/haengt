@@ -195,10 +195,10 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 #### Design-Tokens & Basis
 
-- [ ] `colors_and_type.css` aus dem Design-Bundle als `frontend/src/styles/tokens.css` übernehmen (alle `--*`-Variablen: Farben, Typo, Spacing, Radien, Schatten)
-- [ ] Google Fonts laden: **Cinzel**, **Cormorant Garamond**, **Manrope**, **Caveat** (via `<link>` in `index.html`)
-- [ ] Tailwind-Config auf Design-Tokens ausrichten (`tailwind.config.ts`): `colors`, `fontFamily`, `borderRadius`, `boxShadow` aus den CSS-Variablen ableiten
-- [ ] Globales CSS-Reset: Hintergrund auf `--bg-pergament` (`#f4ead5`), Textfarbe auf `--tinte` (`#1a120b`), Browser-Blau-Focus-Outline deaktivieren → durch Korps-Rot-Outline ersetzen
+- [x] `colors_and_type.css` aus dem Design-Bundle als `frontend/src/styles/tokens.css` übernehmen (alle `--*`-Variablen: Farben, Typo, Spacing, Radien, Schatten)
+- [x] Google Fonts laden: **Cinzel**, **Cormorant Garamond**, **Manrope**, **Caveat** (via `<link>` in `index.html`)
+- [x] Tailwind-Config auf Design-Tokens ausrichten (`tailwind.config.ts`): `colors`, `fontFamily`, `borderRadius`, `boxShadow` aus den CSS-Variablen ableiten
+- [x] Globales CSS-Reset: Hintergrund auf `--bg-pergament` (`#f4ead5`), Textfarbe auf `--tinte` (`#1a120b`), Browser-Blau-Focus-Outline deaktivieren → durch Korps-Rot-Outline ersetzen
 
 #### Komponenten (nach Design-Prototyp)
 

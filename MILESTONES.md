@@ -11,6 +11,7 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 | M5  | Frontend (React)               | 5–7 Tage          | M4 (parallel ab M3 möglich) |
 | M6  | Reporting & Export (PDF/CSV)   | 3–4 Tage          | M4                          |
 | M7  | CI/CD, Deployment & E2E-Tests  | 3–4 Tage          | M5, M6                      |
+| M8  | Design System — Hängt!-Marke  | 3–5 Tage          | M5                          |
 
 ---
 
@@ -20,14 +21,14 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] Repository initialisieren, `.gitignore`, `.editorconfig`
-- [ ] npm-Workspaces konfigurieren (`backend/`, `frontend/`)
-- [ ] Backend-Skeleton: Express, ESM, `pino`, Zod
-- [ ] Frontend-Skeleton: Vite + React + TailwindCSS + React Router
-- [ ] ESLint + Prettier (geteilte Config) + Husky + lint-staged
-- [ ] `npm run dev` startet Backend + Frontend parallel (z. B. via `concurrently`)
-- [ ] README-Grundgerüst, ARCHITECTURE-Skeleton, CHANGELOG, CONTRIBUTING
-- [ ] `engines`-Feld in `package.json` (Node ≥ 20)
+- [x] Repository initialisieren, `.gitignore`, `.editorconfig`
+- [x] npm-Workspaces konfigurieren (`backend/`, `frontend/`)
+- [x] Backend-Skeleton: Express, ESM, `pino`, Zod
+- [x] Frontend-Skeleton: Vite + React + TailwindCSS + React Router
+- [x] ESLint + Prettier (geteilte Config) + Husky + lint-staged
+- [x] `npm run dev` startet Backend + Frontend parallel (z. B. via `concurrently`)
+- [x] README-Grundgerüst, ARCHITECTURE-Skeleton, CHANGELOG, CONTRIBUTING
+- [x] `engines`-Feld in `package.json` (Node ≥ 20)
 
 **Definition of Done:** Frischer Klon → `npm install && npm run dev` startet beide Apps fehlerfrei. Lint läuft grün.
 
@@ -82,16 +83,16 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] `members`-Routen (CRUD, soft-delete)
-- [ ] `drinks`-Routen + Preisverwaltung (`drink_prices`-Historie)
-- [ ] `bookings`-Routen
-  - [ ] `POST /bookings` — Preis-Snapshot zur Buchungszeit
-  - [ ] `GET /bookings/me` mit Pagination (`?limit=50&before=<id>`)
-  - [ ] `POST /bookings/:id/void` mit 5-Minuten-Fenster-Logik
-  - [ ] `GET /bookings` (Admin) mit Filtern (Mitglied, Datum)
-- [ ] Globaler Error-Handler (Zod-Errors → 400, AuthErrors → 401, etc.)
-- [ ] OpenAPI-Spec (`docs/openapi.yaml`) generiert oder hand-gepflegt
-- [ ] **Tests:** Supertest-Integrationstests pro Endpoint, Service-Layer mit Vitest
+- [x] `members`-Routen (CRUD, soft-delete)
+- [x] `drinks`-Routen + Preisverwaltung (`drink_prices`-Historie)
+- [x] `bookings`-Routen
+  - [x] `POST /bookings` — Preis-Snapshot zur Buchungszeit
+  - [x] `GET /bookings/me` mit Pagination (`?limit=50&before=<id>`)
+  - [x] `POST /bookings/:id/void` mit 5-Minuten-Fenster-Logik
+  - [x] `GET /bookings` (Admin) mit Filtern (Mitglied, Datum)
+- [x] Globaler Error-Handler (Zod-Errors → 400, AuthErrors → 401, etc.)
+- [x] OpenAPI-Spec (`docs/openapi.yaml`) generiert oder hand-gepflegt
+- [x] **Tests:** Supertest-Integrationstests pro Endpoint, Service-Layer mit Vitest
 
 **Definition of Done:** Alle in `ARCHITECTURE.md` dokumentierten Endpunkte funktionieren, sind validiert und integrationsgetestet.
 
@@ -105,22 +106,22 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] API-Client mit Auth-Interceptor (Token aus `localStorage`)
-- [ ] `AuthContext` + `ProtectedRoute`-Komponente
-- [ ] **Login-Page** (Username + Passwort)
-- [ ] **Buchungsseite** (Hauptscreen):
-  - [ ] Große Buttons je Getränk, Tap = Buchung
-  - [ ] Optimistic Update + Toast bei Erfolg/Fehler
-  - [ ] Buchungshistorie der letzten 24h mit Storno-Button
-- [ ] **Profilseite** (eigene Buchungen, Monatssumme)
-- [ ] **Admin-Bereich** (eigene Route, nur für `role=admin`):
-  - [ ] Mitglieder-Tabelle (anlegen, deaktivieren, PW zurücksetzen)
-  - [ ] Getränke-Tabelle (anlegen, deaktivieren, Preis ändern)
-  - [ ] Buchungs-Übersicht mit Filtern
-  - [ ] Report-Download (Monat wählen, PDF/CSV)
-- [ ] Responsive Design (Tailwind-Breakpoints, Touch-Targets ≥ 44px)
+- [x] API-Client mit Auth-Interceptor (Token aus `localStorage`)
+- [x] `AuthContext` + `ProtectedRoute`-Komponente
+- [x] **Login-Page** (Username + Passwort)
+- [x] **Buchungsseite** (Hauptscreen):
+  - [x] Große Buttons je Getränk, Tap = Buchung
+  - [x] Optimistic Update + Toast bei Erfolg/Fehler
+  - [x] Buchungshistorie der letzten 24h mit Storno-Button
+- [x] **Profilseite** (eigene Buchungen, Monatssumme)
+- [x] **Admin-Bereich** (eigene Route, nur für `role=admin`):
+  - [x] Mitglieder-Tabelle (anlegen, deaktivieren, PW zurücksetzen)
+  - [x] Getränke-Tabelle (anlegen, deaktivieren, Preis ändern)
+  - [x] Buchungs-Übersicht mit Filtern
+  - [x] Report-Download (Monat wählen, PDF/CSV)
+- [x] Responsive Design (Tailwind-Breakpoints, Touch-Targets ≥ 44px)
 - [ ] Dark-Mode (optional, `prefers-color-scheme`)
-- [ ] **Tests:** Vitest + React Testing Library für kritische Komponenten
+- [x] **Tests:** Vitest + React Testing Library für kritische Komponenten
 
 **Definition of Done:** Vollständiger Klick-Pfad als Mitglied (Login → Buchen → Storno) und als Admin (Mitglied anlegen → Bericht herunterladen) funktioniert auf Mobile + Desktop.
 
@@ -134,16 +135,16 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] `ReportService.calculateMonthly(memberId, year, month)` — aggregiert Buchungen, gruppiert nach Getränk
-- [ ] CSV-Export mit UTF-8-BOM (Excel-kompatibel), Spalten: Datum, Getränk, Anzahl, Einzelpreis, Gesamt
-- [ ] PDF-Export via PDFKit:
-  - [ ] Header mit Vereinsname + Logo (konfigurierbar)
-  - [ ] Tabelle mit Buchungen
-  - [ ] Summenzeile pro Getränk + Gesamtsumme
-  - [ ] Footer mit Erstellungsdatum
-- [ ] Endpunkt `GET /reports/monthly?...` mit `format`-Query (`pdf`|`csv`)
-- [ ] „Alle Mitglieder“-Sammel-PDF (Mehrseitig, Inhaltsverzeichnis)
-- [ ] **Tests:** Snapshot-Test auf CSV-Inhalt, Smoke-Test auf PDF-Größe + erstes Byte (`%PDF`)
+- [x] `ReportService.calculateMonthly(memberId, year, month)` — aggregiert Buchungen, gruppiert nach Getränk
+- [x] CSV-Export mit UTF-8-BOM (Excel-kompatibel), Spalten: Datum, Getränk, Anzahl, Einzelpreis, Gesamt
+- [x] PDF-Export via PDFKit:
+  - [x] Header mit Vereinsname + Logo (konfigurierbar)
+  - [x] Tabelle mit Buchungen
+  - [x] Summenzeile pro Getränk + Gesamtsumme
+  - [x] Footer mit Erstellungsdatum
+- [x] Endpunkt `GET /reports/monthly?...` mit `format`-Query (`pdf`|`csv`)
+- [x] „Alle Mitglieder”-Sammel-PDF (Mehrseitig, Inhaltsverzeichnis)
+- [x] **Tests:** Snapshot-Test auf CSV-Inhalt, Smoke-Test auf PDF-Größe + erstes Byte (`%PDF`)
 
 **Definition of Done:** Admin lädt im UI eine Monatsabrechnung herunter, PDF öffnet korrekt, CSV importiert sauber in Excel/LibreOffice.
 
@@ -157,29 +158,75 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] GitHub Actions Workflow `ci.yml` (auf jedem PR + Push):
-  - [ ] Lint
-  - [ ] Unit-Tests
-  - [ ] Integrationstests
-  - [ ] Build-Artefakt erzeugen
-- [ ] GitHub Actions Workflow `deploy.yml` (auf Tag `v*`):
-  - [ ] Self-Hosted Runner auf dem Pi nimmt das Artefakt
-  - [ ] Backup der aktuellen DB
-  - [ ] Atomic Swap (`/opt/getraenke/current` → `releases/<tag>`)
-  - [ ] `systemctl restart getraenke.service`
-  - [ ] Smoke-Test (`curl /health`)
-- [ ] systemd-Unit-File (`scripts/getraenke.service`)
+- [x] GitHub Actions Workflow `ci.yml` (auf jedem PR + Push):
+  - [x] Lint
+  - [x] Unit-Tests
+  - [x] Integrationstests
+  - [x] Build-Artefakt erzeugen
+- [x] GitHub Actions Workflow `deploy.yml` (auf Tag `v*`):
+  - [x] Self-Hosted Runner auf dem Pi nimmt das Artefakt
+  - [x] Backup der aktuellen DB
+  - [x] Atomic Swap (`/opt/getraenke/current` → `releases/<tag>`)
+  - [x] `systemctl restart getraenke.service`
+  - [x] Smoke-Test (`curl /health`)
+- [x] systemd-Unit-File (`scripts/getraenke.service`)
 - [ ] Caddy/nginx als Reverse-Proxy mit lokalem TLS (optional)
-- [ ] Playwright-E2E-Suite:
-  - [ ] Login-Flow
-  - [ ] Buchung erstellen + sehen
-  - [ ] Storno innerhalb des Fensters
-  - [ ] Admin: Mitglied anlegen
-  - [ ] Admin: PDF-Report herunterladen (Header-Check)
-- [ ] Deployment-Doku in `docs/DEPLOYMENT.md`
-- [ ] Rollback-Prozedur dokumentiert
+- [x] Playwright-E2E-Suite:
+  - [x] Login-Flow
+  - [x] Buchung erstellen + sehen
+  - [x] Storno innerhalb des Fensters
+  - [x] Admin: Mitglied anlegen
+  - [x] Admin: PDF-Report herunterladen (Header-Check)
+- [x] Deployment-Doku in `docs/DEPLOYMENT.md`
+- [x] Rollback-Prozedur dokumentiert
 
 **Definition of Done:** Push eines Tags `v0.1.0` → Pipeline läuft grün → App ist live auf dem Pi → E2E-Smoke-Tests gegen die laufende Instanz sind grün.
+
+---
+
+## M8 — Design System — Hängt!-Marke
+
+**Ziel:** Das bestehende Frontend konsequent auf das Hängt!-Design System umstellen — Pergament-Ästhetik, Verbindungs-Typografie, Marken-Tokens und passende Komponenten.
+
+**Abhängigkeit:** M5.  
+**Quelle:** `h-ngt-design-system/` — alle Tokens, Komponenten und Screens sind als HTML-Prototyp vorhanden. Vor der Implementierung `h-ngt-design-system/project/README.md` sowie `colors_and_type.css` und `ui_kits/app/index.html` vollständig lesen.
+
+### Aufgaben
+
+#### Design-Tokens & Basis
+
+- [x] `colors_and_type.css` aus dem Design-Bundle als `frontend/src/styles/tokens.css` übernehmen (alle `--*`-Variablen: Farben, Typo, Spacing, Radien, Schatten)
+- [x] Google Fonts laden: **Cinzel**, **Cormorant Garamond**, **Manrope**, **Caveat** (via `<link>` in `index.html`)
+- [x] Tailwind-Config auf Design-Tokens ausrichten (`tailwind.config.ts`): `colors`, `fontFamily`, `borderRadius`, `boxShadow` aus den CSS-Variablen ableiten
+- [x] Globales CSS-Reset: Hintergrund auf `--bg-pergament` (`#f4ead5`), Textfarbe auf `--tinte` (`#1a120b`), Browser-Blau-Focus-Outline deaktivieren → durch Korps-Rot-Outline ersetzen
+
+#### Komponenten (nach Design-Prototyp)
+
+- [ ] **`WordmarkHeader`** — Eiche-Holz-Streifen (`--eiche`), Wortmarke in Cinzel links, Aktiver-Kürzel rechts; Höhe 56px Mobile / 64px Desktop
+- [ ] **`SaldoCard`** — Große Saldo-Anzeige, Hintergrund `--bg-card` (`#fbf3df`), 2px Korps-Rot-Linie oben, `--sh-2` + `--sh-emboss`
+- [ ] **`SortenButton`** (Tally-Kachel) — Stempelartige Kachel je Getränkesorte; Press-Animation `scale(.985)` 120ms `--ease-stempel`; Strich-Animation via SVG `stroke-dasharray` in Caveat-Font (240ms)
+- [ ] **`StrichRow`** — Listenzeile Aktiver + Tally-Zähler in Caveat + Saldo, 1px `--line`-Trenner
+- [ ] **`Stepper`** (−/+ Mengen-Stepper) — Kantige Buttons (`--r-2`), Inset-Emboss
+- [ ] **`TabBar`** — Bottom-Nav Mobile, Icons via Lucide (20px, `currentColor`), kein blaues Highlight, aktiver Tab in Korps-Rot
+- [ ] Bestehende generische Komponenten (`Toast`, `Spinner`, `Layout`) auf Marken-Tokens umstellen
+
+#### Screens & UX-Text
+
+- [ ] **Login-Screen** — Sigel-Logo mittig, Cerevis-Name/Verbindung-Label statt „Username", Button-Text „Einloggen", kein „Welcome back 👋"
+- [ ] **Buchungsseite (Stube)** — Layout nach `ui_kits/app/index.html`: Saldo oben, Sorten-Kacheln darunter, History-Liste
+- [ ] **Profilseite (Mein Buch)** — Verlauf + Monatsabschluss, Typografie in Cormorant Garamond für Zitate/Summenzeilen
+- [ ] **Admin-Bereich** — Tabellen mit Hairline-Trennern (`--line`), keine Bootstrap-artigen Grau-Hintergründe, Eyebrow-Section-Titles mit 2px Korps-Rot-Linie darunter
+- [ ] UX-Texte komplett nach Hängt!-Tonalität überarbeiten (kein Englisch-Deutsch-Mix, kein Emoji, „Du"-Ansprache, Verbindungsvokabular — Beispiele in `project/README.md` § „Konkrete Beispiele")
+
+#### Qualitätssicherung
+
+- [ ] Touch-Targets ≥ 44px auf allen interaktiven Elementen (insb. `SortenButton`, `TabBar`)
+- [ ] Focus-States: 2px Outline `--korps-rot`, 2px Offset, kein Browser-Default
+- [ ] Kein `backdrop-filter`/Blur in der UI
+- [ ] Keine Gradienten außer Sepia-Vignette auf Foto-Hero
+- [ ] **Tests:** Visuelle Regressionstests auf Login, Stube und Admin-Startseite (z.B. Playwright-Screenshot-Diff); Accessibility-Check auf Farbkontraste (Korps-Rot auf Pergament ≥ 4.5:1)
+
+**Definition of Done:** Die App sieht aus wie der Prototyp in `ui_kits/app/index.html`. Pergament-Hintergrund überall, Eiche-Header, Korps-Rot-CTAs, Caveat-Striche. Kein Default-Tailwind-Blau, keine Emojis, kein englischer UI-Text.
 
 ---
 

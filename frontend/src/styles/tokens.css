@@ -1,0 +1,249 @@
+/*
+ * Hängt! Design System — Tokens
+ * Generiert aus: h-ngt-design-system/project/colors_and_type.css
+ * NICHT manuell editieren — Quelle ist das Design-System-Bundle.
+ */
+
+/* ============================================================================
+   Hängt! Design System — Tokens
+   Farbphilosophie: Bierkeller bei Kerzenlicht. Wappen, Holz, Kupfer, Kreide.
+   ============================================================================ */
+
+:root {
+  /* ---------- BRAND CORE ----------
+     Diese sechs Farben tragen die Marke. Andere Töne sind Hilfsmittel. */
+
+  --korps-rot:        #7a1c2a;   /* Wappenrot — primär für Aktion, Sigel, Marke */
+  --korps-rot-tief:   #4f1119;   /* Dunklere Variante für gedrückte Zustände */
+  --korps-rot-licht:  #a83646;   /* Hover, Akzent auf dunklem Grund */
+
+  --kupfer:           #b8732f;   /* Brauerei-Kupfer — sekundär, Highlights, Bier-Bezug */
+  --kupfer-tief:      #8a4f1d;
+  --kupfer-licht:     #d99355;
+
+  --pergament:        #f4ead5;   /* Heller Hintergrund, „Papierstrichliste" */
+  --pergament-tief:   #e8dcc0;   /* Karten auf Pergament */
+
+  --tinte:            #1a120b;   /* Fast-Schwarz mit warmem Stich — Text, Linien */
+  --tinte-2:          #3a2a1c;   /* Sekundärtext */
+  --tinte-3:          #6b5847;   /* Tertiärtext, Hilfslabel */
+  --tinte-4:          #9a8a78;   /* Disabled, Platzhalter */
+
+  --kreide:           #fbf7ee;   /* Weiße Strichkreide — Karten auf dunklem Grund */
+  --schaum:           #ffffff;
+
+  --eiche:            #2a1810;   /* Dunkles Holz — Header-Streifen, Footer */
+  --eiche-2:          #3d2616;
+  --messing:          #c89c4d;   /* Brass — Sigel, Linien-Akzent, Goldschrift */
+
+  /* ---------- SEMANTIC SURFACES ---------- */
+
+  --bg:               var(--pergament);
+  --bg-2:             var(--pergament-tief);
+  --bg-inverted:      var(--eiche);
+  --bg-card:          #fbf3df;             /* Karten heben sich minimal ab */
+  --bg-card-hover:    #f7ecc8;
+
+  --fg:               var(--tinte);
+  --fg-2:             var(--tinte-2);
+  --fg-3:             var(--tinte-3);
+  --fg-4:             var(--tinte-4);
+  --fg-on-dark:       var(--kreide);
+  --fg-on-brand:      var(--kreide);
+
+  --line:             #d8c89c;             /* Hairline, getönt — passt zu Pergament */
+  --line-2:           #c4ad7a;             /* Stärkere Trennlinie */
+  --line-tinte:       rgba(26,18,11,0.12); /* Tintenlinie auf Pergament */
+
+  --brand:            var(--korps-rot);
+  --brand-fg:         var(--kreide);
+  --accent:           var(--kupfer);
+  --gold:             var(--messing);
+
+  /* ---------- STATUS ---------- */
+
+  --erfolg:           #4d6b3a;   /* Hopfengrün — bezahlt, eingebucht */
+  --erfolg-bg:        #e6ecd9;
+  --warnung:          #b8732f;   /* Kupfer — fällig, offen */
+  --warnung-bg:       #f3e4cc;
+  --fehler:           #7a1c2a;   /* Korps-Rot — überfällig, hängt */
+  --fehler-bg:        #f0d8db;
+  --info:             #2c4a6b;   /* Tiefes Blau wie ein Tintenfass */
+  --info-bg:          #d9e2eb;
+
+  /* ---------- TYPOGRAPHY ----------
+     Display: Cinzel — römische Versalien, Corps-/Wappen-Anmutung.
+     Serif:   Cormorant Garamond — edler, lesbarer Brotserif.
+     Sans:    Manrope — neutral, modern, deutsch-freundlich (UI-Arbeitstier).
+     Hand:    Caveat — handgeschriebene Striche und Notizen. */
+
+  --font-display: 'Cinzel', 'Trajan Pro', 'Times New Roman', serif;
+  --font-serif:   'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  --font-sans:    'Manrope', 'Inter', system-ui, sans-serif;
+  --font-hand:    'Caveat', 'Bradley Hand', cursive;
+  --font-mono:    ui-monospace, 'SF Mono', 'JetBrains Mono', monospace;
+
+  /* Skalen — modulare Skala 1.250 (Major Third) auf 16px-Basis */
+  --fs-12: 0.75rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-20: 1.25rem;
+  --fs-24: 1.5rem;
+  --fs-32: 2rem;
+  --fs-44: 2.75rem;
+  --fs-60: 3.75rem;
+  --fs-84: 5.25rem;
+
+  /* ---------- SPACING ---------- */
+
+  /* Option D · Eng — 3er-Basis, dichter Rhythmus. */
+  --s-1: 3px;
+  --s-2: 6px;
+  --s-3: 9px;
+  --s-4: 12px;
+  --s-5: 18px;
+  --s-6: 24px;
+  --s-7: 36px;
+  --s-8: 48px;
+  --s-9: 72px;
+
+  /* ---------- RADII ----------
+     Die Marke ist eher kantig — Heraldik-Linien, Bierdeckel. Wenig Radius. */
+
+  --r-0: 0;
+  --r-1: 2px;
+  --r-2: 4px;
+  --r-3: 8px;
+  --r-pill: 999px;
+
+  /* ---------- SHADOWS ----------
+     Wärmestichige Schatten (nicht reines Schwarz). */
+
+  --sh-1: 0 1px 2px rgba(42,24,16,0.10);
+  --sh-2: 0 4px 12px rgba(42,24,16,0.12), 0 1px 2px rgba(42,24,16,0.06);
+  --sh-3: 0 12px 28px rgba(42,24,16,0.18), 0 2px 6px rgba(42,24,16,0.08);
+  --sh-inset: inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(26,18,11,0.08);
+  --sh-emboss: inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 0 rgba(26,18,11,0.05);
+
+  /* ---------- MOTION ----------
+     Bewegung ist eher knapp und gesetzt — wie ein Stempel, kein Schnipsen. */
+
+  --ease-stempel:    cubic-bezier(.2, .8, .2, 1);
+  --ease-out-soft:   cubic-bezier(0, 0, .2, 1);
+  --dur-fast:        120ms;
+  --dur-base:        200ms;
+  --dur-slow:        360ms;
+}
+
+/* ===========================================================================
+   SEMANTIC TYPE STYLES
+   =========================================================================== */
+
+.h-display, h1.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-60);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.h-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-44);
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--fg);
+  margin: 0 0 var(--s-4);
+}
+
+h2, .h2 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-style: italic;
+  font-size: var(--fs-32);
+  line-height: 1.15;
+  letter-spacing: -0.005em;
+  color: var(--fg);
+  margin: 0 0 var(--s-3);
+}
+
+h3, .h3 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--fs-20);
+  line-height: 1.25;
+  letter-spacing: 0;
+  color: var(--fg);
+  margin: 0 0 var(--s-2);
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--fs-12);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+p, .body {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: var(--fs-16);
+  line-height: 1.55;
+  color: var(--fg-2);
+}
+
+.body-serif {
+  font-family: var(--font-serif);
+  font-size: var(--fs-18);
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+.label {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--fs-12);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+.tally {
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: var(--fs-44);
+  line-height: 1;
+  color: var(--tinte);
+  letter-spacing: 0.02em;
+}
+
+.zahl {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-32);
+  color: var(--fg);
+}
+
+code, .code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--pergament-tief);
+  padding: 1px 6px;
+  border-radius: var(--r-2);
+}

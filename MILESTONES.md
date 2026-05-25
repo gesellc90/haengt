@@ -21,14 +21,14 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] Repository initialisieren, `.gitignore`, `.editorconfig`
-- [ ] npm-Workspaces konfigurieren (`backend/`, `frontend/`)
-- [ ] Backend-Skeleton: Express, ESM, `pino`, Zod
-- [ ] Frontend-Skeleton: Vite + React + TailwindCSS + React Router
-- [ ] ESLint + Prettier (geteilte Config) + Husky + lint-staged
-- [ ] `npm run dev` startet Backend + Frontend parallel (z. B. via `concurrently`)
-- [ ] README-Grundgerüst, ARCHITECTURE-Skeleton, CHANGELOG, CONTRIBUTING
-- [ ] `engines`-Feld in `package.json` (Node ≥ 20)
+- [x] Repository initialisieren, `.gitignore`, `.editorconfig`
+- [x] npm-Workspaces konfigurieren (`backend/`, `frontend/`)
+- [x] Backend-Skeleton: Express, ESM, `pino`, Zod
+- [x] Frontend-Skeleton: Vite + React + TailwindCSS + React Router
+- [x] ESLint + Prettier (geteilte Config) + Husky + lint-staged
+- [x] `npm run dev` startet Backend + Frontend parallel (z. B. via `concurrently`)
+- [x] README-Grundgerüst, ARCHITECTURE-Skeleton, CHANGELOG, CONTRIBUTING
+- [x] `engines`-Feld in `package.json` (Node ≥ 20)
 
 **Definition of Done:** Frischer Klon → `npm install && npm run dev` startet beide Apps fehlerfrei. Lint läuft grün.
 
@@ -83,16 +83,16 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] `members`-Routen (CRUD, soft-delete)
-- [ ] `drinks`-Routen + Preisverwaltung (`drink_prices`-Historie)
-- [ ] `bookings`-Routen
-  - [ ] `POST /bookings` — Preis-Snapshot zur Buchungszeit
-  - [ ] `GET /bookings/me` mit Pagination (`?limit=50&before=<id>`)
-  - [ ] `POST /bookings/:id/void` mit 5-Minuten-Fenster-Logik
-  - [ ] `GET /bookings` (Admin) mit Filtern (Mitglied, Datum)
-- [ ] Globaler Error-Handler (Zod-Errors → 400, AuthErrors → 401, etc.)
-- [ ] OpenAPI-Spec (`docs/openapi.yaml`) generiert oder hand-gepflegt
-- [ ] **Tests:** Supertest-Integrationstests pro Endpoint, Service-Layer mit Vitest
+- [x] `members`-Routen (CRUD, soft-delete)
+- [x] `drinks`-Routen + Preisverwaltung (`drink_prices`-Historie)
+- [x] `bookings`-Routen
+  - [x] `POST /bookings` — Preis-Snapshot zur Buchungszeit
+  - [x] `GET /bookings/me` mit Pagination (`?limit=50&before=<id>`)
+  - [x] `POST /bookings/:id/void` mit 5-Minuten-Fenster-Logik
+  - [x] `GET /bookings` (Admin) mit Filtern (Mitglied, Datum)
+- [x] Globaler Error-Handler (Zod-Errors → 400, AuthErrors → 401, etc.)
+- [x] OpenAPI-Spec (`docs/openapi.yaml`) generiert oder hand-gepflegt
+- [x] **Tests:** Supertest-Integrationstests pro Endpoint, Service-Layer mit Vitest
 
 **Definition of Done:** Alle in `ARCHITECTURE.md` dokumentierten Endpunkte funktionieren, sind validiert und integrationsgetestet.
 
@@ -106,22 +106,22 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] API-Client mit Auth-Interceptor (Token aus `localStorage`)
-- [ ] `AuthContext` + `ProtectedRoute`-Komponente
-- [ ] **Login-Page** (Username + Passwort)
-- [ ] **Buchungsseite** (Hauptscreen):
-  - [ ] Große Buttons je Getränk, Tap = Buchung
-  - [ ] Optimistic Update + Toast bei Erfolg/Fehler
-  - [ ] Buchungshistorie der letzten 24h mit Storno-Button
-- [ ] **Profilseite** (eigene Buchungen, Monatssumme)
-- [ ] **Admin-Bereich** (eigene Route, nur für `role=admin`):
-  - [ ] Mitglieder-Tabelle (anlegen, deaktivieren, PW zurücksetzen)
-  - [ ] Getränke-Tabelle (anlegen, deaktivieren, Preis ändern)
-  - [ ] Buchungs-Übersicht mit Filtern
-  - [ ] Report-Download (Monat wählen, PDF/CSV)
-- [ ] Responsive Design (Tailwind-Breakpoints, Touch-Targets ≥ 44px)
+- [x] API-Client mit Auth-Interceptor (Token aus `localStorage`)
+- [x] `AuthContext` + `ProtectedRoute`-Komponente
+- [x] **Login-Page** (Username + Passwort)
+- [x] **Buchungsseite** (Hauptscreen):
+  - [x] Große Buttons je Getränk, Tap = Buchung
+  - [x] Optimistic Update + Toast bei Erfolg/Fehler
+  - [x] Buchungshistorie der letzten 24h mit Storno-Button
+- [x] **Profilseite** (eigene Buchungen, Monatssumme)
+- [x] **Admin-Bereich** (eigene Route, nur für `role=admin`):
+  - [x] Mitglieder-Tabelle (anlegen, deaktivieren, PW zurücksetzen)
+  - [x] Getränke-Tabelle (anlegen, deaktivieren, Preis ändern)
+  - [x] Buchungs-Übersicht mit Filtern
+  - [x] Report-Download (Monat wählen, PDF/CSV)
+- [x] Responsive Design (Tailwind-Breakpoints, Touch-Targets ≥ 44px)
 - [ ] Dark-Mode (optional, `prefers-color-scheme`)
-- [ ] **Tests:** Vitest + React Testing Library für kritische Komponenten
+- [x] **Tests:** Vitest + React Testing Library für kritische Komponenten
 
 **Definition of Done:** Vollständiger Klick-Pfad als Mitglied (Login → Buchen → Storno) und als Admin (Mitglied anlegen → Bericht herunterladen) funktioniert auf Mobile + Desktop.
 
@@ -158,27 +158,27 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] GitHub Actions Workflow `ci.yml` (auf jedem PR + Push):
-  - [ ] Lint
-  - [ ] Unit-Tests
-  - [ ] Integrationstests
-  - [ ] Build-Artefakt erzeugen
-- [ ] GitHub Actions Workflow `deploy.yml` (auf Tag `v*`):
-  - [ ] Self-Hosted Runner auf dem Pi nimmt das Artefakt
-  - [ ] Backup der aktuellen DB
-  - [ ] Atomic Swap (`/opt/getraenke/current` → `releases/<tag>`)
-  - [ ] `systemctl restart getraenke.service`
-  - [ ] Smoke-Test (`curl /health`)
-- [ ] systemd-Unit-File (`scripts/getraenke.service`)
+- [x] GitHub Actions Workflow `ci.yml` (auf jedem PR + Push):
+  - [x] Lint
+  - [x] Unit-Tests
+  - [x] Integrationstests
+  - [x] Build-Artefakt erzeugen
+- [x] GitHub Actions Workflow `deploy.yml` (auf Tag `v*`):
+  - [x] Self-Hosted Runner auf dem Pi nimmt das Artefakt
+  - [x] Backup der aktuellen DB
+  - [x] Atomic Swap (`/opt/getraenke/current` → `releases/<tag>`)
+  - [x] `systemctl restart getraenke.service`
+  - [x] Smoke-Test (`curl /health`)
+- [x] systemd-Unit-File (`scripts/getraenke.service`)
 - [ ] Caddy/nginx als Reverse-Proxy mit lokalem TLS (optional)
-- [ ] Playwright-E2E-Suite:
-  - [ ] Login-Flow
-  - [ ] Buchung erstellen + sehen
-  - [ ] Storno innerhalb des Fensters
-  - [ ] Admin: Mitglied anlegen
-  - [ ] Admin: PDF-Report herunterladen (Header-Check)
-- [ ] Deployment-Doku in `docs/DEPLOYMENT.md`
-- [ ] Rollback-Prozedur dokumentiert
+- [x] Playwright-E2E-Suite:
+  - [x] Login-Flow
+  - [x] Buchung erstellen + sehen
+  - [x] Storno innerhalb des Fensters
+  - [x] Admin: Mitglied anlegen
+  - [x] Admin: PDF-Report herunterladen (Header-Check)
+- [x] Deployment-Doku in `docs/DEPLOYMENT.md`
+- [x] Rollback-Prozedur dokumentiert
 
 **Definition of Done:** Push eines Tags `v0.1.0` → Pipeline läuft grün → App ist live auf dem Pi → E2E-Smoke-Tests gegen die laufende Instanz sind grün.
 

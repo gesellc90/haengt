@@ -11,6 +11,7 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 | M5  | Frontend (React)               | 5–7 Tage          | M4 (parallel ab M3 möglich) |
 | M6  | Reporting & Export (PDF/CSV)   | 3–4 Tage          | M4                          |
 | M7  | CI/CD, Deployment & E2E-Tests  | 3–4 Tage          | M5, M6                      |
+| M8  | Design System — Hängt!-Marke  | 3–5 Tage          | M5                          |
 
 ---
 
@@ -134,16 +135,16 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 ### Aufgaben
 
-- [ ] `ReportService.calculateMonthly(memberId, year, month)` — aggregiert Buchungen, gruppiert nach Getränk
-- [ ] CSV-Export mit UTF-8-BOM (Excel-kompatibel), Spalten: Datum, Getränk, Anzahl, Einzelpreis, Gesamt
-- [ ] PDF-Export via PDFKit:
-  - [ ] Header mit Vereinsname + Logo (konfigurierbar)
-  - [ ] Tabelle mit Buchungen
-  - [ ] Summenzeile pro Getränk + Gesamtsumme
-  - [ ] Footer mit Erstellungsdatum
-- [ ] Endpunkt `GET /reports/monthly?...` mit `format`-Query (`pdf`|`csv`)
-- [ ] „Alle Mitglieder“-Sammel-PDF (Mehrseitig, Inhaltsverzeichnis)
-- [ ] **Tests:** Snapshot-Test auf CSV-Inhalt, Smoke-Test auf PDF-Größe + erstes Byte (`%PDF`)
+- [x] `ReportService.calculateMonthly(memberId, year, month)` — aggregiert Buchungen, gruppiert nach Getränk
+- [x] CSV-Export mit UTF-8-BOM (Excel-kompatibel), Spalten: Datum, Getränk, Anzahl, Einzelpreis, Gesamt
+- [x] PDF-Export via PDFKit:
+  - [x] Header mit Vereinsname + Logo (konfigurierbar)
+  - [x] Tabelle mit Buchungen
+  - [x] Summenzeile pro Getränk + Gesamtsumme
+  - [x] Footer mit Erstellungsdatum
+- [x] Endpunkt `GET /reports/monthly?...` mit `format`-Query (`pdf`|`csv`)
+- [x] „Alle Mitglieder”-Sammel-PDF (Mehrseitig, Inhaltsverzeichnis)
+- [x] **Tests:** Snapshot-Test auf CSV-Inhalt, Smoke-Test auf PDF-Größe + erstes Byte (`%PDF`)
 
 **Definition of Done:** Admin lädt im UI eine Monatsabrechnung herunter, PDF öffnet korrekt, CSV importiert sauber in Excel/LibreOffice.
 
@@ -180,6 +181,52 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 - [ ] Rollback-Prozedur dokumentiert
 
 **Definition of Done:** Push eines Tags `v0.1.0` → Pipeline läuft grün → App ist live auf dem Pi → E2E-Smoke-Tests gegen die laufende Instanz sind grün.
+
+---
+
+## M8 — Design System — Hängt!-Marke
+
+**Ziel:** Das bestehende Frontend konsequent auf das Hängt!-Design System umstellen — Pergament-Ästhetik, Verbindungs-Typografie, Marken-Tokens und passende Komponenten.
+
+**Abhängigkeit:** M5.  
+**Quelle:** `h-ngt-design-system/` — alle Tokens, Komponenten und Screens sind als HTML-Prototyp vorhanden. Vor der Implementierung `h-ngt-design-system/project/README.md` sowie `colors_and_type.css` und `ui_kits/app/index.html` vollständig lesen.
+
+### Aufgaben
+
+#### Design-Tokens & Basis
+
+- [ ] `colors_and_type.css` aus dem Design-Bundle als `frontend/src/styles/tokens.css` übernehmen (alle `--*`-Variablen: Farben, Typo, Spacing, Radien, Schatten)
+- [ ] Google Fonts laden: **Cinzel**, **Cormorant Garamond**, **Manrope**, **Caveat** (via `<link>` in `index.html`)
+- [ ] Tailwind-Config auf Design-Tokens ausrichten (`tailwind.config.ts`): `colors`, `fontFamily`, `borderRadius`, `boxShadow` aus den CSS-Variablen ableiten
+- [ ] Globales CSS-Reset: Hintergrund auf `--bg-pergament` (`#f4ead5`), Textfarbe auf `--tinte` (`#1a120b`), Browser-Blau-Focus-Outline deaktivieren → durch Korps-Rot-Outline ersetzen
+
+#### Komponenten (nach Design-Prototyp)
+
+- [ ] **`WordmarkHeader`** — Eiche-Holz-Streifen (`--eiche`), Wortmarke in Cinzel links, Aktiver-Kürzel rechts; Höhe 56px Mobile / 64px Desktop
+- [ ] **`SaldoCard`** — Große Saldo-Anzeige, Hintergrund `--bg-card` (`#fbf3df`), 2px Korps-Rot-Linie oben, `--sh-2` + `--sh-emboss`
+- [ ] **`SortenButton`** (Tally-Kachel) — Stempelartige Kachel je Getränkesorte; Press-Animation `scale(.985)` 120ms `--ease-stempel`; Strich-Animation via SVG `stroke-dasharray` in Caveat-Font (240ms)
+- [ ] **`StrichRow`** — Listenzeile Aktiver + Tally-Zähler in Caveat + Saldo, 1px `--line`-Trenner
+- [ ] **`Stepper`** (−/+ Mengen-Stepper) — Kantige Buttons (`--r-2`), Inset-Emboss
+- [ ] **`TabBar`** — Bottom-Nav Mobile, Icons via Lucide (20px, `currentColor`), kein blaues Highlight, aktiver Tab in Korps-Rot
+- [ ] Bestehende generische Komponenten (`Toast`, `Spinner`, `Layout`) auf Marken-Tokens umstellen
+
+#### Screens & UX-Text
+
+- [ ] **Login-Screen** — Sigel-Logo mittig, Cerevis-Name/Verbindung-Label statt „Username", Button-Text „Einloggen", kein „Welcome back 👋"
+- [ ] **Buchungsseite (Stube)** — Layout nach `ui_kits/app/index.html`: Saldo oben, Sorten-Kacheln darunter, History-Liste
+- [ ] **Profilseite (Mein Buch)** — Verlauf + Monatsabschluss, Typografie in Cormorant Garamond für Zitate/Summenzeilen
+- [ ] **Admin-Bereich** — Tabellen mit Hairline-Trennern (`--line`), keine Bootstrap-artigen Grau-Hintergründe, Eyebrow-Section-Titles mit 2px Korps-Rot-Linie darunter
+- [ ] UX-Texte komplett nach Hängt!-Tonalität überarbeiten (kein Englisch-Deutsch-Mix, kein Emoji, „Du"-Ansprache, Verbindungsvokabular — Beispiele in `project/README.md` § „Konkrete Beispiele")
+
+#### Qualitätssicherung
+
+- [ ] Touch-Targets ≥ 44px auf allen interaktiven Elementen (insb. `SortenButton`, `TabBar`)
+- [ ] Focus-States: 2px Outline `--korps-rot`, 2px Offset, kein Browser-Default
+- [ ] Kein `backdrop-filter`/Blur in der UI
+- [ ] Keine Gradienten außer Sepia-Vignette auf Foto-Hero
+- [ ] **Tests:** Visuelle Regressionstests auf Login, Stube und Admin-Startseite (z.B. Playwright-Screenshot-Diff); Accessibility-Check auf Farbkontraste (Korps-Rot auf Pergament ≥ 4.5:1)
+
+**Definition of Done:** Die App sieht aus wie der Prototyp in `ui_kits/app/index.html`. Pergament-Hintergrund überall, Eiche-Header, Korps-Rot-CTAs, Caveat-Striche. Kein Default-Tailwind-Blau, keine Emojis, kein englischer UI-Text.
 
 ---
 

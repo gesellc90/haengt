@@ -26,6 +26,15 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   - `frontend/vite.config.ts`: neuer `preview`-Block mit `/api`-Proxy auf `E2E_BACKEND_PORT` (Default 3101)
   - Pi-Grundeinrichtungs-Doku `docs/RASPBERRY-PI-SETUP.md`: OS-Flash via Imager, Production-Hardening (SSH-Key-Only, ufw, fail2ban, unattended-upgrades, timesyncd), Node 20 via NodeSource, build-essential für `better-sqlite3`-ARM-Build, User- und Verzeichnis-Layout, Cron-Backup, Smoke-Test, Troubleshooting-Tabelle
   - Runner-Installation-Doku `docs/RUNNER-SETUP.md`: ARM64-Tarball-Download mit Integritäts-Check, `config.sh` mit Labels `self-hosted,raspberry-pi,arm64`, `svc.sh install` als systemd-Service, Sicherheits-Hinweise
+- **M6 — Reporting & Export (PDF/CSV)**
+  - `ReportService`: `calculateMonthly()` und `calculateAllMembers()` aggregieren Buchungen pro Monat, gruppiert nach Getränk, mit Einzelsummen und Gesamtbetrag
+  - CSV-Export: UTF-8-BOM für Excel-Kompatibilität, Semikolon-Trenner, Komma als Dezimaltrennzeichen, deutsches Datumsformat, CRLF-Zeilenenden
+  - PDF-Export via PDFKit: Einzelbericht (Header, Buchungstabelle, Zusammenfassung, Summenzeile, Footer mit Erstellungsdatum)
+  - Sammel-PDF: alle aktiven Mitglieder mit Inhaltsverzeichnis auf Seite 1, je eine Seite pro Mitglied
+  - Endpunkt `GET /api/v1/reports/monthly?memberId=&year=&month=&format=csv|pdf` (Admin-only)
+  - Endpunkt `GET /api/v1/reports/all?year=&month=&format=pdf` (Admin-only)
+  - Frontend `ReportPage`: Auswahl Monat/Jahr/Mitglied, Download-Buttons CSV + PDF (einzeln) + Sammel-PDF, Toast-Feedback, Loading-Spinner
+  - `frontend/src/api/reports.ts`: `downloadMonthlyReport()` + `downloadAllMembersReport()` mit Blob-Download und Content-Disposition-Parsing
 
 ### Fixed
 

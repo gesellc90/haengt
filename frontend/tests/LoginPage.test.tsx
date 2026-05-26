@@ -102,7 +102,7 @@ describe('LoginPage', () => {
     await user.type(screen.getByLabelText(/Losungswort/i), 'falsch');
     await user.click(screen.getByRole('button', { name: /Einloggen/i }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/ungültige Zugangsdaten/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Kürzel oder Losungswort nicht korrekt/i);
   });
 
   it('zeigt Fehlermeldung bei Rate-Limit (429)', async () => {

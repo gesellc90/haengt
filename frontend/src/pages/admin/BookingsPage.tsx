@@ -25,6 +25,29 @@ function formatDateTime(iso: string): string {
   });
 }
 
+const inputStyle: React.CSSProperties = {
+  minHeight: 44,
+  padding: '8px 12px',
+  borderRadius: 'var(--r-2)',
+  border: '1px solid var(--line-2)',
+  background: 'var(--bg)',
+  color: 'var(--tinte)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 13,
+  outline: 'none',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 11,
+  fontWeight: 700,
+  color: 'var(--tinte-3)',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  marginBottom: 5,
+};
+
 // ---------------------------------------------------------------------------
 // Haupt-Komponente
 // ---------------------------------------------------------------------------
@@ -38,13 +61,11 @@ export default function AdminBookingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [voidingId, setVoidingId] = useState<number | null>(null);
 
-  // -- Filter-State ----------------------------------------------------------
   const [filterMemberId, setFilterMemberId] = useState('');
   const [filterFrom, setFilterFrom] = useState('');
   const [filterTo, setFilterTo] = useState('');
   const [filterIncludeVoided, setFilterIncludeVoided] = useState(false);
 
-  // Mitglieder + Getränke für Dropdown und Namens-Mapping laden
   useEffect(() => {
     membersApi
       .getAll(true)
@@ -99,15 +120,25 @@ export default function AdminBookingsPage() {
     .reduce((s, b) => s + b.price_cents_snapshot, 0);
 
   return (
-    <div className="space-y-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Filter-Leiste */}
-      <div className="flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
-        <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-500">Mitglied</label>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 12,
+          borderRadius: 'var(--r-3)',
+          border: '1px solid var(--line)',
+          background: 'var(--bg-card)',
+          padding: 16,
+        }}
+      >
+        <div style={{ flex: '1 1 160px' }}>
+          <label style={labelStyle}>Mitglied</label>
           <select
             value={filterMemberId}
             onChange={(e) => setFilterMemberId(e.target.value)}
-            className="min-h-touch w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+            style={{ ...inputStyle, width: '100%' }}
           >
             <option value="">Alle</option>
             {members.map((m) => (
@@ -118,30 +149,40 @@ export default function AdminBookingsPage() {
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Von</label>
+          <label style={labelStyle}>Von</label>
           <input
             type="date"
             value={filterFrom}
             onChange={(e) => setFilterFrom(e.target.value)}
-            className="min-h-touch rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+            style={inputStyle}
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">Bis</label>
+          <label style={labelStyle}>Bis</label>
           <input
             type="date"
             value={filterTo}
             onChange={(e) => setFilterTo(e.target.value)}
-            className="min-h-touch rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+            style={inputStyle}
           />
         </div>
-        <div className="flex items-end">
-          <label className="flex min-h-touch items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              minHeight: 44,
+              fontFamily: 'var(--font-sans)',
+              fontSize: 13,
+              color: 'var(--tinte-3)',
+              cursor: 'pointer',
+            }}
+          >
             <input
               type="checkbox"
               checked={filterIncludeVoided}
               onChange={(e) => setFilterIncludeVoided(e.target.checked)}
-              className="rounded"
             />
             Stornierte einblenden
           </label>
@@ -150,67 +191,170 @@ export default function AdminBookingsPage() {
 
       {/* Summe */}
       {!isLoading && bookings.length > 0 && (
-        <p className="text-right text-sm font-semibold text-slate-600 dark:text-slate-400">
-          Summe (aktiv): {formatCents(total)} · {bookings.length} Buchung
-          {bookings.length !== 1 ? 'en' : ''}
+        <p
+          style={{
+            textAlign: 'right',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--tinte-3)',
+          }}
+        >
+          Summe (aktiv): {formatCents(total)} · {bookings.length}{' '}
+          {bookings.length !== 1 ? 'Buchungen' : 'Buchung'}
         </p>
       )}
 
       {/* Tabelle */}
       {isLoading ? (
-        <div className="flex justify-center py-12">
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
           <Spinner size="h-10 w-10" />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <table className="w-full text-sm">
+        <div
+          style={{
+            overflowX: 'auto',
+            borderRadius: 'var(--r-3)',
+            border: '1px solid var(--line)',
+            background: 'var(--bg-card)',
+            boxShadow: 'var(--sh-1)',
+          }}
+        >
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr className="border-b border-slate-100 text-left dark:border-slate-700">
+              <tr>
                 {['Mitglied', 'Getränk', 'Zeitpunkt', 'Preis', 'Status', 'Aktionen'].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400"
+                    style={{
+                      padding: '10px 16px',
+                      textAlign: 'left',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: 'var(--tinte-3)',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      borderBottom: '1px solid var(--line)',
+                      whiteSpace: 'nowrap',
+                    }}
                   >
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-              {bookings.map((b) => {
+            <tbody>
+              {bookings.map((b, i) => {
                 const member = memberMap.get(b.member_id);
                 const voided = b.voided_at !== null;
                 return (
-                  <tr key={b.id} className={voided ? 'opacity-40' : ''}>
-                    <td className="px-4 py-2.5 font-medium text-slate-700 dark:text-slate-300">
+                  <tr
+                    key={b.id}
+                    style={{
+                      opacity: voided ? 0.4 : 1,
+                      borderTop: i > 0 ? '1px solid var(--line)' : 'none',
+                    }}
+                  >
+                    <td
+                      style={{
+                        padding: '10px 16px',
+                        fontFamily: 'var(--font-sans)',
+                        fontWeight: 600,
+                        color: 'var(--tinte)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {member?.display_name ?? `#${b.member_id}`}
                     </td>
-                    <td className="px-4 py-2.5 text-slate-500">
+                    <td
+                      style={{
+                        padding: '10px 16px',
+                        color: 'var(--tinte-3)',
+                        fontFamily: 'var(--font-sans)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {drinkMap.get(b.drink_id) ?? `#${b.drink_id}`}
                     </td>
-                    <td className="px-4 py-2.5 text-slate-500">{formatDateTime(b.booked_at)}</td>
-                    <td className="px-4 py-2.5 font-semibold text-slate-700 dark:text-slate-300">
+                    <td
+                      style={{
+                        padding: '10px 16px',
+                        color: 'var(--tinte-3)',
+                        fontFamily: 'var(--font-sans)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {formatDateTime(b.booked_at)}
+                    </td>
+                    <td
+                      style={{
+                        padding: '10px 16px',
+                        fontFamily: 'var(--font-serif)',
+                        fontWeight: 600,
+                        color: 'var(--tinte-2)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {formatCents(b.price_cents_snapshot)}
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td style={{ padding: '10px 16px' }}>
                       {voided ? (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            padding: '2px 8px',
+                            borderRadius: 'var(--r-pill)',
+                            border: '1px solid var(--line-2)',
+                            background: 'var(--bg-2)',
+                            color: 'var(--tinte-4)',
+                            fontFamily: 'var(--font-sans)',
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
+                        >
                           Storniert
                         </span>
                       ) : (
-                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            padding: '2px 8px',
+                            borderRadius: 'var(--r-pill)',
+                            border: '1px solid var(--erfolg)',
+                            background: 'var(--erfolg-bg)',
+                            color: 'var(--erfolg)',
+                            fontFamily: 'var(--font-sans)',
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
+                        >
                           Aktiv
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td style={{ padding: '10px 16px' }}>
                       {!voided && (
                         <button
                           onClick={() => void handleVoid(b.id)}
                           disabled={voidingId === b.id}
-                          className="rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-800 dark:text-red-400"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            minHeight: 32,
+                            padding: '3px 10px',
+                            borderRadius: 'var(--r-1)',
+                            border: '1px solid var(--korps-rot)',
+                            background: 'transparent',
+                            color: 'var(--korps-rot)',
+                            fontFamily: 'var(--font-sans)',
+                            fontSize: 12,
+                            fontWeight: 500,
+                            cursor: voidingId === b.id ? 'not-allowed' : 'pointer',
+                            opacity: voidingId === b.id ? 0.5 : 1,
+                          }}
                         >
-                          {voidingId === b.id ? <Spinner size="h-3 w-3" /> : 'Storno'}
+                          {voidingId === b.id ? <Spinner size="h-3 w-3" /> : 'Stornieren'}
                         </button>
                       )}
                     </td>
@@ -220,7 +364,18 @@ export default function AdminBookingsPage() {
             </tbody>
           </table>
           {bookings.length === 0 && (
-            <p className="py-10 text-center text-sm text-slate-400">Keine Buchungen gefunden.</p>
+            <p
+              style={{
+                padding: '40px 0',
+                textAlign: 'center',
+                fontFamily: 'var(--font-serif)',
+                fontStyle: 'italic',
+                fontSize: 14,
+                color: 'var(--tinte-4)',
+              }}
+            >
+              Keine Buchungen gefunden.
+            </p>
           )}
         </div>
       )}

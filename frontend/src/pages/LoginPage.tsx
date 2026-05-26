@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
-  // Wenn bereits eingeloggt, direkt weiterleiten — <Navigate> statt navigate() im Render
   const from =
     (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? '/buchen';
   if (isAuthenticated) {
@@ -32,14 +31,16 @@ export default function LoginPage() {
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 401) {
-          setError('Ungültige Zugangsdaten. Bitte prüfe Benutzername und Passwort.');
+          setError('Kürzel oder Losungswort nicht korrekt. Bitte prüfen und erneut versuchen.');
         } else if (err.status === 429) {
           setError('Zu viele Fehlversuche. Bitte warte 15 Minuten und versuche es erneut.');
         } else {
           setError(err.message);
         }
       } else {
-        setError('Verbindung zum Server fehlgeschlagen. Bitte versuche es später erneut.');
+        setError(
+          'Verbindung zur Stube konnte nicht hergestellt werden. Bitte später erneut versuchen.',
+        );
       }
     } finally {
       setIsPending(false);
@@ -47,43 +48,143 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-900">
-      <div className="w-full max-w-sm">
-        {/* Logo / Titel */}
-        <div className="mb-8 text-center">
-          <div className="mb-3 text-5xl">🍺</div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Hängt!</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Jeder Strich zählt</p>
+    <div
+      style={{
+        minHeight: '100svh',
+        background: 'var(--bg)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px 16px',
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: 360 }}>
+        {/* ---------------------------------------------------------------- */}
+        {/* Wordmark / Sigel                                                 */}
+        {/* ---------------------------------------------------------------- */}
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          {/* Sigel-Kreis */}
+          <div
+            aria-hidden
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              border: '2px solid var(--korps-rot)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 32,
+                fontWeight: 700,
+                color: 'var(--korps-rot)',
+                lineHeight: 1,
+                letterSpacing: '0.04em',
+              }}
+            >
+              H!
+            </span>
+          </div>
+
+          <h1
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 28,
+              fontWeight: 700,
+              color: 'var(--tinte)',
+              letterSpacing: '0.06em',
+              margin: 0,
+              lineHeight: 1,
+            }}
+          >
+            Hängt<span style={{ color: 'var(--korps-rot)' }}>!</span>
+          </h1>
+          <p
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
+              fontSize: 15,
+              color: 'var(--tinte-3)',
+              marginTop: 6,
+              marginBottom: 0,
+            }}
+          >
+            Jeder Strich zählt.
+          </p>
         </div>
 
-        {/* Formular */}
+        {/* ---------------------------------------------------------------- */}
+        {/* Formular-Karte                                                   */}
+        {/* ---------------------------------------------------------------- */}
         <form
           onSubmit={(e) => void handleSubmit(e)}
           noValidate
-          className="rounded-2xl border border-slate-200 bg-white px-6 py-8 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+          style={{
+            background: 'var(--bg-card)',
+            borderRadius: 'var(--r-3)',
+            border: '1px solid var(--line)',
+            padding: '28px 24px',
+            boxShadow: 'var(--sh-2)',
+          }}
         >
-          <h2 className="mb-6 text-lg font-semibold text-slate-700 dark:text-slate-200">
-            Anmelden
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 16,
+              fontWeight: 600,
+              color: 'var(--tinte)',
+              letterSpacing: '0.04em',
+              margin: '0 0 20px',
+              paddingBottom: 10,
+              borderBottom: '2px solid var(--korps-rot)',
+              display: 'inline-block',
+            }}
+          >
+            Einloggen
           </h2>
 
           {/* Fehlermeldung */}
           {error && (
             <div
               role="alert"
-              className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400"
+              style={{
+                marginBottom: 16,
+                padding: '10px 14px',
+                borderRadius: 'var(--r-2)',
+                border: '1px solid var(--fehler-bg)',
+                background: 'var(--fehler-bg)',
+                color: 'var(--fehler)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 13,
+                lineHeight: 1.5,
+              }}
             >
               {error}
             </div>
           )}
 
-          <div className="space-y-4">
-            {/* Benutzername */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Kürzel */}
             <div>
               <label
                 htmlFor="username"
-                className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                style={{
+                  display: 'block',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: 'var(--tinte-2)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  marginBottom: 6,
+                }}
               >
-                Benutzername
+                Kürzel
               </label>
               <input
                 id="username"
@@ -93,18 +194,48 @@ export default function LoginPage() {
                 disabled={isPending}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="min-h-touch w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
                 placeholder="max.mustermann"
+                style={{
+                  width: '100%',
+                  minHeight: 44,
+                  padding: '10px 12px',
+                  borderRadius: 'var(--r-2)',
+                  border: '1px solid var(--line-2)',
+                  background: 'var(--bg)',
+                  color: 'var(--tinte)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 15,
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  opacity: isPending ? 0.5 : 1,
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--korps-rot)';
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(122,28,42,0.15)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--line-2)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               />
             </div>
 
-            {/* Passwort */}
+            {/* Losungswort */}
             <div>
               <label
                 htmlFor="password"
-                className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                style={{
+                  display: 'block',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: 'var(--tinte-2)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  marginBottom: 6,
+                }}
               >
-                Passwort
+                Losungswort
               </label>
               <input
                 id="password"
@@ -114,8 +245,29 @@ export default function LoginPage() {
                 disabled={isPending}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="min-h-touch w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
                 placeholder="••••••••"
+                style={{
+                  width: '100%',
+                  minHeight: 44,
+                  padding: '10px 12px',
+                  borderRadius: 'var(--r-2)',
+                  border: '1px solid var(--line-2)',
+                  background: 'var(--bg)',
+                  color: 'var(--tinte)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 15,
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  opacity: isPending ? 0.5 : 1,
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--korps-rot)';
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(122,28,42,0.15)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--line-2)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               />
             </div>
 
@@ -123,15 +275,36 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isPending || !username.trim() || !password}
-              className="min-h-touch flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              style={{
+                minHeight: 48,
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                borderRadius: 'var(--r-2)',
+                border: 'none',
+                background:
+                  isPending || !username.trim() || !password
+                    ? 'var(--tinte-4)'
+                    : 'var(--korps-rot)',
+                color: 'var(--kreide)',
+                fontFamily: 'var(--font-display)',
+                fontSize: 15,
+                fontWeight: 600,
+                letterSpacing: '0.06em',
+                cursor: isPending || !username.trim() || !password ? 'not-allowed' : 'pointer',
+                transition: 'background 120ms',
+                marginTop: 4,
+              }}
             >
               {isPending ? (
                 <>
-                  <Spinner size="h-4 w-4" label="Wird angemeldet…" />
-                  Anmelden…
+                  <Spinner size="h-4 w-4" label="Wird eingeloggt…" />
+                  Einloggen…
                 </>
               ) : (
-                'Anmelden'
+                'Einloggen'
               )}
             </button>
           </div>

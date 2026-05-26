@@ -11,7 +11,11 @@ import type { BookingRow, DrinkWithCurrentPrice } from '../types/api.js';
 // ---------------------------------------------------------------------------
 
 function formatCents(cents: number): string {
-  return (cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+  return (cents / 100).toLocaleString('de-DE', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+  });
 }
 
 function formatDateTime(iso: string): string {
@@ -22,6 +26,32 @@ function formatDateTime(iso: string): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+// ---------------------------------------------------------------------------
+// Abschnitts-Titel (Eyebrow-Stil, konsistent mit Stube)
+// ---------------------------------------------------------------------------
+
+function SectionTitle({ id, children }: { id?: string; children: React.ReactNode }) {
+  return (
+    <h2
+      id={id}
+      style={{
+        fontFamily: 'var(--font-sans)',
+        fontSize: 11,
+        fontWeight: 700,
+        color: 'var(--tinte-3)',
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+        margin: '0 0 12px',
+        paddingBottom: 6,
+        borderBottom: '2px solid var(--korps-rot)',
+        display: 'inline-block',
+      }}
+    >
+      {children}
+    </h2>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -38,7 +68,6 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // Getränke für Namens-Mapping laden (verfügbare + ggf. deaktivierte via Fallback)
   useEffect(() => {
     drinksApi
       .getAvailable()
@@ -57,7 +86,7 @@ export default function ProfilePage() {
         }
         setHasMore(res.hasMore);
       } catch {
-        showToast('Buchungen konnten nicht geladen werden.', 'error');
+        showToast('Striche konnten nicht geladen werden.', 'error');
       }
     },
     [showToast],
@@ -77,7 +106,7 @@ export default function ProfilePage() {
     setIsLoadingMore(false);
   }
 
-  // -- Monatssumme (aktueller Monat) ----------------------------------------
+  // -- Monatssumme ----------------------------------------------------------
 
   const now = new Date();
   const thisMonth = bookings.filter((b) => {
@@ -91,80 +120,211 @@ export default function ProfilePage() {
   const monthTotal = thisMonth.reduce((sum, b) => sum + b.price_cents_snapshot, 0);
   const monthLabel = now.toLocaleString('de-DE', { month: 'long', year: 'numeric' });
 
-  // Drink-ID → Name (deaktivierte Getränke fallen auf "Getränk #ID" zurück)
   const drinkNameMap = new Map(drinks.map((d) => [d.id, d.name]));
 
   // -------------------------------------------------------------------------
 
   return (
-    <div className="space-y-6">
-      {/* Profil-Karte */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <h2 className="mb-3 text-lg font-bold text-slate-800 dark:text-white">Mein Profil</h2>
-        <dl className="space-y-1 text-sm">
-          <div className="flex gap-2">
-            <dt className="w-36 shrink-0 font-medium text-slate-500 dark:text-slate-400">Name</dt>
-            <dd className="text-slate-800 dark:text-white">{member?.display_name}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="w-36 shrink-0 font-medium text-slate-500 dark:text-slate-400">
-              Benutzername
-            </dt>
-            <dd className="text-slate-800 dark:text-white">{member?.username}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="w-36 shrink-0 font-medium text-slate-500 dark:text-slate-400">Rolle</dt>
-            <dd className="text-slate-800 dark:text-white capitalize">{member?.role}</dd>
-          </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* ------------------------------------------------------------------ */}
+      {/* Profil-Karte                                                        */}
+      {/* ------------------------------------------------------------------ */}
+      <section
+        style={{
+          background: 'var(--bg-card)',
+          borderRadius: 'var(--r-3)',
+          border: '1px solid var(--line)',
+          padding: '20px',
+          boxShadow: 'var(--sh-1)',
+        }}
+      >
+        <SectionTitle>Profil</SectionTitle>
+        <dl style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[
+            { label: 'Name', value: member?.display_name },
+            { label: 'Kürzel', value: member?.username },
+            { label: 'Rolle', value: member?.role === 'admin' ? 'Vorstand' : 'Mitglied' },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ display: 'flex', gap: 12 }}>
+              <dt
+                style={{
+                  width: 80,
+                  flexShrink: 0,
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: 'var(--tinte-3)',
+                  letterSpacing: '0.04em',
+                  paddingTop: 1,
+                }}
+              >
+                {label}
+              </dt>
+              <dd
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 14,
+                  color: 'var(--tinte)',
+                  margin: 0,
+                }}
+              >
+                {value}
+              </dd>
+            </div>
+          ))}
         </dl>
       </section>
 
-      {/* Monatssumme */}
-      <section className="rounded-2xl border border-blue-100 bg-blue-50 p-5 dark:border-blue-900 dark:bg-blue-950/40">
-        <p className="text-sm font-medium text-blue-700 dark:text-blue-300">{monthLabel}</p>
-        <p className="mt-1 text-3xl font-bold text-blue-800 dark:text-blue-100">
+      {/* ------------------------------------------------------------------ */}
+      {/* Monatsabschluss                                                     */}
+      {/* ------------------------------------------------------------------ */}
+      <section
+        style={{
+          background: 'var(--bg-card)',
+          borderRadius: 'var(--r-3)',
+          border: '1px solid var(--line)',
+          padding: '20px',
+          boxShadow: 'var(--sh-1)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Korps-Rot-Streifen oben */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            background: 'var(--korps-rot)',
+          }}
+        />
+
+        <p
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'var(--tinte-3)',
+            margin: '0 0 6px',
+          }}
+        >
+          {monthLabel}
+        </p>
+        <p
+          style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: 44,
+            fontWeight: 700,
+            lineHeight: 1,
+            color: monthTotal > 0 ? 'var(--korps-rot)' : 'var(--erfolg)',
+            margin: '0 0 4px',
+            letterSpacing: '-0.01em',
+          }}
+        >
           {formatCents(monthTotal)}
         </p>
-        <p className="mt-1 text-xs text-blue-500 dark:text-blue-400">
-          {thisMonth.length} Buchung{thisMonth.length !== 1 ? 'en' : ''}
+        <p
+          style={{
+            fontFamily: 'var(--font-serif)',
+            fontStyle: 'italic',
+            fontSize: 14,
+            color: 'var(--tinte-3)',
+            margin: 0,
+          }}
+        >
+          {thisMonth.length === 0
+            ? 'Noch keine Striche diesen Monat.'
+            : `${thisMonth.length} ${thisMonth.length === 1 ? 'Strich' : 'Striche'} diesen Monat`}
         </p>
       </section>
 
-      {/* Buchungshistorie */}
+      {/* ------------------------------------------------------------------ */}
+      {/* Buchungshistorie                                                    */}
+      {/* ------------------------------------------------------------------ */}
       <section aria-labelledby="history-heading">
-        <h2 id="history-heading" className="mb-3 text-lg font-bold text-slate-800 dark:text-white">
-          Meine Buchungen
-        </h2>
+        <SectionTitle id="history-heading">Meine Striche</SectionTitle>
 
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            borderRadius: 'var(--r-3)',
+            border: '1px solid var(--line)',
+            boxShadow: 'var(--sh-1)',
+          }}
+        >
           {isLoading ? (
-            <div className="flex justify-center py-12">
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
               <Spinner size="h-10 w-10" />
             </div>
           ) : bookings.length === 0 ? (
-            <p className="py-10 text-center text-sm text-slate-400">Noch keine Buchungen.</p>
+            <p
+              style={{
+                padding: '40px 0',
+                textAlign: 'center',
+                fontFamily: 'var(--font-serif)',
+                fontStyle: 'italic',
+                fontSize: 15,
+                color: 'var(--tinte-4)',
+              }}
+            >
+              Noch keine Striche verzeichnet.
+            </p>
           ) : (
             <>
-              <ul className="divide-y divide-slate-100 px-4 dark:divide-slate-700">
-                {bookings.map((b) => {
+              <ul style={{ margin: 0, padding: '0 16px', listStyle: 'none' }}>
+                {bookings.map((b, i) => {
                   const voided = b.voided_at !== null;
                   return (
                     <li
                       key={b.id}
-                      className={`flex items-center justify-between gap-3 py-3 ${voided ? 'opacity-40' : ''}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '12px 0',
+                        borderTop: i > 0 ? '1px solid var(--line)' : 'none',
+                        opacity: voided ? 0.45 : 1,
+                      }}
                     >
-                      <div className="min-w-0 flex-1">
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <p
-                          className={`text-sm font-medium ${voided ? 'line-through' : ''} text-slate-800 dark:text-slate-200`}
+                          style={{
+                            fontFamily: 'var(--font-sans)',
+                            fontSize: 14,
+                            fontWeight: 600,
+                            color: 'var(--tinte)',
+                            margin: 0,
+                            textDecoration: voided ? 'line-through' : 'none',
+                          }}
                         >
                           {drinkNameMap.get(b.drink_id) ?? `Getränk #${b.drink_id}`}
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p
+                          style={{
+                            fontFamily: 'var(--font-sans)',
+                            fontSize: 12,
+                            color: 'var(--tinte-4)',
+                            margin: '2px 0 0',
+                          }}
+                        >
                           {formatDateTime(b.booked_at)}
                           {voided && ' · storniert'}
                         </p>
                       </div>
-                      <span className="shrink-0 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-serif)',
+                          fontSize: 15,
+                          fontWeight: 600,
+                          color: 'var(--tinte-2)',
+                          flexShrink: 0,
+                        }}
+                      >
                         {formatCents(b.price_cents_snapshot)}
                       </span>
                     </li>
@@ -173,11 +333,31 @@ export default function ProfilePage() {
               </ul>
 
               {hasMore && (
-                <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-700">
+                <div
+                  style={{
+                    borderTop: '1px solid var(--line)',
+                    padding: '12px 16px',
+                  }}
+                >
                   <button
                     onClick={() => void handleLoadMore()}
                     disabled={isLoadingMore}
-                    className="min-h-touch flex w-full items-center justify-center gap-2 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                    style={{
+                      minHeight: 44,
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      background: 'none',
+                      border: 'none',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: isLoadingMore ? 'var(--tinte-4)' : 'var(--korps-rot)',
+                      cursor: isLoadingMore ? 'not-allowed' : 'pointer',
+                      letterSpacing: '0.03em',
+                    }}
                   >
                     {isLoadingMore ? (
                       <>
@@ -185,7 +365,7 @@ export default function ProfilePage() {
                         Lädt…
                       </>
                     ) : (
-                      'Weitere laden'
+                      'Weitere Striche laden'
                     )}
                   </button>
                 </div>

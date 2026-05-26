@@ -6,6 +6,89 @@ import Spinner from '../../components/Spinner.js';
 import type { PublicMember } from '../../types/api.js';
 
 // ---------------------------------------------------------------------------
+// Gemeinsame Styles
+// ---------------------------------------------------------------------------
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  minHeight: 44,
+  padding: '8px 12px',
+  borderRadius: 'var(--r-2)',
+  border: '1px solid var(--line-2)',
+  background: 'var(--bg)',
+  color: 'var(--tinte)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 14,
+  outline: 'none',
+  boxSizing: 'border-box',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 11,
+  fontWeight: 700,
+  color: 'var(--tinte-3)',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  marginBottom: 5,
+};
+
+const btnPrimary: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  minHeight: 44,
+  padding: '8px 16px',
+  borderRadius: 'var(--r-2)',
+  border: 'none',
+  background: 'var(--korps-rot)',
+  color: 'var(--kreide)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: 'pointer',
+  letterSpacing: '0.03em',
+};
+
+const btnSecondary: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  minHeight: 44,
+  padding: '8px 16px',
+  borderRadius: 'var(--r-2)',
+  border: '1px solid var(--line-2)',
+  background: 'transparent',
+  color: 'var(--tinte-2)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
+};
+
+const btnGhost: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  minHeight: 36,
+  padding: '4px 10px',
+  borderRadius: 'var(--r-1)',
+  border: '1px solid var(--line)',
+  background: 'transparent',
+  color: 'var(--tinte-3)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 12,
+  fontWeight: 500,
+  cursor: 'pointer',
+};
+
+const btnDanger: React.CSSProperties = {
+  ...btnGhost,
+  border: '1px solid var(--korps-rot)',
+  color: 'var(--korps-rot)',
+};
+
+// ---------------------------------------------------------------------------
 // Neues-Mitglied-Formular
 // ---------------------------------------------------------------------------
 
@@ -49,10 +132,7 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="min-h-touch rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-      >
+      <button onClick={() => setOpen(true)} style={btnPrimary}>
         + Mitglied anlegen
       </button>
     );
@@ -61,23 +141,48 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
   return (
     <form
       onSubmit={(e) => void handleSubmit(e)}
-      className="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/30"
+      style={{
+        borderRadius: 'var(--r-3)',
+        border: '1px solid var(--line)',
+        background: 'var(--bg-card)',
+        padding: 20,
+      }}
     >
-      <h3 className="mb-3 font-semibold text-slate-700 dark:text-slate-200">Neues Mitglied</h3>
+      <h3
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 14,
+          fontWeight: 600,
+          letterSpacing: '0.05em',
+          color: 'var(--tinte)',
+          margin: '0 0 14px',
+          paddingBottom: 8,
+          borderBottom: '2px solid var(--korps-rot)',
+          display: 'inline-block',
+        }}
+      >
+        Neues Mitglied
+      </h3>
+
       {error && (
-        <p role="alert" className="mb-3 text-sm text-red-600 dark:text-red-400">
+        <p
+          role="alert"
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 13,
+            color: 'var(--fehler)',
+            marginBottom: 12,
+          }}
+        >
           {error}
         </p>
       )}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" style={{ marginBottom: 14 }}>
         {(['display_name', 'username', 'password'] as const).map((field) => (
           <div key={field}>
-            <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
-              {field === 'display_name'
-                ? 'Anzeigename'
-                : field === 'username'
-                  ? 'Benutzername'
-                  : 'Passwort'}
+            <label style={labelStyle}>
+              {field === 'display_name' ? 'Name' : field === 'username' ? 'Kürzel' : 'Losungswort'}
             </label>
             <input
               type={field === 'password' ? 'password' : 'text'}
@@ -85,39 +190,29 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
               required
               value={form[field]}
               onChange={handleChange}
-              className="min-h-touch w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+              style={inputStyle}
             />
           </div>
         ))}
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-400">
-            Rolle
-          </label>
-          <select
-            name="role"
-            value={form.role}
-            onChange={handleChange}
-            className="min-h-touch w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
-          >
+          <label style={labelStyle}>Rolle</label>
+          <select name="role" value={form.role} onChange={handleChange} style={inputStyle}>
             <option value="member">Mitglied</option>
-            <option value="admin">Admin</option>
+            <option value="admin">Vorstand</option>
           </select>
         </div>
       </div>
-      <div className="mt-3 flex gap-2">
+
+      <div style={{ display: 'flex', gap: 8 }}>
         <button
           type="submit"
           disabled={isPending}
-          className="min-h-touch flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          style={{ ...btnPrimary, opacity: isPending ? 0.6 : 1 }}
         >
           {isPending && <Spinner size="h-3 w-3" />}
           Anlegen
         </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="min-h-touch rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
-        >
+        <button type="button" onClick={() => setOpen(false)} style={btnSecondary}>
           Abbrechen
         </button>
       </div>
@@ -144,7 +239,7 @@ function ResetPasswordForm({ memberId, onClose }: ResetPasswordFormProps) {
     setIsPending(true);
     try {
       await membersApi.update(memberId, { password });
-      showToast('Passwort wurde zurückgesetzt.', 'success');
+      showToast('Losungswort wurde zurückgesetzt.', 'success');
       onClose();
     } catch (err) {
       showToast(err instanceof ApiError ? err.message : 'Fehler.', 'error');
@@ -154,28 +249,27 @@ function ResetPasswordForm({ memberId, onClose }: ResetPasswordFormProps) {
   }
 
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="mt-2 flex items-center gap-2">
+    <form
+      onSubmit={(e) => void handleSubmit(e)}
+      style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}
+    >
       <input
         type="password"
         required
         minLength={8}
-        placeholder="Neues Passwort (mind. 8 Zeichen)"
+        placeholder="Neues Losungswort (mind. 8 Zeichen)"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="min-h-touch flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+        style={{ ...inputStyle, flex: 1 }}
       />
       <button
         type="submit"
         disabled={isPending || password.length < 8}
-        className="min-h-touch rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+        style={{ ...btnPrimary, opacity: isPending || password.length < 8 ? 0.5 : 1 }}
       >
         {isPending ? <Spinner size="h-3 w-3" /> : 'Speichern'}
       </button>
-      <button
-        type="button"
-        onClick={onClose}
-        className="min-h-touch rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600"
-      >
+      <button type="button" onClick={onClose} style={btnSecondary}>
         ✕
       </button>
     </form>
@@ -221,67 +315,142 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
         <CreateMemberForm onCreated={(m) => setMembers((prev) => [m, ...prev])} />
-        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontFamily: 'var(--font-sans)',
+            fontSize: 13,
+            color: 'var(--tinte-3)',
+            cursor: 'pointer',
+          }}
+        >
           <input
             type="checkbox"
             checked={includeInactive}
             onChange={(e) => setIncludeInactive(e.target.checked)}
-            className="rounded"
           />
           Inaktive anzeigen
         </label>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
           <Spinner size="h-10 w-10" />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-          <table className="w-full text-sm">
+        <div
+          style={{
+            overflowX: 'auto',
+            borderRadius: 'var(--r-3)',
+            border: '1px solid var(--line)',
+            background: 'var(--bg-card)',
+            boxShadow: 'var(--sh-1)',
+          }}
+        >
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr className="border-b border-slate-100 text-left dark:border-slate-700">
-                {['Anzeigename', 'Benutzername', 'Rolle', 'Status', 'Aktionen'].map((h) => (
+              <tr>
+                {['Name', 'Kürzel', 'Rolle', 'Status', 'Aktionen'].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 font-semibold text-slate-500 dark:text-slate-400"
+                    style={{
+                      padding: '10px 16px',
+                      textAlign: 'left',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: 'var(--tinte-3)',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      borderBottom: '1px solid var(--line)',
+                    }}
                   >
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-              {members.map((m) => (
+            <tbody>
+              {members.map((m, i) => (
                 <>
-                  <tr key={m.id} className={m.is_active === 0 ? 'opacity-40' : ''}>
-                    <td className="px-4 py-3 font-medium text-slate-800 dark:text-white">
+                  <tr
+                    key={m.id}
+                    style={{
+                      opacity: m.is_active === 0 ? 0.45 : 1,
+                      borderTop: i > 0 ? '1px solid var(--line)' : 'none',
+                    }}
+                  >
+                    <td
+                      style={{
+                        padding: '10px 16px',
+                        fontFamily: 'var(--font-sans)',
+                        fontWeight: 600,
+                        color: 'var(--tinte)',
+                      }}
+                    >
                       {m.display_name}
                     </td>
-                    <td className="px-4 py-3 text-slate-500">{m.username}</td>
-                    <td className="px-4 py-3 capitalize text-slate-500">{m.role}</td>
-                    <td className="px-4 py-3">
+                    <td
+                      style={{
+                        padding: '10px 16px',
+                        color: 'var(--tinte-3)',
+                        fontFamily: 'var(--font-sans)',
+                      }}
+                    >
+                      {m.username}
+                    </td>
+                    <td
+                      style={{
+                        padding: '10px 16px',
+                        color: 'var(--tinte-3)',
+                        fontFamily: 'var(--font-sans)',
+                      }}
+                    >
+                      {m.role === 'admin' ? 'Vorstand' : 'Mitglied'}
+                    </td>
+                    <td style={{ padding: '10px 16px' }}>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${m.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}
+                        style={{
+                          display: 'inline-block',
+                          padding: '2px 8px',
+                          borderRadius: 'var(--r-pill)',
+                          border: `1px solid ${m.is_active ? 'var(--erfolg)' : 'var(--line-2)'}`,
+                          background: m.is_active ? 'var(--erfolg-bg)' : 'var(--bg-2)',
+                          color: m.is_active ? 'var(--erfolg)' : 'var(--tinte-4)',
+                          fontFamily: 'var(--font-sans)',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          letterSpacing: '0.04em',
+                        }}
                       >
                         {m.is_active ? 'Aktiv' : 'Inaktiv'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
+                    <td style={{ padding: '10px 16px' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                         <button
                           onClick={() => setResetId(resetId === m.id ? null : m.id)}
-                          className="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-400"
+                          style={btnGhost}
                         >
-                          PW zurücksetzen
+                          Losungswort
                         </button>
                         {m.is_active === 1 && (
                           <button
                             onClick={() => void handleDeactivate(m.id, m.display_name)}
-                            className="rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400"
+                            style={btnDanger}
                           >
                             Deaktivieren
                           </button>
@@ -291,7 +460,10 @@ export default function MembersPage() {
                   </tr>
                   {resetId === m.id && (
                     <tr key={`${m.id}-reset`}>
-                      <td colSpan={5} className="px-4 pb-3">
+                      <td
+                        colSpan={5}
+                        style={{ padding: '4px 16px 14px', borderTop: '1px solid var(--line)' }}
+                      >
                         <ResetPasswordForm memberId={m.id} onClose={() => setResetId(null)} />
                       </td>
                     </tr>
@@ -301,7 +473,18 @@ export default function MembersPage() {
             </tbody>
           </table>
           {members.length === 0 && (
-            <p className="py-10 text-center text-sm text-slate-400">Keine Mitglieder gefunden.</p>
+            <p
+              style={{
+                padding: '40px 0',
+                textAlign: 'center',
+                fontFamily: 'var(--font-serif)',
+                fontStyle: 'italic',
+                fontSize: 14,
+                color: 'var(--tinte-4)',
+              }}
+            >
+              Keine Mitglieder gefunden.
+            </p>
           )}
         </div>
       )}

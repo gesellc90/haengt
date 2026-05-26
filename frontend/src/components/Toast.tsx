@@ -1,19 +1,29 @@
+import { Check, X, Info } from 'lucide-react';
 import { useToast, type ToastVariant } from '../contexts/ToastContext.js';
 
 // ---------------------------------------------------------------------------
-// Farbklassen je Variante
+// Token-basierte Varianten-Styles
 // ---------------------------------------------------------------------------
 
-const variantClasses: Record<ToastVariant, string> = {
-  success: 'bg-green-600 text-white',
-  error: 'bg-red-600 text-white',
-  info: 'bg-slate-700 text-white',
+const variantStyles: Record<ToastVariant, React.CSSProperties> = {
+  success: {
+    background: 'var(--erfolg)',
+    color: 'var(--kreide)',
+  },
+  error: {
+    background: 'var(--korps-rot)',
+    color: 'var(--kreide)',
+  },
+  info: {
+    background: 'var(--info)',
+    color: 'var(--kreide)',
+  },
 };
 
-const variantIcon: Record<ToastVariant, string> = {
-  success: '✓',
-  error: '✕',
-  info: 'ℹ',
+const variantIcon: Record<ToastVariant, React.ReactNode> = {
+  success: <Check size={16} aria-hidden />,
+  error: <X size={16} aria-hidden />,
+  info: <Info size={16} aria-hidden />,
 };
 
 // ---------------------------------------------------------------------------
@@ -29,24 +39,61 @@ export default function ToastContainer() {
     <div
       aria-live="polite"
       aria-label="Benachrichtigungen"
-      className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 flex-col gap-2"
+      style={{
+        position: 'fixed',
+        bottom: 16,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 50,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+      }}
     >
       {toasts.map((toast) => (
         <div
           key={toast.id}
           role="alert"
-          className={`flex min-w-64 items-center gap-3 rounded-xl px-4 py-3 shadow-lg ${variantClasses[toast.variant]}`}
+          style={{
+            display: 'flex',
+            minWidth: 260,
+            maxWidth: 360,
+            alignItems: 'center',
+            gap: 12,
+            padding: '12px 16px',
+            borderRadius: 'var(--r-3)',
+            boxShadow: 'var(--sh-3)',
+            ...variantStyles[toast.variant],
+          }}
         >
-          <span className="text-lg font-bold" aria-hidden>
-            {variantIcon[toast.variant]}
+          <span style={{ display: 'flex', flexShrink: 0 }}>{variantIcon[toast.variant]}</span>
+          <span
+            style={{
+              flex: 1,
+              fontSize: 14,
+              fontFamily: 'var(--font-sans)',
+              fontWeight: 500,
+            }}
+          >
+            {toast.message}
           </span>
-          <span className="flex-1 text-sm font-medium">{toast.message}</span>
           <button
             onClick={() => dismissToast(toast.id)}
             aria-label="Benachrichtigung schließen"
-            className="ml-2 rounded p-1 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+            style={{
+              marginLeft: 8,
+              padding: 4,
+              borderRadius: 'var(--r-2)',
+              border: 'none',
+              background: 'rgba(255,255,255,0.15)',
+              color: 'inherit',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            ✕
+            <X size={14} aria-hidden />
           </button>
         </div>
       ))}

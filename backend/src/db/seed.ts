@@ -9,11 +9,21 @@
  * Das Skript ist idempotent: Läuft es ein zweites Mal, werden keine
  * Duplikate angelegt (INSERT OR IGNORE auf username/name).
  *
- * WICHTIG: Passwörter hier sind Demo-Klartextplatzhalter.
- * Ab M3 werden sie durch bcrypt-Hashes ersetzt; bis dahin ist die
- * Anmeldefunktion noch nicht aktiv.
+ * DEV-Passwörter: In der Entwicklungsumgebung (NODE_ENV=development) setzt
+ * dieses Skript automatisch ein Standard-Passwort für den Admin-Account,
+ * sofern noch keines gesetzt ist:
+ *
+ *   Benutzername: admin
+ *   Passwort:     admin123
+ *
+ * Das Passwort wird NUR gesetzt wenn password_hash noch NULL ist –
+ * manuell gesetzte Passwörter werden nicht überschrieben.
+ *
+ * Für die E2E-Suite werden die bcrypt-Hashes anschließend von
+ * `e2e/seed/test-seed.mjs` gesetzt — dort liegen auch die Test-Passwörter.
  */
 
+import bcrypt from 'bcryptjs';
 import { loadEnv } from '../utils/env.js';
 import { openDatabase } from './client.js';
 import { runMigrations } from './migrate.js';
@@ -43,6 +53,29 @@ db.transaction(() => {
 })();
 
 console.log('[seed] Mitglieder angelegt.');
+
+// ---------------------------------------------------------------------------
+// Dev-Passwort für Admin setzen (nur in development, nur wenn noch keines gesetzt)
+// ---------------------------------------------------------------------------
+
+if (env.NODE_ENV === 'development') {
+  const DEV_ADMIN_PASSWORD = 'admin123';
+
+  const adminRow = db
+    .prepare<
+      [],
+      { id: number; password_hash: string | null }
+    >(`SELECT id, password_hash FROM members WHERE username = 'admin'`)
+    .get();
+
+  if (adminRow && adminRow.password_hash === null) {
+    const hash = await bcrypt.hash(DEV_ADMIN_PASSWORD, 10);
+    db.prepare('UPDATE members SET password_hash = ? WHERE id = ?').run(hash, adminRow.id);
+    console.log('[seed] Dev-Passwort für Admin gesetzt (Benutzername: admin, Passwort: admin123)');
+  } else if (adminRow) {
+    console.log('[seed] Admin hat bereits ein Passwort – wird nicht überschrieben.');
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Getränke

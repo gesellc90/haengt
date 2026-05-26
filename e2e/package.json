@@ -1,0 +1,22 @@
+{
+  "name": "@getraenke/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "End-to-End-Tests (Playwright) für Backend + Frontend.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "PWDEBUG=1 playwright test",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^20.12.0",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.0.0",
+    "typescript": "^5.4.0"
+  }
+}

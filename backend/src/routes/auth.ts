@@ -19,6 +19,9 @@ export function createAuthRouter(authService: AuthService): Router {
     legacyHeaders: false,
     message: { error: 'Zu viele Login-Versuche. Bitte in 15 Minuten erneut versuchen.' },
     skipSuccessfulRequests: false,
+    // In E2E-Tests deaktivieren (alle Requests kämen von 127.0.0.1,
+    // der gemeinsame Bucket würde nach 5 Logins die restlichen Tests blockieren).
+    skip: () => process.env['DISABLE_RATE_LIMIT'] === 'true',
   });
 
   // ---------------------------------------------------------------------------

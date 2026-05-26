@@ -20,6 +20,25 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   - sudoers-Snippet `scripts/getraenke-deploy.sudoers` (minimaler NOPASSWD-Eintrag für `systemctl restart/status/is-active` + Migration als App-User)
   - Wrapper-Skript `scripts/deploy-migrate.sh` für DB-Migrationen während des Deploys (lädt `/etc/getraenke/env`, ruft `migrate-cli.js` als App-User `getraenke` auf)
   - CI-Erweiterung in `.github/workflows/ci.yml`: neuer Job `lint-deploy` mit `systemd-analyze verify`, `visudo -cf` und `bash -n` für alle Skripte
+  - Playwright-E2E-Suite (`e2e/`) als eigener npm-Workspace `@getraenke/e2e`. Globaler Setup-Hook startet gebautes Backend + `vite preview` gegen eine temporäre SQLite-DB, seedet Test-Daten (bcrypt-Hashes für admin/anna/bernd, „alte" Buchung für Storno-Negativ-Test). Fünf Specs: Login, Buchung, Storno (positiv + negativ), Admin-Mitgliederanlage, PDF-Report-Download
+  - GitHub Actions Workflow `.github/workflows/e2e.yml` (Trigger auf Push/PR, Playwright-Browser-Cache, Trace-Upload bei Fehler)
+  - Neue Doku `docs/TESTING.md` (Test-Schichten, lokale Befehle, Trace-Viewer, Test-Daten-Schema)
+  - `frontend/vite.config.ts`: neuer `preview`-Block mit `/api`-Proxy auf `E2E_BACKEND_PORT` (Default 3101)
+  - Pi-Grundeinrichtungs-Doku `docs/RASPBERRY-PI-SETUP.md`: OS-Flash via Imager, Production-Hardening (SSH-Key-Only, ufw, fail2ban, unattended-upgrades, timesyncd), Node 20 via NodeSource, build-essential für `better-sqlite3`-ARM-Build, User- und Verzeichnis-Layout, Cron-Backup, Smoke-Test, Troubleshooting-Tabelle
+  - Runner-Installation-Doku `docs/RUNNER-SETUP.md`: ARM64-Tarball-Download mit Integritäts-Check, `config.sh` mit Labels `self-hosted,raspberry-pi,arm64`, `svc.sh install` als systemd-Service, Sicherheits-Hinweise
+- **M6 — Reporting & Export (PDF/CSV)**
+  - `ReportService`: `calculateMonthly()` und `calculateAllMembers()` aggregieren Buchungen pro Monat, gruppiert nach Getränk, mit Einzelsummen und Gesamtbetrag
+  - CSV-Export: UTF-8-BOM für Excel-Kompatibilität, Semikolon-Trenner, Komma als Dezimaltrennzeichen, deutsches Datumsformat, CRLF-Zeilenenden
+  - PDF-Export via PDFKit: Einzelbericht (Header, Buchungstabelle, Zusammenfassung, Summenzeile, Footer mit Erstellungsdatum)
+  - Sammel-PDF: alle aktiven Mitglieder mit Inhaltsverzeichnis auf Seite 1, je eine Seite pro Mitglied
+  - Endpunkt `GET /api/v1/reports/monthly?memberId=&year=&month=&format=csv|pdf` (Admin-only)
+  - Endpunkt `GET /api/v1/reports/all?year=&month=&format=pdf` (Admin-only)
+  - Frontend `ReportPage`: Auswahl Monat/Jahr/Mitglied, Download-Buttons CSV + PDF (einzeln) + Sammel-PDF, Toast-Feedback, Loading-Spinner
+  - `frontend/src/api/reports.ts`: `downloadMonthlyReport()` + `downloadAllMembersReport()` mit Blob-Download und Content-Disposition-Parsing
+
+### Fixed
+
+- **Backend-Build:** Migrations-`.sql`-Dateien werden jetzt via `backend/scripts/copy-migrations.mjs` nach `dist/db/migrations/` kopiert. Ohne diesen Schritt würde `node dist/db/migrate-cli.js` (genutzt in PR 2 vom Pi-Deploy) zur Laufzeit keine Migrationen finden, weil `tsc` Nicht-TS-Files ignoriert
 - **M1 — Projekt-Setup & Tooling**
   - Mono-Repo mit npm-Workspaces (`backend/`, `frontend/`)
   - Backend-Skeleton: Express, pino, Zod, `/api/v1/health`-Route, graceful Shutdown auf SIGTERM/SIGINT
@@ -45,6 +64,8 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ### Changed
 
 - `ARCHITECTURE.md`: Verzeichnisstruktur auf TypeScript (`.ts`/`.tsx`) umgestellt, Build- und Run-Strategie-Tabelle ergänzt (Dev: `tsx watch` / `vite`, Prod: `tsc → dist/` / `vite build`)
+- `backend/src/db/seed.ts`: veralteter Header-Kommentar („Passwörter werden ab M3 durch bcrypt-Hashes ersetzt") an die M3-Realität angepasst — der Seed lässt `password_hash` bewusst NULL, Initial-Passwort muss von einem Admin gesetzt werden; E2E-Setup übernimmt das Hashing in `e2e/seed/test-seed.mjs`
+- `docs/DEPLOYMENT.md`: neue Sektion „Bekannte Limitierungen" mit den zwei offenen Code-Folge-Issues aus M7 Hälfte B (HOST-Binding wird ignoriert, Frontend wird nicht via `express.static` ausgeliefert)
 
 ### Deprecated
 

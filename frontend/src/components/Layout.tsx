@@ -2,18 +2,14 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
 import { useToast } from '../contexts/ToastContext.js';
 import ToastContainer from './Toast.js';
+import WordmarkHeader from './WordmarkHeader.js';
 
 // ---------------------------------------------------------------------------
 // NavLink-Hilfsfunktion
 // ---------------------------------------------------------------------------
 
 function navClass({ isActive }: { isActive: boolean }) {
-  return [
-    'min-h-touch flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-    isActive
-      ? 'bg-blue-600 text-white'
-      : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700',
-  ].join(' ');
+  return isActive ? '' : '';
 }
 
 // ---------------------------------------------------------------------------
@@ -34,47 +30,172 @@ export default function Layout() {
     }
   }
 
-  return (
-    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-900">
-      {/* ------------------------------------------------------------------ */}
-      {/* Header / Navigation                                                */}
-      {/* ------------------------------------------------------------------ */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-2">
-          <span className="text-lg font-bold text-slate-800 dark:text-white">🍺 Hängt!</span>
+  const initials = member?.display_name
+    ? member.display_name
+        .split(' ')
+        .map((w) => w[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    : '??';
 
-          <nav className="flex items-center gap-1">
-            <NavLink to="/buchen" className={navClass}>
+  return (
+    <div
+      style={{
+        display: 'flex',
+        minHeight: '100vh',
+        flexDirection: 'column',
+        background: 'var(--bg)',
+      }}
+    >
+      {/* ------------------------------------------------------------------ */}
+      {/* Header                                                              */}
+      {/* ------------------------------------------------------------------ */}
+      <WordmarkHeader avatarInitials={initials} onAvatarClick={() => void navigate('/profil')} />
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Desktop-Navigation                                                  */}
+      {/* ------------------------------------------------------------------ */}
+      <div
+        style={{
+          borderBottom: '1px solid var(--line)',
+          background: 'var(--bg-card)',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 960,
+            margin: '0 auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 16px',
+          }}
+        >
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <NavLink
+              to="/buchen"
+              className={navClass}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                minHeight: 44,
+                borderRadius: 'var(--r-2)',
+                padding: '8px 12px',
+                fontSize: 14,
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'background 150ms',
+                background: isActive ? 'var(--korps-rot)' : 'transparent',
+                color: isActive ? 'var(--kreide)' : 'var(--fg-2)',
+              })}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget;
+                if (!el.dataset['active']) el.style.background = 'var(--bg-2)';
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget;
+                if (!el.dataset['active']) el.style.background = 'transparent';
+              }}
+            >
               Buchen
             </NavLink>
-            <NavLink to="/profil" className={navClass}>
+            <NavLink
+              to="/profil"
+              className={navClass}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                minHeight: 44,
+                borderRadius: 'var(--r-2)',
+                padding: '8px 12px',
+                fontSize: 14,
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'background 150ms',
+                background: isActive ? 'var(--korps-rot)' : 'transparent',
+                color: isActive ? 'var(--kreide)' : 'var(--fg-2)',
+              })}
+            >
               Profil
             </NavLink>
             {isAdmin && (
-              <NavLink to="/admin" className={navClass}>
+              <NavLink
+                to="/admin"
+                className={navClass}
+                style={({ isActive }) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  minHeight: 44,
+                  borderRadius: 'var(--r-2)',
+                  padding: '8px 12px',
+                  fontSize: 14,
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  transition: 'background 150ms',
+                  background: isActive ? 'var(--korps-rot)' : 'transparent',
+                  color: isActive ? 'var(--kreide)' : 'var(--fg-2)',
+                })}
+              >
                 Admin
               </NavLink>
             )}
           </nav>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden text-xs text-slate-500 sm:block dark:text-slate-400">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span
+              style={{
+                display: 'none',
+                fontSize: 12,
+                color: 'var(--fg-3)',
+              }}
+              className="sm:block"
+            >
               {member?.display_name}
             </span>
             <button
               onClick={() => void handleLogout()}
-              className="min-h-touch rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+              style={{
+                minHeight: 44,
+                borderRadius: 'var(--r-2)',
+                padding: '8px 12px',
+                fontSize: 14,
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 500,
+                color: 'var(--fg-3)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background 150ms',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--bg-2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
             >
               Abmelden
             </button>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* ------------------------------------------------------------------ */}
       {/* Hauptinhalt                                                         */}
       {/* ------------------------------------------------------------------ */}
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6">
+      <main
+        style={{
+          maxWidth: 960,
+          margin: '0 auto',
+          width: '100%',
+          flex: 1,
+          padding: '24px 16px',
+        }}
+      >
         <Outlet />
       </main>
 

@@ -11,7 +11,7 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 | M5  | Frontend (React)               | 5–7 Tage          | M4 (parallel ab M3 möglich) |
 | M6  | Reporting & Export (PDF/CSV)   | 3–4 Tage          | M4                          |
 | M7  | CI/CD, Deployment & E2E-Tests  | 3–4 Tage          | M5, M6                      |
-| M8  | Design System — Hängt!-Marke  | 3–5 Tage          | M5                          |
+| M8  | Design System — Hängt!-Marke   | 3–5 Tage          | M5                          |
 
 ---
 
@@ -202,13 +202,13 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 #### Komponenten (nach Design-Prototyp)
 
-- [ ] **`WordmarkHeader`** — Eiche-Holz-Streifen (`--eiche`), Wortmarke in Cinzel links, Aktiver-Kürzel rechts; Höhe 56px Mobile / 64px Desktop
-- [ ] **`SaldoCard`** — Große Saldo-Anzeige, Hintergrund `--bg-card` (`#fbf3df`), 2px Korps-Rot-Linie oben, `--sh-2` + `--sh-emboss`
-- [ ] **`SortenButton`** (Tally-Kachel) — Stempelartige Kachel je Getränkesorte; Press-Animation `scale(.985)` 120ms `--ease-stempel`; Strich-Animation via SVG `stroke-dasharray` in Caveat-Font (240ms)
-- [ ] **`StrichRow`** — Listenzeile Aktiver + Tally-Zähler in Caveat + Saldo, 1px `--line`-Trenner
-- [ ] **`Stepper`** (−/+ Mengen-Stepper) — Kantige Buttons (`--r-2`), Inset-Emboss
-- [ ] **`TabBar`** — Bottom-Nav Mobile, Icons via Lucide (20px, `currentColor`), kein blaues Highlight, aktiver Tab in Korps-Rot
-- [ ] Bestehende generische Komponenten (`Toast`, `Spinner`, `Layout`) auf Marken-Tokens umstellen
+- [x] **`WordmarkHeader`** — Eiche-Holz-Streifen (`--eiche`), Wortmarke in Cormorant Garamond links, Aktiver-Kürzel rechts; sticky top-0
+- [x] **`SaldoCard`** — Große Saldo-Anzeige, Hintergrund `--bg-card` (`#fbf3df`), 3px Korps-Rot-Topstreifen, `--sh-2`
+- [x] **`SortenButton`** (Tally-Kachel) — Stempelartige Kachel je Getränkesorte; Press-Animation `scale(.985)` 150ms `--ease-stempel`; Loading-State via Spinner
+- [x] **`StrichRow`** — Listenzeile Aktiver + TallyStrokes-SVG + Saldo, 1px `--line`-Trenner
+- [x] **`Stepper`** (−/+ Mengen-Stepper) — Pill-Shape, Korps-Rot-Buttons, scale(.92) bei Press
+- [x] **`TabBar`** — Bottom-Nav Mobile, Icons via Lucide (22px, `currentColor`), aktiver Tab in `--messing`
+- [x] Bestehende generische Komponenten (`Toast`, `Spinner`, `Layout`) auf Marken-Tokens umstellen
 
 #### Screens & UX-Text
 

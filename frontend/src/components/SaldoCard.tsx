@@ -1,36 +1,33 @@
-/** Hilfsfunktion: Cent-Betrag als Euro-String */
-function formatCents(cents: number): string {
-  return (cents / 100).toLocaleString('de-DE', {
+interface SaldoCardProps {
+  /** Saldo in Cent (negativ = schuldet Geld) */
+  balanceCents: number;
+  /** Anzahl offener Striche heute, optional */
+  stricheHeute?: number;
+}
+
+function formatCurrency(cents: number): string {
+  return (Math.abs(cents) / 100).toLocaleString('de-DE', {
     style: 'currency',
     currency: 'EUR',
-    minimumFractionDigits: 2,
   });
 }
 
-interface SaldoCardProps {
-  /** Offener Betrag in Cent (positiv = Schulden) */
-  balanceCents: number;
-  /** true = alles bezahlt */
-  isPaid: boolean;
-  /** Anzahl der heutigen Buchungen */
-  todayCount?: number;
-}
-
-export default function SaldoCard({ balanceCents, isPaid, todayCount = 0 }: SaldoCardProps) {
-  const balanceColor = isPaid ? 'var(--erfolg)' : 'var(--korps-rot)';
+export default function SaldoCard({ balanceCents, stricheHeute }: SaldoCardProps) {
+  const isPaid = balanceCents <= 0;
 
   return (
     <div
       style={{
-        position: 'relative',
         background: 'var(--bg-card)',
-        borderRadius: 'var(--r-3)',
-        padding: '20px 20px 16px',
-        boxShadow: 'var(--sh-2)',
+        border: '1px solid var(--line)',
+        borderRadius: 10,
+        padding: '20px 18px',
+        position: 'relative',
         overflow: 'hidden',
+        boxShadow: 'var(--sh-2)',
       }}
     >
-      {/* Korps-Rot Streifen oben */}
+      {/* 3px Korps-Rot-Topstreifen */}
       <div
         style={{
           position: 'absolute',
@@ -42,44 +39,60 @@ export default function SaldoCard({ balanceCents, isPaid, todayCount = 0 }: Sald
         }}
       />
 
-      {/* Saldo-Betrag */}
+      {/* Label-Zeile */}
       <div
         style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 56,
+          fontFamily: 'var(--font-sans)',
+          fontSize: 11,
           fontWeight: 700,
-          lineHeight: 1,
-          color: balanceColor,
-          letterSpacing: '-0.02em',
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase' as const,
+          color: 'var(--fg-3)',
           marginBottom: 4,
         }}
       >
-        {formatCents(balanceCents)}
+        Dein offener Strich
       </div>
 
-      {/* Subtext */}
+      {/* Betrag */}
+      <div
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontWeight: 700,
+          fontSize: 56,
+          lineHeight: 1,
+          fontVariantNumeric: 'tabular-nums',
+          letterSpacing: '-0.01em',
+          color: isPaid ? 'var(--erfolg)' : 'var(--korps-rot)',
+        }}
+      >
+        {formatCurrency(balanceCents)}
+      </div>
+
+      {/* Sub-Zeile */}
       <div
         style={{
           fontFamily: 'var(--font-serif)',
           fontStyle: 'italic',
-          fontSize: 15,
+          fontSize: 16,
           color: 'var(--fg-2)',
-          marginBottom: 8,
+          marginTop: 6,
         }}
       >
-        {isPaid ? 'Konto ausgeglichen' : 'Offener Saldo'}
+        {isPaid ? 'Sauber. Du hängst nicht.' : 'Schoppe weiter — oder tilg.'}
       </div>
 
       {/* Striche heute */}
-      {todayCount > 0 && (
+      {stricheHeute !== undefined && stricheHeute > 0 && (
         <div
           style={{
             fontFamily: 'var(--font-hand)',
-            fontSize: 14,
-            color: 'var(--fg-3)',
+            fontSize: 20,
+            color: 'var(--tinte)',
+            marginTop: 8,
           }}
         >
-          {todayCount} {todayCount === 1 ? 'Strich' : 'Striche'} heute
+          {stricheHeute} Striche heute
         </div>
       )}
     </div>

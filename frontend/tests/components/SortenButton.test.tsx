@@ -29,6 +29,7 @@ describe('SortenButton', () => {
   it('zeigt Spinner wenn isLoading, kein Name sichtbar', () => {
     render(<SortenButton name="Pils" priceCents={180} onClick={() => {}} isLoading />);
     expect(screen.queryByText('Pils')).toBeNull();
+    // Spinner hat role="status"
     expect(screen.getByRole('status')).toBeDefined();
   });
 });

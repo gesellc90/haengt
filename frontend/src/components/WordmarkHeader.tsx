@@ -1,7 +1,7 @@
 interface WordmarkHeaderProps {
-  /** Initialen für den Avatar-Button (max. 2 Zeichen). Fehlt → kein Avatar. */
+  /** 1–3 Buchstaben für den Avatar-Kreis, z. B. „CK" */
   avatarInitials?: string;
-  /** Callback wenn der Avatar-Button geklickt wird */
+  /** Callback für Avatar-Klick (z. B. Profil öffnen) */
   onAvatarClick?: () => void;
 }
 
@@ -9,56 +9,56 @@ export default function WordmarkHeader({ avatarInitials, onAvatarClick }: Wordma
   return (
     <header
       style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
         background: 'var(--eiche)',
+        color: 'var(--kreide)',
+        padding: '14px 18px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 16px',
-        height: 52,
-        borderBottom: '1px solid rgba(0,0,0,0.18)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+        flexShrink: 0,
+        borderBottom: '1px solid var(--messing)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 40,
       }}
     >
-      {/* Wordmark */}
+      {/* Wortmarke: Cormorant Garamond, 28px */}
       <span
         style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 24,
+          fontFamily: 'var(--font-serif)',
           fontWeight: 700,
-          color: 'var(--kreide)',
-          letterSpacing: '0.04em',
+          fontSize: 28,
+          letterSpacing: '-0.01em',
           lineHeight: 1,
-          userSelect: 'none',
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 2,
         }}
       >
-        Hängt
-        <span style={{ color: 'var(--messing)' }}>!</span>
+        Hängt<span style={{ color: 'var(--messing)' }}>!</span>
       </span>
 
-      {/* Avatar */}
+      {/* Avatar-Kreis */}
       {avatarInitials && (
         <button
           onClick={onAvatarClick}
-          aria-label="Profil"
+          aria-label="Profil öffnen"
           style={{
             width: 32,
             height: 32,
             borderRadius: '50%',
             background: 'var(--korps-rot)',
-            border: 'none',
-            cursor: 'pointer',
+            color: 'var(--kreide)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontFamily: 'var(--font-display)',
-            fontSize: 12,
             fontWeight: 700,
-            color: 'var(--kreide)',
-            letterSpacing: '0.06em',
-            flexShrink: 0,
+            fontSize: 12,
+            border: '1px solid var(--messing)',
+            cursor: onAvatarClick ? 'pointer' : 'default',
+            padding: 0,
+            outline: 'none',
           }}
         >
           {avatarInitials}

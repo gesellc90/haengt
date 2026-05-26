@@ -3,30 +3,33 @@ import { render, screen } from '@testing-library/react';
 import TallyStrokes from '../../src/components/TallyStrokes';
 
 describe('TallyStrokes', () => {
-  it('zeigt Gedankenstrich bei count=0', () => {
-    render(<TallyStrokes count={0} />);
-    expect(screen.getByText('—')).toBeDefined();
+  it('rendert einen Bindestrich bei count <= 0', () => {
+    const { container } = render(<TallyStrokes count={0} />);
+    expect(container.textContent).toBe('—');
   });
 
-  it('zeigt ein SVG-Element bei count=3', () => {
-    const { container } = render(<TallyStrokes count={3} />);
+  it('rendert ein vollständiges SVG bei count=5 (4 Linien + Diagonale)', () => {
+    const { container } = render(<TallyStrokes count={5} />);
     const svgs = container.querySelectorAll('svg');
     expect(svgs.length).toBe(1);
+    const lines = svgs[0]!.querySelectorAll('line');
+    // 4 senkrechte + 1 diagonale = 5
+    expect(lines.length).toBe(5);
   });
 
-  it('zeigt zwei Gruppen bei count=7 (5+2)', () => {
+  it('rendert zwei SVG-Gruppen bei count=7 (5 + 2)', () => {
     const { container } = render(<TallyStrokes count={7} />);
     const svgs = container.querySelectorAll('svg');
     expect(svgs.length).toBe(2);
   });
 
-  it('hat role="img" mit aria-label', () => {
-    render(<TallyStrokes count={5} label="5 Striche heute" />);
-    expect(screen.getByRole('img', { name: '5 Striche heute' })).toBeDefined();
+  it('aria-label enthält die Anzahl der Striche', () => {
+    render(<TallyStrokes count={13} />);
+    expect(screen.getByRole('img', { name: /13 Striche/ })).toBeDefined();
   });
 
-  it('verwendet Standard-aria-label wenn kein label prop', () => {
-    render(<TallyStrokes count={3} />);
-    expect(screen.getByRole('img', { name: '3 Striche' })).toBeDefined();
+  it('übernimmt ein benutzerdefiniertes label', () => {
+    render(<TallyStrokes count={3} label="drei Bier" />);
+    expect(screen.getByRole('img', { name: 'drei Bier' })).toBeDefined();
   });
 });

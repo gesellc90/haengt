@@ -4,40 +4,36 @@ import userEvent from '@testing-library/user-event';
 import Stepper from '../../src/components/Stepper';
 
 describe('Stepper', () => {
-  it('zeigt den Anfangswert', () => {
+  it('rendert den Initialwert', () => {
     render(<Stepper value={3} onChange={() => {}} />);
     expect(screen.getByText('3')).toBeDefined();
   });
 
-  it('ruft onChange mit erhöhtem Wert auf', async () => {
+  it('Klick auf + ruft onChange mit value+1 auf', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<Stepper value={2} onChange={onChange} />);
-    await user.click(screen.getByLabelText('Erhöhen'));
+    await user.click(screen.getByRole('button', { name: 'Mehr' }));
     expect(onChange).toHaveBeenCalledWith(3);
   });
 
-  it('ruft onChange mit verringertem Wert auf', async () => {
+  it('Klick auf − ruft onChange mit value-1 auf', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<Stepper value={2} onChange={onChange} min={0} />);
-    await user.click(screen.getByLabelText('Verringern'));
-    expect(onChange).toHaveBeenCalledWith(1);
+    render(<Stepper value={5} onChange={onChange} />);
+    await user.click(screen.getByRole('button', { name: 'Weniger' }));
+    expect(onChange).toHaveBeenCalledWith(4);
   });
 
-  it('Minus-Button disabled wenn value === min', async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(<Stepper value={0} onChange={onChange} min={0} />);
-    await user.click(screen.getByLabelText('Verringern'));
-    expect(onChange).not.toHaveBeenCalled();
+  it('− ist disabled bei value=min', () => {
+    render(<Stepper value={0} onChange={() => {}} min={0} />);
+    const minusBtn = screen.getByRole('button', { name: 'Weniger' });
+    expect(minusBtn.hasAttribute('disabled')).toBe(true);
   });
 
-  it('Plus-Button disabled wenn value === max', async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(<Stepper value={10} onChange={onChange} max={10} />);
-    await user.click(screen.getByLabelText('Erhöhen'));
-    expect(onChange).not.toHaveBeenCalled();
+  it('+ ist disabled bei value=max', () => {
+    render(<Stepper value={99} onChange={() => {}} max={99} />);
+    const plusBtn = screen.getByRole('button', { name: 'Mehr' });
+    expect(plusBtn.hasAttribute('disabled')).toBe(true);
   });
 });

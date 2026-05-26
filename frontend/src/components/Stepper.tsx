@@ -2,96 +2,96 @@ import { useState } from 'react';
 
 interface StepperProps {
   value: number;
-  onChange: (value: number) => void;
   min?: number;
   max?: number;
-  step?: number;
+  onChange: (v: number) => void;
+  label?: string;
 }
 
-export default function Stepper({ value, onChange, min = 0, max = 99, step = 1 }: StepperProps) {
-  const [pressedMinus, setPressedMinus] = useState(false);
-  const [pressedPlus, setPressedPlus] = useState(false);
-
-  const canDecrement = value - step >= min;
-  const canIncrement = value + step <= max;
-
-  const btnBase: React.CSSProperties = {
-    width: 44,
-    height: 44,
-    border: 'none',
-    borderRadius: 'var(--r-2)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontFamily: 'var(--font-sans)',
-    fontSize: 22,
-    fontWeight: 400,
-    color: 'var(--kreide)',
-    cursor: 'pointer',
-    flexShrink: 0,
-    transition: 'transform 80ms, background 100ms',
-    lineHeight: 1,
-  };
+export default function Stepper({ value, min = 0, max = 99, onChange, label }: StepperProps) {
+  const [minusActive, setMinusActive] = useState(false);
+  const [plusActive, setPlusActive] = useState(false);
 
   return (
     <div
+      role="group"
+      aria-label={label}
       style={{
-        display: 'inline-flex',
+        display: 'flex',
         alignItems: 'center',
-        gap: 0,
+        gap: 14,
+        justifyContent: 'center',
         background: 'var(--bg-card)',
-        borderRadius: 'var(--r-pill)',
         border: '1px solid var(--line)',
-        padding: 2,
-        boxShadow: 'var(--sh-1)',
+        borderRadius: 'var(--r-pill)',
+        padding: '6px 10px',
       }}
     >
-      {/* Minus */}
       <button
-        aria-label="Verringern"
-        disabled={!canDecrement}
-        onClick={() => canDecrement && onChange(value - step)}
-        onMouseDown={() => setPressedMinus(true)}
-        onMouseUp={() => setPressedMinus(false)}
-        onMouseLeave={() => setPressedMinus(false)}
+        aria-label="Weniger"
+        onClick={() => onChange(Math.max(min, value - 1))}
+        disabled={value <= min}
+        onMouseDown={() => setMinusActive(true)}
+        onMouseUp={() => setMinusActive(false)}
+        onMouseLeave={() => setMinusActive(false)}
         style={{
-          ...btnBase,
-          background: canDecrement ? 'var(--korps-rot)' : 'var(--tinte-4)',
-          transform: pressedMinus ? 'scale(0.92)' : 'scale(1)',
-          cursor: canDecrement ? 'pointer' : 'not-allowed',
+          width: 44,
+          height: 44,
+          borderRadius: '50%',
+          border: 'none',
+          background: value <= min ? 'var(--tinte-4)' : 'var(--korps-rot)',
+          color: 'var(--kreide)',
+          fontSize: 20,
+          fontWeight: 900,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: value <= min ? 'not-allowed' : 'pointer',
+          transition: `transform 120ms var(--ease-stempel)`,
+          transform: minusActive && value > min ? 'scale(.92)' : 'none',
+          flexShrink: 0,
         }}
       >
         −
       </button>
 
-      {/* Wert */}
       <span
         style={{
-          minWidth: 40,
-          textAlign: 'center',
-          fontFamily: 'var(--font-ui)',
-          fontSize: 18,
+          fontFamily: 'var(--font-display)',
           fontWeight: 700,
-          color: 'var(--fg)',
-          userSelect: 'none',
+          fontSize: 32,
+          color: 'var(--tinte)',
+          minWidth: 50,
+          textAlign: 'center',
+          fontVariantNumeric: 'tabular-nums',
         }}
       >
         {value}
       </span>
 
-      {/* Plus */}
       <button
-        aria-label="Erhöhen"
-        disabled={!canIncrement}
-        onClick={() => canIncrement && onChange(value + step)}
-        onMouseDown={() => setPressedPlus(true)}
-        onMouseUp={() => setPressedPlus(false)}
-        onMouseLeave={() => setPressedPlus(false)}
+        aria-label="Mehr"
+        onClick={() => onChange(Math.min(max, value + 1))}
+        disabled={value >= max}
+        onMouseDown={() => setPlusActive(true)}
+        onMouseUp={() => setPlusActive(false)}
+        onMouseLeave={() => setPlusActive(false)}
         style={{
-          ...btnBase,
-          background: canIncrement ? 'var(--korps-rot)' : 'var(--tinte-4)',
-          transform: pressedPlus ? 'scale(0.92)' : 'scale(1)',
-          cursor: canIncrement ? 'pointer' : 'not-allowed',
+          width: 44,
+          height: 44,
+          borderRadius: '50%',
+          border: 'none',
+          background: value >= max ? 'var(--tinte-4)' : 'var(--korps-rot)',
+          color: 'var(--kreide)',
+          fontSize: 20,
+          fontWeight: 900,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: value >= max ? 'not-allowed' : 'pointer',
+          transition: `transform 120ms var(--ease-stempel)`,
+          transform: plusActive && value < max ? 'scale(.92)' : 'none',
+          flexShrink: 0,
         }}
       >
         +

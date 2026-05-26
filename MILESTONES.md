@@ -202,13 +202,12 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 #### Komponenten (nach Design-Prototyp)
 
-- [x] **`WordmarkHeader`** — Eiche-Holz-Streifen (`--eiche`), Wortmarke in Cinzel links, Avatar-Button rechts; sticky, `box-shadow`
-- [x] **`SaldoCard`** — Große Saldo-Anzeige, Hintergrund `--bg-card` (`#fbf3df`), 3px Korps-Rot-Linie oben, `--sh-2`
-- [x] **`SortenButton`** (Tally-Kachel) — Stempelartige Kachel je Getränkesorte; Hover/Press-Animation `scale(.97)`, Spinner-State
-- [x] **`StrichRow`** — Listenzeile Aktiver + `TallyStrokes` + Saldo, 1px `--line`-Trenner, rollenabhängiger Avatar
-- [x] **`Stepper`** (−/+ Mengen-Stepper) — Pill-Form, Korps-Rot-Buttons, `scale(.92)` Press, Disabled bei min/max
-- [x] **`TabBar`** — Standalone-Komponente, Icons via lucide-react, aktiver Tab in `--messing`; Desktop-Nav + Mobile-Bottom-Nav direkt in `Layout`
-- [x] **`TallyStrokes`** — SVG-Strichbild in 5er-Gruppen (4 senkrecht + 1 diagonal), skalierbar, Screen-Reader-Label
+- [x] **`WordmarkHeader`** — Eiche-Holz-Streifen (`--eiche`), Wortmarke in Cormorant Garamond links, Aktiver-Kürzel rechts; sticky top-0
+- [x] **`SaldoCard`** — Große Saldo-Anzeige, Hintergrund `--bg-card` (`#fbf3df`), 3px Korps-Rot-Topstreifen, `--sh-2`
+- [x] **`SortenButton`** (Tally-Kachel) — Stempelartige Kachel je Getränkesorte; Press-Animation `scale(.985)` 150ms `--ease-stempel`; Loading-State via Spinner
+- [x] **`StrichRow`** — Listenzeile Aktiver + TallyStrokes-SVG + Saldo, 1px `--line`-Trenner
+- [x] **`Stepper`** (−/+ Mengen-Stepper) — Pill-Shape, Korps-Rot-Buttons, scale(.92) bei Press
+- [x] **`TabBar`** — Bottom-Nav Mobile, Icons via Lucide (22px, `currentColor`), aktiver Tab in `--messing`
 - [x] Bestehende generische Komponenten (`Toast`, `Spinner`, `Layout`) auf Marken-Tokens umstellen
 
 #### Screens & UX-Text

@@ -4,25 +4,29 @@ import userEvent from '@testing-library/user-event';
 import TabBar from '../../src/components/TabBar';
 
 describe('TabBar', () => {
-  it('rendert alle 4 Tabs', () => {
+  it('rendert ohne Fehler', () => {
     render(<TabBar active="stube" onChange={() => {}} />);
-    expect(screen.getByLabelText('Stube')).toBeDefined();
-    expect(screen.getByLabelText('Strich')).toBeDefined();
-    expect(screen.getByLabelText('Liste')).toBeDefined();
-    expect(screen.getByLabelText('Buch')).toBeDefined();
+  });
+
+  it('zeigt alle vier Tab-Labels', () => {
+    render(<TabBar active="stube" onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Stube' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Strich' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Liste' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Buch' })).toBeDefined();
   });
 
   it('aktiver Tab hat aria-current="page"', () => {
     render(<TabBar active="strich" onChange={() => {}} />);
-    expect(screen.getByLabelText('Strich').getAttribute('aria-current')).toBe('page');
-    expect(screen.getByLabelText('Stube').getAttribute('aria-current')).toBeNull();
+    const activeBtn = screen.getByRole('button', { name: 'Strich' });
+    expect(activeBtn.getAttribute('aria-current')).toBe('page');
   });
 
-  it('ruft onChange auf wenn ein Tab geklickt wird', async () => {
+  it('onChange wird beim Klick aufgerufen', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<TabBar active="stube" onChange={onChange} />);
-    await user.click(screen.getByLabelText('Liste'));
+    await user.click(screen.getByRole('button', { name: 'Liste' }));
     expect(onChange).toHaveBeenCalledWith('liste');
   });
 });

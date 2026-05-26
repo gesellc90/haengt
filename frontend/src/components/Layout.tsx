@@ -8,108 +8,8 @@ import WordmarkHeader from './WordmarkHeader.js';
 // Desktop-Nav-Stil
 // ---------------------------------------------------------------------------
 
-function navStyle(isActive: boolean): React.CSSProperties {
-  return {
-    display: 'flex',
-    alignItems: 'center',
-    minHeight: 44,
-    padding: '6px 14px',
-    fontFamily: 'var(--font-sans)',
-    fontSize: 13,
-    fontWeight: 600,
-    letterSpacing: '0.04em',
-    textDecoration: 'none',
-    borderBottom: isActive ? '2px solid var(--korps-rot)' : '2px solid transparent',
-    color: isActive ? 'var(--korps-rot)' : 'var(--tinte-3)',
-    transition: 'color 120ms, border-color 120ms',
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Bottom-TabBar Icons (inline SVG, kein externer Import)
-// ---------------------------------------------------------------------------
-
-function IconStube() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M3 3h18v4a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V3Z" />
-      <path d="M8 11v8" />
-      <path d="M16 11v8" />
-      <path d="M5 19h14" />
-    </svg>
-  );
-}
-function IconBuch() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-    </svg>
-  );
-}
-function IconVerwaltung() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <circle cx="12" cy="8" r="4" />
-      <path d="M20 21a8 8 0 1 0-16 0" />
-      <circle cx="19" cy="19" r="3" />
-      <path d="M19 17v2M19 21v.01" />
-    </svg>
-  );
-}
-
-function tabStyle(isActive: boolean): React.CSSProperties {
-  return {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-    flex: 1,
-    minHeight: 56,
-    padding: '6px 4px',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: isActive ? 'var(--korps-rot)' : 'var(--tinte-4)',
-    fontFamily: 'var(--font-sans)',
-    fontSize: 10,
-    fontWeight: isActive ? 700 : 500,
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase' as const,
-    textDecoration: 'none',
-    transition: 'color 120ms',
-  };
+function navClass({ isActive }: { isActive: boolean }) {
+  return isActive ? '' : '';
 }
 
 // ---------------------------------------------------------------------------
@@ -130,108 +30,170 @@ export default function Layout() {
     }
   }
 
-  const avatarInitials = member?.display_name
+  const initials = member?.display_name
     ? member.display_name
         .split(' ')
         .map((w) => w[0])
         .join('')
         .toUpperCase()
         .slice(0, 2)
-    : undefined;
+    : '??';
 
   return (
     <div
       style={{
         display: 'flex',
-        minHeight: '100dvh',
+        minHeight: '100vh',
         flexDirection: 'column',
         background: 'var(--bg)',
       }}
     >
       {/* ------------------------------------------------------------------ */}
-      {/* WordmarkHeader                                                       */}
+      {/* Header                                                              */}
       {/* ------------------------------------------------------------------ */}
-      <WordmarkHeader avatarInitials={avatarInitials} onAvatarClick={() => navigate('/profil')} />
+      <WordmarkHeader avatarInitials={initials} onAvatarClick={() => void navigate('/profil')} />
 
       {/* ------------------------------------------------------------------ */}
-      {/* Navigation                                                           */}
+      {/* Desktop-Navigation                                                  */}
       {/* ------------------------------------------------------------------ */}
-      {/* ------------------------------------------------------------------ */}
-      {/* Desktop-Nav (ab sm sichtbar)                                        */}
-      {/* ------------------------------------------------------------------ */}
-      <nav
-        className="hidden sm:flex"
-        aria-label="Hauptnavigation"
+      <div
         style={{
-          background: 'var(--bg-card)',
           borderBottom: '1px solid var(--line)',
-          padding: '0 16px',
-          display: 'flex',
-          alignItems: 'stretch',
-          gap: 0,
+          background: 'var(--bg-card)',
         }}
       >
-        <NavLink to="/buchen" style={({ isActive }) => navStyle(isActive)}>
-          Stube
-        </NavLink>
-        <NavLink to="/profil" style={({ isActive }) => navStyle(isActive)}>
-          Mein Buch
-        </NavLink>
-        {isAdmin && (
-          <NavLink to="/admin" style={({ isActive }) => navStyle(isActive)}>
-            Verwaltung
-          </NavLink>
-        )}
-
-        <div style={{ flex: 1 }} />
-
-        <span
+        <div
           style={{
+            maxWidth: 960,
+            margin: '0 auto',
             display: 'flex',
             alignItems: 'center',
-            fontSize: 12,
-            color: 'var(--tinte-3)',
-            fontFamily: 'var(--font-sans)',
-            whiteSpace: 'nowrap',
-            paddingRight: 8,
+            justifyContent: 'space-between',
+            padding: '0 16px',
           }}
         >
-          {member?.display_name}
-        </span>
-        <button
-          onClick={() => void handleLogout()}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            minHeight: 44,
-            padding: '6px 12px',
-            background: 'transparent',
-            border: 'none',
-            fontFamily: 'var(--font-sans)',
-            fontSize: 13,
-            fontWeight: 500,
-            color: 'var(--tinte-4)',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-            borderBottom: '2px solid transparent',
-            letterSpacing: '0.02em',
-          }}
-        >
-          Abmelden
-        </button>
-      </nav>
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <NavLink
+              to="/buchen"
+              className={navClass}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                minHeight: 44,
+                borderRadius: 'var(--r-2)',
+                padding: '8px 12px',
+                fontSize: 14,
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'background 150ms',
+                background: isActive ? 'var(--korps-rot)' : 'transparent',
+                color: isActive ? 'var(--kreide)' : 'var(--fg-2)',
+              })}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget;
+                if (!el.dataset['active']) el.style.background = 'var(--bg-2)';
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget;
+                if (!el.dataset['active']) el.style.background = 'transparent';
+              }}
+            >
+              Buchen
+            </NavLink>
+            <NavLink
+              to="/profil"
+              className={navClass}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                minHeight: 44,
+                borderRadius: 'var(--r-2)',
+                padding: '8px 12px',
+                fontSize: 14,
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'background 150ms',
+                background: isActive ? 'var(--korps-rot)' : 'transparent',
+                color: isActive ? 'var(--kreide)' : 'var(--fg-2)',
+              })}
+            >
+              Profil
+            </NavLink>
+            {isAdmin && (
+              <NavLink
+                to="/admin"
+                className={navClass}
+                style={({ isActive }) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  minHeight: 44,
+                  borderRadius: 'var(--r-2)',
+                  padding: '8px 12px',
+                  fontSize: 14,
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  transition: 'background 150ms',
+                  background: isActive ? 'var(--korps-rot)' : 'transparent',
+                  color: isActive ? 'var(--kreide)' : 'var(--fg-2)',
+                })}
+              >
+                Admin
+              </NavLink>
+            )}
+          </nav>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span
+              style={{
+                display: 'none',
+                fontSize: 12,
+                color: 'var(--fg-3)',
+              }}
+              className="sm:block"
+            >
+              {member?.display_name}
+            </span>
+            <button
+              onClick={() => void handleLogout()}
+              style={{
+                minHeight: 44,
+                borderRadius: 'var(--r-2)',
+                padding: '8px 12px',
+                fontSize: 14,
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 500,
+                color: 'var(--fg-3)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background 150ms',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--bg-2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              Abmelden
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* ------------------------------------------------------------------ */}
       {/* Hauptinhalt                                                         */}
       {/* ------------------------------------------------------------------ */}
       <main
         style={{
-          flex: 1,
-          width: '100%',
-          maxWidth: 768,
+          maxWidth: 960,
           margin: '0 auto',
-          padding: '20px 16px 88px', // 88px Puffer für Bottom-TabBar auf Mobile
-          boxSizing: 'border-box',
+          width: '100%',
+          flex: 1,
+          padding: '24px 16px',
         }}
       >
         <Outlet />

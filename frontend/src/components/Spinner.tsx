@@ -1,5 +1,5 @@
 interface SpinnerProps {
-  /** Größe der Spinner-Fläche in Tailwind-Klassen (z. B. 'h-6 w-6') */
+  /** Größe der Spinner-Fläche als Tailwind-Klassen (z. B. 'h-6 w-6') */
   size?: string;
   label?: string;
 }
@@ -8,7 +8,8 @@ export default function Spinner({ size = 'h-6 w-6', label = 'Lädt…' }: Spinne
   return (
     <span role="status" aria-label={label} className="inline-block">
       <svg
-        className={`animate-spin ${size} text-current`}
+        className={`animate-spin ${size}`}
+        style={{ color: 'var(--korps-rot)' }}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"

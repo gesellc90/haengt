@@ -1,8 +1,16 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Beer, BookOpen, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.js';
 import { useToast } from '../contexts/ToastContext.js';
 import ToastContainer from './Toast.js';
 import WordmarkHeader from './WordmarkHeader.js';
+
+// ---------------------------------------------------------------------------
+// Nav-Icons (Lucide-Aliase für semantische Namen)
+// ---------------------------------------------------------------------------
+const IconStube = () => <Beer size={20} aria-hidden />;
+const IconBuch = () => <BookOpen size={20} aria-hidden />;
+const IconVerwaltung = () => <Settings size={20} aria-hidden />;
 
 // ---------------------------------------------------------------------------
 // Desktop-Nav-Stil

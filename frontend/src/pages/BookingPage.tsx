@@ -275,8 +275,7 @@ export default function BookingPage() {
       {!isLoadingBookings && (
         <SaldoCard
           balanceCents={todayTotal}
-          isPaid={todayTotal === 0}
-          todayCount={todayBookings.length}
+          stricheHeute={todayBookings.length}
         />
       )}
 

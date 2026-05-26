@@ -1,3 +1,4 @@
+import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Beer, BookOpen, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.js';
@@ -18,6 +19,27 @@ const IconVerwaltung = () => <Settings size={20} aria-hidden />;
 
 function navClass({ isActive }: { isActive: boolean }) {
   return isActive ? '' : '';
+}
+
+// ---------------------------------------------------------------------------
+// Mobile-Tab-Stil
+// ---------------------------------------------------------------------------
+
+function tabStyle(isActive: boolean): React.CSSProperties {
+  return {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    padding: '8px 4px',
+    fontSize: 11,
+    fontWeight: isActive ? 600 : 400,
+    color: isActive ? 'var(--tinte)' : 'var(--fg-3)',
+    textDecoration: 'none',
+    transition: 'color 0.15s',
+  };
 }
 
 // ---------------------------------------------------------------------------

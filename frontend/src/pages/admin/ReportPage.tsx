@@ -50,7 +50,7 @@ const selectStyle: React.CSSProperties = {
   color: 'var(--tinte)',
   fontFamily: 'var(--font-sans)',
   fontSize: 14,
-  outline: 'none',
+  /* outline via globales :focus-visible (korps-rot) */
 };
 
 const labelStyle: React.CSSProperties = {

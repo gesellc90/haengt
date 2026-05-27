@@ -38,30 +38,48 @@ export default function WordmarkHeader({ avatarInitials, onAvatarClick }: Wordma
         Hängt<span style={{ color: 'var(--messing)' }}>!</span>
       </span>
 
-      {/* Avatar-Kreis */}
+      {/* Avatar-Kreis — 44×44px Touch-Target, visuell 32px */}
       {avatarInitials && (
         <button
           onClick={onAvatarClick}
           aria-label="Profil öffnen"
           style={{
-            width: 32,
-            height: 32,
+            /* Touch-Target: mindestens 44×44px (WCAG 2.5.8) */
+            width: 44,
+            height: 44,
             borderRadius: '50%',
-            background: 'var(--korps-rot)',
-            color: 'var(--kreide)',
+            background: 'transparent',
+            border: 'none',
+            cursor: onAvatarClick ? 'pointer' : 'default',
+            padding: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontFamily: 'var(--font-display)',
-            fontWeight: 700,
-            fontSize: 12,
-            border: '1px solid var(--messing)',
-            cursor: onAvatarClick ? 'pointer' : 'default',
-            padding: 0,
-            outline: 'none',
+            /* Kein outline: none — globales :focus-visible greift */
           }}
         >
-          {avatarInitials}
+          {/* Visueller Kreis (32px) innerhalb des größeren Hit-Bereichs */}
+          <span
+            aria-hidden="true"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: 'var(--korps-rot)',
+              color: 'var(--kreide)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: 12,
+              border: '1px solid var(--messing)',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          >
+            {avatarInitials}
+          </span>
         </button>
       )}
     </header>

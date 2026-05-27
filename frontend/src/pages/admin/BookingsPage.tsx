@@ -34,7 +34,7 @@ const inputStyle: React.CSSProperties = {
   color: 'var(--tinte)',
   fontFamily: 'var(--font-sans)',
   fontSize: 13,
-  outline: 'none',
+  /* outline via globales :focus-visible (korps-rot) */
 };
 
 const labelStyle: React.CSSProperties = {

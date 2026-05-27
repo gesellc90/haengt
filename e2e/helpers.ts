@@ -20,8 +20,8 @@ export const TEST_PASSWORDS = Object.freeze({
  */
 export async function loginViaUi(page: Page, username: string, password: string): Promise<void> {
   await page.goto('/login');
-  await page.getByLabel('Benutzername').fill(username);
-  await page.getByLabel('Passwort').fill(password);
+  await page.getByLabel('Kürzel').fill(username);
+  await page.getByLabel('Losungswort').fill(password);
   await page.getByRole('button', { name: /anmelden|einloggen|login/i }).click();
 }
 

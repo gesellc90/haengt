@@ -212,11 +212,11 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 #### Screens & UX-Text
 
-- [ ] **Login-Screen** — Sigel-Logo mittig, Cerevis-Name/Verbindung-Label statt „Username", Button-Text „Einloggen", kein „Welcome back 👋"
-- [ ] **Buchungsseite (Stube)** — Layout nach `ui_kits/app/index.html`: Saldo oben, Sorten-Kacheln darunter, History-Liste
-- [ ] **Profilseite (Mein Buch)** — Verlauf + Monatsabschluss, Typografie in Cormorant Garamond für Zitate/Summenzeilen
-- [ ] **Admin-Bereich** — Tabellen mit Hairline-Trennern (`--line`), keine Bootstrap-artigen Grau-Hintergründe, Eyebrow-Section-Titles mit 2px Korps-Rot-Linie darunter
-- [ ] UX-Texte komplett nach Hängt!-Tonalität überarbeiten (kein Englisch-Deutsch-Mix, kein Emoji, „Du"-Ansprache, Verbindungsvokabular — Beispiele in `project/README.md` § „Konkrete Beispiele")
+- [x] **Login-Screen** — Sigel-Logo mittig, Cerevis-Name/Verbindung-Label statt „Username", Button-Text „Einloggen", kein „Welcome back 👋"
+- [x] **Buchungsseite (Stube)** — Layout nach `ui_kits/app/index.html`: Saldo oben, Sorten-Kacheln darunter, History-Liste
+- [x] **Profilseite (Mein Buch)** — Verlauf + Monatsabschluss, Typografie in Cormorant Garamond für Zitate/Summenzeilen
+- [x] **Admin-Bereich** — Tabellen mit Hairline-Trennern (`--line`), keine Bootstrap-artigen Grau-Hintergründe, Eyebrow-Section-Titles mit 2px Korps-Rot-Linie darunter
+- [x] UX-Texte komplett nach Hängt!-Tonalität überarbeiten (kein Englisch-Deutsch-Mix, kein Emoji, „Du"-Ansprache, Verbindungsvokabular — Beispiele in `project/README.md` § „Konkrete Beispiele")
 
 #### Qualitätssicherung
 

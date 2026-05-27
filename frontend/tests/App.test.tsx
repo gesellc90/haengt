@@ -29,10 +29,10 @@ describe('App — Routing-Grundverhalten', () => {
       </MemoryRouter>,
     );
 
-    // Login-Seite zeigt den App-Titel und das Anmelden-Heading
-    const appTitle = await screen.findByRole('heading', { name: /Hängt!/i });
+    // Login-Seite zeigt den App-Titel und das Einloggen-Heading
+    const appTitle = await screen.findByRole('heading', { name: /Hängt\s*!/i });
     expect(appTitle).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Anmelden/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Einloggen/i })).toBeInTheDocument();
   });
 
   it('zeigt die Login-Seite direkt auf /login', async () => {
@@ -42,7 +42,7 @@ describe('App — Routing-Grundverhalten', () => {
       </MemoryRouter>,
     );
 
-    const loginHeading = await screen.findByRole('heading', { name: /Anmelden/i });
+    const loginHeading = await screen.findByRole('heading', { name: /Einloggen/i });
     expect(loginHeading).toBeInTheDocument();
   });
 });

@@ -15,7 +15,7 @@ test.describe('Storno (5-Minuten-Fenster)', () => {
     await expect(colaItem).toBeVisible();
 
     // Innerhalb der Buchungs-Karte den Storno-Button anklicken.
-    await colaItem.getByRole('button', { name: 'Buchung stornieren' }).click();
+    await colaItem.getByRole('button', { name: 'Strich stornieren' }).click();
 
     // Nach erfolgreichem Storno erscheint typischerweise „storniert" oder
     // der Eintrag verschwindet aus der „aktiv"-Liste. Wir prüfen beide Pfade.

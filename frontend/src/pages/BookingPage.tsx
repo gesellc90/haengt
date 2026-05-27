@@ -4,6 +4,8 @@ import { drinksApi } from '../api/drinks.js';
 import { ApiError } from '../api/client.js';
 import { useToast } from '../contexts/ToastContext.js';
 import Spinner from '../components/Spinner.js';
+import SaldoCard from '../components/SaldoCard.js';
+import SortenButton from '../components/SortenButton.js';
 import type { BookingRow, DrinkWithCurrentPrice } from '../types/api.js';
 
 // ---------------------------------------------------------------------------
@@ -26,57 +28,116 @@ function isVoidable(booking: BookingRow): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Buchungshistorie der letzten 24h
+// Strich-Historie
 // ---------------------------------------------------------------------------
 
-interface BookingHistoryProps {
+interface StrichHistoryProps {
   bookings: BookingRow[];
   drinks: DrinkWithCurrentPrice[];
   onVoid(bookingId: number): void;
   voidingId: number | null;
 }
 
-function BookingHistory({ bookings, drinks, onVoid, voidingId }: BookingHistoryProps) {
+function StrichHistory({ bookings, drinks, onVoid, voidingId }: StrichHistoryProps) {
   const drinkMap = new Map(drinks.map((d) => [d.id, d]));
   const cutoff = Date.now() - 24 * 60 * 60 * 1000;
   const recent = bookings.filter((b) => new Date(b.booked_at).getTime() > cutoff);
 
   if (recent.length === 0) {
-    return <p className="py-6 text-center text-sm text-slate-400">Noch keine Buchungen heute.</p>;
+    return (
+      <p
+        style={{
+          padding: '24px 0',
+          textAlign: 'center',
+          fontFamily: 'var(--font-serif)',
+          fontStyle: 'italic',
+          fontSize: 15,
+          color: 'var(--tinte-4)',
+        }}
+      >
+        Heute noch keine Striche gesetzt.
+      </p>
+    );
   }
 
   return (
-    <ul className="divide-y divide-slate-100 dark:divide-slate-700">
-      {recent.map((b) => {
+    <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+      {recent.map((b, i) => {
         const drink = drinkMap.get(b.drink_id);
         const voided = b.voided_at !== null;
         return (
           <li
             key={b.id}
-            className={`flex items-center justify-between gap-3 py-3 ${voided ? 'opacity-40' : ''}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '12px 0',
+              borderTop: i > 0 ? '1px solid var(--line)' : 'none',
+              opacity: voided ? 0.45 : 1,
+            }}
           >
-            <div className="min-w-0 flex-1">
+            <div style={{ flex: 1, minWidth: 0 }}>
               <p
-                className={`text-sm font-medium ${voided ? 'line-through' : ''} text-slate-800 dark:text-slate-200`}
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: 'var(--tinte)',
+                  margin: 0,
+                  textDecoration: voided ? 'line-through' : 'none',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
               >
                 {drink?.name ?? `Getränk #${b.drink_id}`}
               </p>
-              <p className="text-xs text-slate-400">
+              <p
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 12,
+                  color: 'var(--tinte-4)',
+                  margin: '2px 0 0',
+                }}
+              >
                 {formatTime(b.booked_at)}
                 {voided && ' · storniert'}
               </p>
             </div>
-            <span className="shrink-0 text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <span
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontSize: 14,
+                fontWeight: 600,
+                color: 'var(--tinte-2)',
+                flexShrink: 0,
+              }}
+            >
               {formatCents(b.price_cents_snapshot)}
             </span>
             {!voided && isVoidable(b) && (
               <button
                 onClick={() => onVoid(b.id)}
                 disabled={voidingId === b.id}
-                aria-label="Buchung stornieren"
-                className="min-h-touch shrink-0 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30"
+                aria-label="Strich stornieren"
+                style={{
+                  minHeight: 36,
+                  flexShrink: 0,
+                  padding: '4px 12px',
+                  borderRadius: 'var(--r-2)',
+                  border: '1px solid var(--korps-rot)',
+                  background: 'transparent',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: 'var(--korps-rot)',
+                  cursor: voidingId === b.id ? 'not-allowed' : 'pointer',
+                  opacity: voidingId === b.id ? 0.5 : 1,
+                  letterSpacing: '0.03em',
+                }}
               >
-                {voidingId === b.id ? <Spinner size="h-3 w-3" /> : 'Storno'}
+                {voidingId === b.id ? <Spinner size="h-3 w-3" /> : 'Stornieren'}
               </button>
             )}
           </li>
@@ -87,7 +148,32 @@ function BookingHistory({ bookings, drinks, onVoid, voidingId }: BookingHistoryP
 }
 
 // ---------------------------------------------------------------------------
-// Haupt-Komponente
+// Abschnitts-Titel (Eyebrow-Stil)
+// ---------------------------------------------------------------------------
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h2
+      style={{
+        fontFamily: 'var(--font-sans)',
+        fontSize: 11,
+        fontWeight: 700,
+        color: 'var(--tinte-3)',
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+        margin: '0 0 12px',
+        paddingBottom: 6,
+        borderBottom: '2px solid var(--korps-rot)',
+        display: 'inline-block',
+      }}
+    >
+      {children}
+    </h2>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Haupt-Komponente — Stube
 // ---------------------------------------------------------------------------
 
 export default function BookingPage() {
@@ -98,9 +184,7 @@ export default function BookingPage() {
   const [isLoadingDrinks, setIsLoadingDrinks] = useState(true);
   const [isLoadingBookings, setIsLoadingBookings] = useState(true);
 
-  /** ID des Getränks, das gerade gebucht wird (für Loading-State am Button) */
   const [bookingDrinkId, setBookingDrinkId] = useState<number | null>(null);
-  /** ID der Buchung, die gerade storniert wird */
   const [voidingId, setVoidingId] = useState<number | null>(null);
 
   // -- Daten laden ----------------------------------------------------------
@@ -109,7 +193,7 @@ export default function BookingPage() {
     drinksApi
       .getAvailable()
       .then(setDrinks)
-      .catch(() => showToast('Getränke konnten nicht geladen werden.', 'error'))
+      .catch(() => showToast('Getränkeliste konnte nicht geladen werden.', 'error'))
       .finally(() => setIsLoadingDrinks(false));
   }, [showToast]);
 
@@ -117,7 +201,7 @@ export default function BookingPage() {
     bookingsApi
       .getMine(50)
       .then((res) => setBookings(res.items))
-      .catch(() => showToast('Buchungshistorie konnte nicht geladen werden.', 'error'))
+      .catch(() => showToast('Striche konnten nicht geladen werden.', 'error'))
       .finally(() => setIsLoadingBookings(false));
   }, [showToast]);
 
@@ -125,13 +209,12 @@ export default function BookingPage() {
     loadBookings();
   }, [loadBookings]);
 
-  // -- Buchung anlegen ------------------------------------------------------
+  // -- Strich setzen --------------------------------------------------------
 
   async function handleBook(drink: DrinkWithCurrentPrice) {
-    if (bookingDrinkId !== null) return; // Debounce: nur eine Buchung gleichzeitig
+    if (bookingDrinkId !== null) return;
 
-    // Optimistic Update: Platzhalter-Buchung sofort anzeigen
-    const optimisticId = -Date.now(); // negative ID als Platzhalter
+    const optimisticId = -Date.now();
     const optimistic: BookingRow = {
       id: optimisticId,
       member_id: 0,
@@ -146,14 +229,14 @@ export default function BookingPage() {
 
     try {
       const real = await bookingsApi.create(drink.id);
-      // Platzhalter durch echte Buchung ersetzen
       setBookings((prev) => prev.map((b) => (b.id === optimisticId ? real : b)));
-      showToast(`${drink.name} gebucht – ${formatCents(real.price_cents_snapshot)}`, 'success');
+      showToast(`${drink.name} gebucht — ${formatCents(real.price_cents_snapshot)}`, 'success');
     } catch (err) {
-      // Optimistischen Eintrag rückgängig machen
       setBookings((prev) => prev.filter((b) => b.id !== optimisticId));
       const msg =
-        err instanceof ApiError ? err.message : 'Buchung fehlgeschlagen. Bitte versuche es erneut.';
+        err instanceof ApiError
+          ? err.message
+          : 'Strich konnte nicht gesetzt werden. Bitte erneut versuchen.';
       showToast(msg, 'error');
     } finally {
       setBookingDrinkId(null);
@@ -167,7 +250,7 @@ export default function BookingPage() {
     try {
       const updated = await bookingsApi.void(bookingId);
       setBookings((prev) => prev.map((b) => (b.id === bookingId ? updated : b)));
-      showToast('Buchung wurde storniert.', 'success');
+      showToast('Strich wurde storniert.', 'success');
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Stornierung fehlgeschlagen.';
       showToast(msg, 'error');
@@ -178,80 +261,112 @@ export default function BookingPage() {
 
   // -- Tages-Summe ----------------------------------------------------------
 
-  const todayTotal = bookings
-    .filter(
-      (b) =>
-        b.voided_at === null && new Date(b.booked_at).getTime() > Date.now() - 24 * 60 * 60 * 1000,
-    )
-    .reduce((sum, b) => sum + b.price_cents_snapshot, 0);
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const todayBookings = bookings.filter(
+    (b) => b.voided_at === null && new Date(b.booked_at).getTime() > cutoff,
+  );
+  const todayTotal = todayBookings.reduce((sum, b) => sum + b.price_cents_snapshot, 0);
 
   // -------------------------------------------------------------------------
 
   return (
-    <div className="space-y-8">
-      {/* Getränke-Buttons */}
-      <section aria-labelledby="drinks-heading">
-        <h2 id="drinks-heading" className="mb-4 text-lg font-bold text-slate-800 dark:text-white">
-          Getränk buchen
-        </h2>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Saldo-Karte */}
+      {!isLoadingBookings && (
+        <SaldoCard
+          balanceCents={todayTotal}
+          stricheHeute={todayBookings.length}
+        />
+      )}
+
+      {/* Getränke-Kacheln */}
+      <section aria-labelledby="sorten-heading">
+        <SectionTitle>
+          <span id="sorten-heading">Strich setzen</span>
+        </SectionTitle>
 
         {isLoadingDrinks ? (
-          <div className="flex justify-center py-12">
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
             <Spinner size="h-10 w-10" />
           </div>
         ) : drinks.length === 0 ? (
-          <p className="py-12 text-center text-sm text-slate-400">Keine Getränke verfügbar.</p>
+          <p
+            style={{
+              padding: '40px 0',
+              textAlign: 'center',
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
+              fontSize: 15,
+              color: 'var(--tinte-4)',
+            }}
+          >
+            Keine Getränke verfügbar.
+          </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {drinks.map((drink) => {
-              const isBooking = bookingDrinkId === drink.id;
-              return (
-                <button
-                  key={drink.id}
-                  onClick={() => void handleBook(drink)}
-                  disabled={bookingDrinkId !== null}
-                  aria-label={`${drink.name} buchen, ${formatCents(drink.current_price_cents ?? 0)}`}
-                  className="relative flex min-h-[5.5rem] flex-col items-center justify-center gap-1 rounded-2xl border-2 border-blue-100 bg-white px-3 py-4 font-semibold text-slate-800 shadow-sm transition-all hover:border-blue-400 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                >
-                  {isBooking ? (
-                    <Spinner size="h-6 w-6" label={`${drink.name} wird gebucht…`} />
-                  ) : (
-                    <>
-                      <span className="text-base">{drink.name}</span>
-                      {drink.current_price_cents !== null && (
-                        <span className="text-sm font-normal text-blue-600 dark:text-blue-400">
-                          {formatCents(drink.current_price_cents)}
-                        </span>
-                      )}
-                    </>
-                  )}
-                </button>
-              );
-            })}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: 12,
+            }}
+            className="sm:grid-cols-3"
+          >
+            {drinks.map((drink) => (
+              <SortenButton
+                key={drink.id}
+                name={drink.name}
+                priceCents={drink.current_price_cents ?? 0}
+                onClick={() => void handleBook(drink)}
+                disabled={bookingDrinkId !== null}
+                isLoading={bookingDrinkId === drink.id}
+              />
+            ))}
           </div>
         )}
       </section>
 
-      {/* Buchungshistorie */}
+      {/* Strich-Historie */}
       <section aria-labelledby="history-heading">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 id="history-heading" className="text-lg font-bold text-slate-800 dark:text-white">
-            Buchungen heute
-          </h2>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            marginBottom: 12,
+          }}
+        >
+          <SectionTitle>
+            <span id="history-heading">Striche heute</span>
+          </SectionTitle>
           {todayTotal > 0 && (
-            <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-              Gesamt: {formatCents(todayTotal)}
+            <span
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--tinte-3)',
+              }}
+            >
+              {formatCents(todayTotal)}
             </span>
           )}
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            borderRadius: 'var(--r-3)',
+            border: '1px solid var(--line)',
+            padding: '0 16px',
+            boxShadow: 'var(--sh-1)',
+          }}
+        >
           {isLoadingBookings ? (
-            <div className="flex justify-center py-8">
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 0' }}>
               <Spinner size="h-8 w-8" />
             </div>
           ) : (
-            <BookingHistory
+            <StrichHistory
               bookings={bookings}
               drinks={drinks}
               onVoid={(id) => void handleVoid(id)}

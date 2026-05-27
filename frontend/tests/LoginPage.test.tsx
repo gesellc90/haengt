@@ -67,15 +67,15 @@ describe('LoginPage', () => {
   it('rendert Username- und Passwort-Felder', () => {
     renderLogin();
 
-    expect(screen.getByLabelText(/Benutzername/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Passwort/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Anmelden/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Kürzel/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Losungswort/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Einloggen/i })).toBeInTheDocument();
   });
 
   it('Submit-Button ist deaktiviert, solange kein Username eingegeben ist', () => {
     renderLogin();
 
-    expect(screen.getByRole('button', { name: /Anmelden/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Einloggen/i })).toBeDisabled();
   });
 
   it('leitet nach erfolgreichem Login auf /buchen weiter', async () => {
@@ -84,9 +84,9 @@ describe('LoginPage', () => {
     renderLogin();
     const user = userEvent.setup();
 
-    await user.type(screen.getByLabelText(/Benutzername/i), 'max');
-    await user.type(screen.getByLabelText(/Passwort/i), 'geheim123');
-    await user.click(screen.getByRole('button', { name: /Anmelden/i }));
+    await user.type(screen.getByLabelText(/Kürzel/i), 'max');
+    await user.type(screen.getByLabelText(/Losungswort/i), 'geheim123');
+    await user.click(screen.getByRole('button', { name: /Einloggen/i }));
 
     expect(await screen.findByText('Buchungsseite')).toBeInTheDocument();
     expect(mockLogin).toHaveBeenCalledWith('max', 'geheim123');
@@ -98,11 +98,11 @@ describe('LoginPage', () => {
     renderLogin();
     const user = userEvent.setup();
 
-    await user.type(screen.getByLabelText(/Benutzername/i), 'falsch');
-    await user.type(screen.getByLabelText(/Passwort/i), 'falsch');
-    await user.click(screen.getByRole('button', { name: /Anmelden/i }));
+    await user.type(screen.getByLabelText(/Kürzel/i), 'falsch');
+    await user.type(screen.getByLabelText(/Losungswort/i), 'falsch');
+    await user.click(screen.getByRole('button', { name: /Einloggen/i }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/ungültige Zugangsdaten/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Kürzel oder Losungswort nicht korrekt/i);
   });
 
   it('zeigt Fehlermeldung bei Rate-Limit (429)', async () => {
@@ -111,9 +111,9 @@ describe('LoginPage', () => {
     renderLogin();
     const user = userEvent.setup();
 
-    await user.type(screen.getByLabelText(/Benutzername/i), 'max');
-    await user.type(screen.getByLabelText(/Passwort/i), 'geheim123');
-    await user.click(screen.getByRole('button', { name: /Anmelden/i }));
+    await user.type(screen.getByLabelText(/Kürzel/i), 'max');
+    await user.type(screen.getByLabelText(/Losungswort/i), 'geheim123');
+    await user.click(screen.getByRole('button', { name: /Einloggen/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/15 Minuten/i);
   });
@@ -124,9 +124,9 @@ describe('LoginPage', () => {
     renderLogin();
     const user = userEvent.setup();
 
-    await user.type(screen.getByLabelText(/Benutzername/i), '  max  ');
-    await user.type(screen.getByLabelText(/Passwort/i), 'geheim123');
-    await user.click(screen.getByRole('button', { name: /Anmelden/i }));
+    await user.type(screen.getByLabelText(/Kürzel/i), '  max  ');
+    await user.type(screen.getByLabelText(/Losungswort/i), 'geheim123');
+    await user.click(screen.getByRole('button', { name: /Einloggen/i }));
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith('max', 'geheim123');

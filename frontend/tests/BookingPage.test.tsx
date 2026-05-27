@@ -185,7 +185,7 @@ describe('BookingPage', () => {
     renderBookingPage();
     const user = userEvent.setup();
 
-    const stornoBtn = await screen.findByRole('button', { name: /Buchung stornieren/i });
+    const stornoBtn = await screen.findByRole('button', { name: /Strich stornieren/i });
     await user.click(stornoBtn);
 
     expect(mockVoid).toHaveBeenCalledWith(42);

@@ -1,15 +1,45 @@
+import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Beer, BookOpen, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.js';
 import { useToast } from '../contexts/ToastContext.js';
 import ToastContainer from './Toast.js';
 import WordmarkHeader from './WordmarkHeader.js';
 
 // ---------------------------------------------------------------------------
-// NavLink-Hilfsfunktion
+// Nav-Icons (Lucide-Aliase für semantische Namen)
+// ---------------------------------------------------------------------------
+const IconStube = () => <Beer size={20} aria-hidden />;
+const IconBuch = () => <BookOpen size={20} aria-hidden />;
+const IconVerwaltung = () => <Settings size={20} aria-hidden />;
+
+// ---------------------------------------------------------------------------
+// Desktop-Nav-Stil
 // ---------------------------------------------------------------------------
 
 function navClass({ isActive }: { isActive: boolean }) {
   return isActive ? '' : '';
+}
+
+// ---------------------------------------------------------------------------
+// Mobile-Tab-Stil
+// ---------------------------------------------------------------------------
+
+function tabStyle(isActive: boolean): React.CSSProperties {
+  return {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    padding: '8px 4px',
+    fontSize: 11,
+    fontWeight: isActive ? 600 : 400,
+    color: isActive ? 'var(--tinte)' : 'var(--fg-3)',
+    textDecoration: 'none',
+    transition: 'color 0.15s',
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -198,6 +228,40 @@ export default function Layout() {
       >
         <Outlet />
       </main>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Bottom-TabBar (Mobile, bis sm)                                      */}
+      {/* ------------------------------------------------------------------ */}
+      <nav
+        aria-label="Navigation"
+        className="sm:hidden"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          display: 'flex',
+          background: 'var(--bg-card)',
+          borderTop: '1px solid var(--line)',
+          zIndex: 50,
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
+        <NavLink to="/buchen" style={({ isActive }) => tabStyle(isActive)}>
+          <IconStube />
+          Stube
+        </NavLink>
+        <NavLink to="/profil" style={({ isActive }) => tabStyle(isActive)}>
+          <IconBuch />
+          Mein Buch
+        </NavLink>
+        {isAdmin && (
+          <NavLink to="/admin" style={({ isActive }) => tabStyle(isActive)}>
+            <IconVerwaltung />
+            Verwaltung
+          </NavLink>
+        )}
+      </nav>
 
       {/* ------------------------------------------------------------------ */}
       {/* Toasts                                                              */}

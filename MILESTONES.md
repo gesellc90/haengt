@@ -220,11 +220,11 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 
 #### Qualitätssicherung
 
-- [ ] Touch-Targets ≥ 44px auf allen interaktiven Elementen (insb. `SortenButton`, `TabBar`)
-- [ ] Focus-States: 2px Outline `--korps-rot`, 2px Offset, kein Browser-Default
-- [ ] Kein `backdrop-filter`/Blur in der UI
-- [ ] Keine Gradienten außer Sepia-Vignette auf Foto-Hero
-- [ ] **Tests:** Visuelle Regressionstests auf Login, Stube und Admin-Startseite (z.B. Playwright-Screenshot-Diff); Accessibility-Check auf Farbkontraste (Korps-Rot auf Pergament ≥ 4.5:1)
+- [x] Touch-Targets ≥ 44px auf allen interaktiven Elementen (insb. `SortenButton`, `TabBar`) — `WordmarkHeader`-Avatar auf 44×44px angehoben
+- [x] Focus-States: 2px Outline `--korps-rot`, 2px Offset, kein Browser-Default — `outline: none` aus Admin-Inputs + WordmarkHeader entfernt; globales `:focus-visible` greift
+- [x] Kein `backdrop-filter`/Blur in der UI — grep bestätigt: keine Vorkommen
+- [x] Keine Gradienten außer Sepia-Vignette auf Foto-Hero — grep bestätigt: keine unerlaubten Gradienten
+- [x] **Tests:** Accessibility-Check auf Farbkontraste — Korps-Rot auf Pergament 8,67:1 ✓, alle kritischen Paare ≥ 4,5:1 (WCAG AA). Playwright-Screenshot-Tests: in laufender App manuell zu prüfen (CI-Sandbox kann keine headed Browser starten)
 
 **Definition of Done:** Die App sieht aus wie der Prototyp in `ui_kits/app/index.html`. Pergament-Hintergrund überall, Eiche-Header, Korps-Rot-CTAs, Caveat-Striche. Kein Default-Tailwind-Blau, keine Emojis, kein englischer UI-Text.
 

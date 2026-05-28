@@ -1,3 +1,6 @@
+/* ── Google Fonts — Cinzel · Cormorant Garamond · Manrope · Caveat ── */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Manrope:wght@400;500;600;700;800&family=Caveat:wght@500;600;700&display=swap');
+
 @import './styles/tokens.css';
 @tailwind base;
 @tailwind components;
@@ -80,4 +83,18 @@ button {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--tinte-4);
+}
+
+/* ── Strichmacher-Animation ──────────────────────────────────────────────── */
+/* Wird auf den letzten SVG-Strich in TallyStrokes angewendet, wenn ein
+   neuer Strich gesetzt wird. Einmal abspielen, 240ms, wie ein Tintenstrich. */
+
+@keyframes strich-einfahren {
+  from { stroke-dashoffset: 40; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.strich-latest {
+  stroke-dasharray: 40;
+  animation: strich-einfahren 240ms cubic-bezier(.2, .8, .2, 1) both;
 }

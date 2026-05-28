@@ -273,10 +273,7 @@ export default function BookingPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Saldo-Karte */}
       {!isLoadingBookings && (
-        <SaldoCard
-          balanceCents={todayTotal}
-          stricheHeute={todayBookings.length}
-        />
+        <SaldoCard balanceCents={todayTotal} stricheHeute={todayBookings.length} />
       )}
 
       {/* Getränke-Kacheln */}

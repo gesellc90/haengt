@@ -19,8 +19,8 @@ html {
 
 body {
   margin: 0;
-  background-color: var(--bg);           /* Pergament #f4ead5 */
-  color: var(--fg);                      /* Tinte #1a120b */
+  background-color: var(--bg); /* Pergament #f4ead5 */
+  color: var(--fg); /* Tinte #1a120b */
   font-family: var(--font-sans);
   font-size: var(--fs-16);
   line-height: 1.55;

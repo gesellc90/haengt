@@ -1,8 +1,15 @@
+import TallyStrokes from './TallyStrokes.js';
+
 interface SaldoCardProps {
   /** Saldo in Cent (negativ = schuldet Geld) */
   balanceCents: number;
   /** Anzahl offener Striche heute, optional */
   stricheHeute?: number;
+  /**
+   * Wenn true: Der zuletzt gesetzte Strich wird mit der Strichmacher-Animation
+   * eingezeichnet (wird an TallyStrokes weitergereicht).
+   */
+  animateLatest?: boolean;
 }
 
 function formatCurrency(cents: number): string {
@@ -12,7 +19,11 @@ function formatCurrency(cents: number): string {
   });
 }
 
-export default function SaldoCard({ balanceCents, stricheHeute }: SaldoCardProps) {
+export default function SaldoCard({
+  balanceCents,
+  stricheHeute,
+  animateLatest = false,
+}: SaldoCardProps) {
   const isPaid = balanceCents <= 0;
 
   return (
@@ -82,17 +93,37 @@ export default function SaldoCard({ balanceCents, stricheHeute }: SaldoCardProps
         {isPaid ? 'Sauber. Du hängst nicht.' : 'Schoppe weiter — oder tilg.'}
       </div>
 
-      {/* Striche heute */}
+      {/* Striche heute — als echte Tally-Grafik mit optionaler Strichmacher-Animation */}
       {stricheHeute !== undefined && stricheHeute > 0 && (
         <div
           style={{
-            fontFamily: 'var(--font-hand)',
-            fontSize: 20,
-            color: 'var(--tinte)',
-            marginTop: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginTop: 12,
+            paddingTop: 10,
+            borderTop: '1px solid var(--line)',
           }}
         >
-          {stricheHeute} Striche heute
+          <TallyStrokes
+            count={stricheHeute}
+            color="var(--tinte)"
+            size={1.1}
+            animateLatest={animateLatest}
+            label={`${stricheHeute} Striche heute`}
+          />
+          <span
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--fg-3)',
+            }}
+          >
+            heute
+          </span>
         </div>
       )}
     </div>

@@ -22,17 +22,19 @@ export default function WordmarkHeader({ avatarInitials, onAvatarClick }: Wordma
         zIndex: 40,
       }}
     >
-      {/* Wortmarke: Cormorant Garamond, 28px */}
+      {/* Wortmarke: Cinzel, uppercase — „HÄNGT!" mit Messing-! */}
       <span
         style={{
-          fontFamily: 'var(--font-serif)',
+          fontFamily: 'var(--font-display)',
           fontWeight: 700,
-          fontSize: 28,
-          letterSpacing: '-0.01em',
+          fontSize: 22,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
           lineHeight: 1,
           display: 'flex',
           alignItems: 'baseline',
-          gap: 2,
+          gap: 1,
+          color: 'var(--kreide)',
         }}
       >
         Hängt<span style={{ color: 'var(--messing)' }}>!</span>

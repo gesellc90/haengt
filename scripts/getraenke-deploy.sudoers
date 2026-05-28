@@ -34,7 +34,8 @@ Defaults:getraenke-runner   !requiretty
 # Cmnd-Alias für Service-Steuerung — Pfade absolut, kein Wildcard.
 Cmnd_Alias GETRAENKE_SVC = /usr/bin/systemctl restart getraenke.service, \
                            /usr/bin/systemctl status  getraenke.service, \
-                           /usr/bin/systemctl is-active getraenke.service
+                           /usr/bin/systemctl is-active getraenke.service, \
+                           /usr/bin/systemctl is-active --quiet getraenke.service
 
 # Cmnd-Alias für Migration — Wildcard nur für den Tag-Anteil im Pfad.
 # WICHTIG: ohne Wildcard bei `env`, sonst kann ein bösartiger Runner-Job

@@ -54,3 +54,7 @@ backend/data/*.db-shm
 # Diverses
 *.tmp
 *.bak
+
+# Veraltete Pi-Setup-Skripte (durch pi-setup-v2.py ersetzt)
+scripts/pi-setup.py
+scripts/pi-setup.sh

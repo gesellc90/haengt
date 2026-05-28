@@ -40,8 +40,9 @@ interface StrichHistoryProps {
 
 function StrichHistory({ bookings, drinks, onVoid, voidingId }: StrichHistoryProps) {
   const drinkMap = new Map(drinks.map((d) => [d.id, d]));
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  const recent = bookings.filter((b) => new Date(b.booked_at).getTime() > cutoff);
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  const recent = bookings.filter((b) => new Date(b.booked_at).getTime() >= startOfMonth);
 
   if (recent.length === 0) {
     return (
@@ -55,7 +56,7 @@ function StrichHistory({ bookings, drinks, onVoid, voidingId }: StrichHistoryPro
           color: 'var(--tinte-4)',
         }}
       >
-        Heute noch keine Striche gesetzt.
+        Diesen Monat noch keine Striche gesetzt.
       </p>
     );
   }
@@ -199,7 +200,7 @@ export default function BookingPage() {
 
   const loadBookings = useCallback(() => {
     bookingsApi
-      .getMine(50)
+      .getMine(200)
       .then((res) => setBookings(res.items))
       .catch(() => showToast('Striche konnten nicht geladen werden.', 'error'))
       .finally(() => setIsLoadingBookings(false));
@@ -259,13 +260,13 @@ export default function BookingPage() {
     }
   }
 
-  // -- Tages-Summe ----------------------------------------------------------
+  // -- Monats-Summe ---------------------------------------------------------
 
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  const todayBookings = bookings.filter(
-    (b) => b.voided_at === null && new Date(b.booked_at).getTime() > cutoff,
+  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+  const monthBookings = bookings.filter(
+    (b) => b.voided_at === null && new Date(b.booked_at).getTime() >= startOfMonth,
   );
-  const todayTotal = todayBookings.reduce((sum, b) => sum + b.price_cents_snapshot, 0);
+  const monthTotal = monthBookings.reduce((sum, b) => sum + b.price_cents_snapshot, 0);
 
   // -------------------------------------------------------------------------
 
@@ -273,7 +274,7 @@ export default function BookingPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Saldo-Karte */}
       {!isLoadingBookings && (
-        <SaldoCard balanceCents={todayTotal} stricheHeute={todayBookings.length} />
+        <SaldoCard balanceCents={monthTotal} stricheMonat={monthBookings.length} />
       )}
 
       {/* Getränke-Kacheln */}
@@ -333,9 +334,9 @@ export default function BookingPage() {
           }}
         >
           <SectionTitle>
-            <span id="history-heading">Striche heute</span>
+            <span id="history-heading">Striche diesen Monat</span>
           </SectionTitle>
-          {todayTotal > 0 && (
+          {monthTotal > 0 && (
             <span
               style={{
                 fontFamily: 'var(--font-sans)',
@@ -344,7 +345,7 @@ export default function BookingPage() {
                 color: 'var(--tinte-3)',
               }}
             >
-              {formatCents(todayTotal)}
+              {formatCents(monthTotal)}
             </span>
           )}
         </div>

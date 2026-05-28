@@ -3,8 +3,8 @@ import TallyStrokes from './TallyStrokes.js';
 interface SaldoCardProps {
   /** Saldo in Cent (negativ = schuldet Geld) */
   balanceCents: number;
-  /** Anzahl offener Striche heute, optional */
-  stricheHeute?: number;
+  /** Anzahl offener Striche diesen Monat, optional */
+  stricheMonat?: number;
   /**
    * Wenn true: Der zuletzt gesetzte Strich wird mit der Strichmacher-Animation
    * eingezeichnet (wird an TallyStrokes weitergereicht).
@@ -21,7 +21,7 @@ function formatCurrency(cents: number): string {
 
 export default function SaldoCard({
   balanceCents,
-  stricheHeute,
+  stricheMonat,
   animateLatest = false,
 }: SaldoCardProps) {
   const isPaid = balanceCents <= 0;
@@ -93,8 +93,8 @@ export default function SaldoCard({
         {isPaid ? 'Sauber. Du hängst nicht.' : 'Schoppe weiter — oder tilg.'}
       </div>
 
-      {/* Striche heute — als echte Tally-Grafik mit optionaler Strichmacher-Animation */}
-      {stricheHeute !== undefined && stricheHeute > 0 && (
+      {/* Striche diesen Monat — als echte Tally-Grafik mit optionaler Strichmacher-Animation */}
+      {stricheMonat !== undefined && stricheMonat > 0 && (
         <div
           style={{
             display: 'flex',
@@ -106,11 +106,11 @@ export default function SaldoCard({
           }}
         >
           <TallyStrokes
-            count={stricheHeute}
+            count={stricheMonat}
             color="var(--tinte)"
             size={1.1}
             animateLatest={animateLatest}
-            label={`${stricheHeute} Striche heute`}
+            label={`${stricheMonat} Striche diesen Monat`}
           />
           <span
             style={{
@@ -122,7 +122,7 @@ export default function SaldoCard({
               color: 'var(--fg-3)',
             }}
           >
-            heute
+            diesen Monat
           </span>
         </div>
       )}

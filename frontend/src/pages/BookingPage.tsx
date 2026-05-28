@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { bookingsApi } from '../api/bookings.js';
 import { drinksApi } from '../api/drinks.js';
 import { ApiError } from '../api/client.js';
@@ -187,13 +187,6 @@ export default function BookingPage() {
   const [bookingDrinkId, setBookingDrinkId] = useState<number | null>(null);
   const [voidingId, setVoidingId] = useState<number | null>(null);
 
-  /**
-   * Strichmacher-Animation: nach jedem erfolgreichen Strich kurz true setzen,
-   * damit TallyStrokes den neuen Strich einzeichnet (240ms Animation + Puffer).
-   */
-  const [animateLatest, setAnimateLatest] = useState(false);
-  const animateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // -- Daten laden ----------------------------------------------------------
 
   useEffect(() => {
@@ -203,13 +196,6 @@ export default function BookingPage() {
       .catch(() => showToast('Getränkeliste konnte nicht geladen werden.', 'error'))
       .finally(() => setIsLoadingDrinks(false));
   }, [showToast]);
-
-  // Timer bei Unmount aufräumen
-  useEffect(() => {
-    return () => {
-      if (animateTimerRef.current !== null) clearTimeout(animateTimerRef.current);
-    };
-  }, []);
 
   const loadBookings = useCallback(() => {
     bookingsApi
@@ -245,11 +231,6 @@ export default function BookingPage() {
       const real = await bookingsApi.create(drink.id);
       setBookings((prev) => prev.map((b) => (b.id === optimisticId ? real : b)));
       showToast(`${drink.name} gebucht — ${formatCents(real.price_cents_snapshot)}`, 'success');
-
-      // Strichmacher-Animation triggern: 400ms (240ms Anim + 160ms Puffer)
-      if (animateTimerRef.current !== null) clearTimeout(animateTimerRef.current);
-      setAnimateLatest(true);
-      animateTimerRef.current = setTimeout(() => setAnimateLatest(false), 400);
     } catch (err) {
       setBookings((prev) => prev.filter((b) => b.id !== optimisticId));
       const msg =
@@ -292,11 +273,7 @@ export default function BookingPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Saldo-Karte */}
       {!isLoadingBookings && (
-        <SaldoCard
-          balanceCents={todayTotal}
-          stricheHeute={todayBookings.length}
-          animateLatest={animateLatest}
-        />
+        <SaldoCard balanceCents={todayTotal} stricheHeute={todayBookings.length} />
       )}
 
       {/* Getränke-Kacheln */}

@@ -18,13 +18,18 @@ describe('SaldoCard', () => {
     expect(screen.getByText('Sauber. Du hängst nicht.')).toBeDefined();
   });
 
-  it('zeigt Striche heute wenn übergeben', () => {
+  it('zeigt Striche heute als TallyStrokes-Grafik wenn übergeben', () => {
     render(<SaldoCard balanceCents={500} stricheHeute={3} />);
-    expect(screen.getByText(/3 Striche heute/)).toBeDefined();
+    // SaldoCard rendert jetzt echte TallyStrokes-SVGs mit aria-label statt Plain-Text
+    expect(screen.getByRole('img', { name: /3 Striche heute/ })).toBeDefined();
+    // Die "heute"-Beschriftung daneben ist weiterhin sichtbar
+    expect(screen.getByText('heute')).toBeDefined();
   });
 
   it('zeigt keine Striche-heute-Zeile wenn stricheHeute=0', () => {
     render(<SaldoCard balanceCents={500} stricheHeute={0} />);
-    expect(screen.queryByText(/Striche heute/)).toBeNull();
+    // Kein TallyStrokes-img und keine "heute"-Beschriftung
+    expect(screen.queryByRole('img', { name: /Striche heute/ })).toBeNull();
+    expect(screen.queryByText('heute')).toBeNull();
   });
 });

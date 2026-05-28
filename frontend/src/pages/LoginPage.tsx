@@ -3,7 +3,6 @@ import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.js';
 import { ApiError } from '../api/client.js';
 import Spinner from '../components/Spinner.js';
-import Sigel from '../components/Sigel.js';
 
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
@@ -64,47 +63,58 @@ export default function LoginPage() {
         {/* Wordmark / Sigel                                                 */}
         {/* ---------------------------------------------------------------- */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          {/* Echtes Hängt!-Wappen-Sigel */}
-          <div style={{ display: 'inline-block', marginBottom: 18 }}>
-            <Sigel size={96} />
+          {/* Sigel-Kreis */}
+          <div
+            aria-hidden
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              border: '2px solid var(--korps-rot)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 32,
+                fontWeight: 700,
+                color: 'var(--korps-rot)',
+                lineHeight: 1,
+                letterSpacing: '0.04em',
+              }}
+            >
+              H!
+            </span>
           </div>
 
-          {/* Wortmarke: Cinzel uppercase, ! in Korps-Rot */}
           <h1
             style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 32,
+              fontSize: 28,
               fontWeight: 700,
               color: 'var(--tinte)',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
               margin: 0,
               lineHeight: 1,
             }}
           >
             Hängt<span style={{ color: 'var(--korps-rot)' }}>!</span>
           </h1>
-
-          {/* Messing-Trennlinie + Tagline */}
-          <div
-            style={{
-              width: 60,
-              height: 1,
-              background: 'var(--messing)',
-              margin: '10px auto 8px',
-            }}
-          />
           <p
             style={{
               fontFamily: 'var(--font-serif)',
               fontStyle: 'italic',
-              fontSize: 14,
+              fontSize: 15,
               color: 'var(--tinte-3)',
-              margin: 0,
-              letterSpacing: '0.03em',
+              marginTop: 6,
+              marginBottom: 0,
             }}
           >
-            — Jeder Strich zählt —
+            Jeder Strich zählt.
           </p>
         </div>
 

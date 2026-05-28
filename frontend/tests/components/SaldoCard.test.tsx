@@ -18,18 +18,18 @@ describe('SaldoCard', () => {
     expect(screen.getByText('Sauber. Du hängst nicht.')).toBeDefined();
   });
 
-  it('zeigt Striche heute als TallyStrokes-Grafik wenn übergeben', () => {
-    render(<SaldoCard balanceCents={500} stricheHeute={3} />);
+  it('zeigt Striche diesen Monat als TallyStrokes-Grafik wenn übergeben', () => {
+    render(<SaldoCard balanceCents={500} stricheMonat={3} />);
     // SaldoCard rendert jetzt echte TallyStrokes-SVGs mit aria-label statt Plain-Text
-    expect(screen.getByRole('img', { name: /3 Striche heute/ })).toBeDefined();
-    // Die "heute"-Beschriftung daneben ist weiterhin sichtbar
-    expect(screen.getByText('heute')).toBeDefined();
+    expect(screen.getByRole('img', { name: /3 Striche diesen Monat/ })).toBeDefined();
+    // Die "diesen Monat"-Beschriftung daneben ist weiterhin sichtbar
+    expect(screen.getByText('diesen Monat')).toBeDefined();
   });
 
-  it('zeigt keine Striche-heute-Zeile wenn stricheHeute=0', () => {
-    render(<SaldoCard balanceCents={500} stricheHeute={0} />);
-    // Kein TallyStrokes-img und keine "heute"-Beschriftung
-    expect(screen.queryByRole('img', { name: /Striche heute/ })).toBeNull();
-    expect(screen.queryByText('heute')).toBeNull();
+  it('zeigt keine Striche-Monat-Zeile wenn stricheMonat=0', () => {
+    render(<SaldoCard balanceCents={500} stricheMonat={0} />);
+    // Kein TallyStrokes-img und keine "diesen Monat"-Beschriftung
+    expect(screen.queryByRole('img', { name: /Striche diesen Monat/ })).toBeNull();
+    expect(screen.queryByText('diesen Monat')).toBeNull();
   });
 });

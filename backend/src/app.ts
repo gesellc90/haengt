@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express, { type Express } from 'express';
 import { pinoHttp } from 'pino-http';
 import type { Logger } from 'pino';
@@ -67,6 +69,19 @@ export function createApp({ logger, db, env }: AppOptions): Express {
   app.use('/api/v1/drinks', createDrinksRouter(authService, drinksService));
   app.use('/api/v1/bookings', createBookingsRouter(authService, bookingService));
   app.use('/api/v1/reports', createReportsRouter(authService, reportService));
+
+  // -- Frontend (SPA) ---------------------------------------------------------
+  // Im Production-Build liegen die gebauten React-Assets in frontend/dist,
+  // relativ zum kompilierten backend/dist/app.js also zwei Ebenen hoch.
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const frontendDist = path.join(__dirname, '../../frontend/dist');
+  app.use(express.static(frontendDist));
+
+  // SPA-Fallback: alle Nicht-API-Routen auf index.html umleiten,
+  // damit React Router client-seitig die Navigation übernimmt.
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
 
   // -- Globaler Error-Handler (muss nach allen Routen stehen) -----------------
   app.use(createErrorHandler(logger));

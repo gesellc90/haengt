@@ -86,7 +86,8 @@ CREATE TABLE bookings (
     total_cents     INTEGER NOT NULL,
     booked_at       TEXT NOT NULL DEFAULT (datetime('now')),
     voided_at       TEXT,
-    voided_by       INTEGER REFERENCES members(id)
+    voided_by       INTEGER REFERENCES members(id),
+    booked_by_id    INTEGER REFERENCES members(id) ON DELETE SET NULL  -- wer gebucht hat; NULL = Selbstbuchung
 );
 CREATE INDEX idx_bookings_member_month ON bookings(member_id, booked_at);
 
@@ -115,47 +116,48 @@ Basis-URL: `/api/v1`. Alle geschützten Endpunkte erwarten `Authorization: Beare
 
 ### Auth
 
-| Methode | Pfad             | Auth | Beschreibung                          |
-|---------|------------------|------|---------------------------------------|
-| POST    | `/auth/login`    | —    | Login mit Username + Passwort         |
-| POST    | `/auth/logout`   | User | Token serverseitig invalidieren       |
-| GET     | `/auth/me`       | User | Aktuelles Profil                      |
+| Methode | Pfad           | Auth | Beschreibung                    |
+| ------- | -------------- | ---- | ------------------------------- |
+| POST    | `/auth/login`  | —    | Login mit Username + Passwort   |
+| POST    | `/auth/logout` | User | Token serverseitig invalidieren |
+| GET     | `/auth/me`     | User | Aktuelles Profil                |
 
 ### Mitglieder
 
-| Methode | Pfad                | Auth  | Beschreibung                     |
-|---------|---------------------|-------|----------------------------------|
-| GET     | `/members`          | Admin | Alle Mitglieder                  |
-| POST    | `/members`          | Admin | Neues Mitglied anlegen           |
-| GET     | `/members/:id`      | Admin | Einzelnes Mitglied               |
-| PATCH   | `/members/:id`      | Admin | Mitglied aktualisieren           |
-| DELETE  | `/members/:id`      | Admin | Mitglied deaktivieren (soft)     |
+| Methode | Pfad           | Auth  | Beschreibung                 |
+| ------- | -------------- | ----- | ---------------------------- |
+| GET     | `/members`     | Admin | Alle Mitglieder              |
+| POST    | `/members`     | Admin | Neues Mitglied anlegen       |
+| GET     | `/members/:id` | Admin | Einzelnes Mitglied           |
+| PATCH   | `/members/:id` | Admin | Mitglied aktualisieren       |
+| DELETE  | `/members/:id` | Admin | Mitglied deaktivieren (soft) |
 
 ### Getränke
 
-| Methode | Pfad                       | Auth  | Beschreibung                |
-|---------|----------------------------|-------|-----------------------------|
-| GET     | `/drinks`                  | User  | Aktive Getränke + Preise    |
-| POST    | `/drinks`                  | Admin | Neues Getränk anlegen       |
-| PATCH   | `/drinks/:id`              | Admin | Getränk aktualisieren       |
-| POST    | `/drinks/:id/prices`       | Admin | Neuen Preis setzen          |
+| Methode | Pfad                 | Auth  | Beschreibung             |
+| ------- | -------------------- | ----- | ------------------------ |
+| GET     | `/drinks`            | User  | Aktive Getränke + Preise |
+| POST    | `/drinks`            | Admin | Neues Getränk anlegen    |
+| PATCH   | `/drinks/:id`        | Admin | Getränk aktualisieren    |
+| POST    | `/drinks/:id/prices` | Admin | Neuen Preis setzen       |
 
 ### Buchungen
 
-| Methode | Pfad                      | Auth  | Beschreibung                       |
-|---------|---------------------------|-------|------------------------------------|
-| POST    | `/bookings`               | User  | Eigene Getränkebuchung anlegen     |
-| GET     | `/bookings/me`            | User  | Eigene Buchungen (paginiert)       |
-| POST    | `/bookings/:id/void`      | User  | Eigene Buchung stornieren (≤ 5min) |
-| GET     | `/bookings`               | Admin | Alle Buchungen mit Filter          |
+| Methode | Pfad                   | Auth  | Beschreibung                                                                   |
+| ------- | ---------------------- | ----- | ------------------------------------------------------------------------------ |
+| POST    | `/bookings`            | User  | Buchung anlegen; optional `member_id` (nur Konten mit `can_book_for_others`)   |
+| GET     | `/bookings/me`         | User  | Eigene Buchungen (paginiert)                                                   |
+| GET     | `/bookings/member/:id` | User  | Buchungen eines Mitglieds; fremde nur mit `can_book_for_others`                |
+| POST    | `/bookings/:id/void`   | User  | Eigene Buchung stornieren (≤ 5min); Allgemein-Konto auch eigene Fremdbuchungen |
+| GET     | `/bookings`            | Admin | Alle Buchungen mit Filter                                                      |
 
 ### Reports
 
-| Methode | Pfad                                              | Auth  | Beschreibung                  |
-|---------|---------------------------------------------------|-------|-------------------------------|
-| GET     | `/reports/monthly?year=YYYY&month=MM&format=pdf`  | Admin | PDF-Monatsabrechnung (alle)   |
-| GET     | `/reports/monthly?...&format=csv`                 | Admin | CSV-Export                    |
-| GET     | `/reports/monthly/:memberId?...`                  | Admin | Pro Mitglied                  |
+| Methode | Pfad                                             | Auth  | Beschreibung                |
+| ------- | ------------------------------------------------ | ----- | --------------------------- |
+| GET     | `/reports/monthly?year=YYYY&month=MM&format=pdf` | Admin | PDF-Monatsabrechnung (alle) |
+| GET     | `/reports/monthly?...&format=csv`                | Admin | CSV-Export                  |
+| GET     | `/reports/monthly/:memberId?...`                 | Admin | Pro Mitglied                |
 
 ## Auth-Flow
 
@@ -212,9 +214,9 @@ frontend/
 
 ## Build- und Run-Strategie
 
-| Umgebung      | Backend                              | Frontend                              |
-|---------------|--------------------------------------|---------------------------------------|
-| Development   | `tsx watch src/server.ts` (kein Build-Step) | `vite` Dev-Server mit HMR             |
-| Production    | `tsc` → `dist/`, Start mit `node dist/server.js` | `vite build` → statische Assets       |
+| Umgebung    | Backend                                          | Frontend                        |
+| ----------- | ------------------------------------------------ | ------------------------------- |
+| Development | `tsx watch src/server.ts` (kein Build-Step)      | `vite` Dev-Server mit HMR       |
+| Production  | `tsc` → `dist/`, Start mit `node dist/server.js` | `vite build` → statische Assets |
 
 Im Pi-Deployment liefert das Backend die `frontend/dist/`-Assets statisch aus, sodass nur ein Port exponiert werden muss (siehe Übersicht).

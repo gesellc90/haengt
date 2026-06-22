@@ -46,6 +46,9 @@ interface TestContext {
   adminToken: string;
   aliceToken: string;
   bobToken: string;
+  allgemeinToken: string;
+  aliceId: number;
+  allgemeinId: number;
   drinkId: number;
 }
 
@@ -61,7 +64,7 @@ async function setupApp(): Promise<TestContext> {
     password_hash: passwordHash,
     role: 'admin',
   });
-  membersRepo.create({
+  const alice = membersRepo.create({
     username: 'alice',
     display_name: 'Alice Muster',
     password_hash: passwordHash,
@@ -73,18 +76,36 @@ async function setupApp(): Promise<TestContext> {
     password_hash: passwordHash,
     role: 'member',
   });
+  const allgemein = membersRepo.create({
+    username: 'allgemein',
+    display_name: 'Allgemein',
+    password_hash: passwordHash,
+    role: 'member',
+    can_book_for_others: 1,
+  });
 
   const drink = drinksRepo.create({ name: 'Cola', initialPriceCents: 150 });
 
   const app = createApp({ logger: silentLogger, db, env: testEnv });
 
-  const [adminToken, aliceToken, bobToken] = await Promise.all([
+  const [adminToken, aliceToken, bobToken, allgemeinToken] = await Promise.all([
     getToken(app, 'admin'),
     getToken(app, 'alice'),
     getToken(app, 'bob'),
+    getToken(app, 'allgemein'),
   ]);
 
-  return { app, db, adminToken, aliceToken, bobToken, drinkId: drink.id };
+  return {
+    app,
+    db,
+    adminToken,
+    aliceToken,
+    bobToken,
+    allgemeinToken,
+    aliceId: alice.id,
+    allgemeinId: allgemein.id,
+    drinkId: drink.id,
+  };
 }
 
 async function getToken(app: Express, username: string, password = 'geheim123'): Promise<string> {
@@ -473,5 +494,139 @@ describe('GET /api/v1/bookings (Admin)', () => {
       .set('Authorization', `Bearer ${ctx.adminToken}`);
     expect(withFlag.body).toHaveLength(1);
     expect(withFlag.body[0].voided_at).not.toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// M9: Buchen für andere (Theken-/Allgemein-Konto)
+// ---------------------------------------------------------------------------
+
+describe('POST /api/v1/bookings — für anderes Mitglied (M9)', () => {
+  let ctx: TestContext;
+
+  beforeEach(async () => {
+    ctx = await setupApp();
+  });
+
+  it('Allgemein-Konto bucht für ein anderes Mitglied (201, member_id = Ziel)', async () => {
+    const res = await request(ctx.app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${ctx.allgemeinToken}`)
+      .send({ drink_id: ctx.drinkId, member_id: ctx.aliceId });
+
+    expect(res.status).toBe(201);
+    expect(res.body.member_id).toBe(ctx.aliceId);
+    expect(res.body.booked_by_id).toBe(ctx.allgemeinId);
+  });
+
+  it('normales Mitglied darf NICHT für andere buchen (403)', async () => {
+    const res = await request(ctx.app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${ctx.aliceToken}`)
+      .send({ drink_id: ctx.drinkId, member_id: ctx.allgemeinId });
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('FORBIDDEN');
+  });
+
+  it('Allgemein-Konto bucht für unbekanntes Mitglied (404)', async () => {
+    const res = await request(ctx.app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${ctx.allgemeinToken}`)
+      .send({ drink_id: ctx.drinkId, member_id: 9999 });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('member_id = eigene ID verhält sich wie Selbstbuchung (booked_by_id null)', async () => {
+    const res = await request(ctx.app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${ctx.aliceToken}`)
+      .send({ drink_id: ctx.drinkId, member_id: ctx.aliceId });
+
+    expect(res.status).toBe(201);
+    expect(res.body.booked_by_id).toBeNull();
+  });
+});
+
+describe('GET /api/v1/bookings/member/:id (M9)', () => {
+  let ctx: TestContext;
+
+  beforeEach(async () => {
+    ctx = await setupApp();
+  });
+
+  it('Allgemein-Konto liest die Buchungen eines Mitglieds', async () => {
+    await request(ctx.app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${ctx.allgemeinToken}`)
+      .send({ drink_id: ctx.drinkId, member_id: ctx.aliceId });
+
+    const res = await request(ctx.app)
+      .get(`/api/v1/bookings/member/${ctx.aliceId}`)
+      .set('Authorization', `Bearer ${ctx.allgemeinToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.items[0].member_id).toBe(ctx.aliceId);
+  });
+
+  it('normales Mitglied darf keine fremden Buchungen lesen (403)', async () => {
+    const res = await request(ctx.app)
+      .get(`/api/v1/bookings/member/${ctx.aliceId}`)
+      .set('Authorization', `Bearer ${ctx.bobToken}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it('normales Mitglied darf die eigenen Buchungen über diesen Endpunkt lesen', async () => {
+    await request(ctx.app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${ctx.aliceToken}`)
+      .send({ drink_id: ctx.drinkId });
+
+    const res = await request(ctx.app)
+      .get(`/api/v1/bookings/member/${ctx.aliceId}`)
+      .set('Authorization', `Bearer ${ctx.aliceToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.items).toHaveLength(1);
+  });
+});
+
+describe('POST /api/v1/bookings/:id/void — durch Allgemein-Konto (M9)', () => {
+  let ctx: TestContext;
+
+  beforeEach(async () => {
+    ctx = await setupApp();
+  });
+
+  it('Allgemein-Konto storniert eine selbst angelegte Fremdbuchung (im Fenster)', async () => {
+    const booking = await request(ctx.app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${ctx.allgemeinToken}`)
+      .send({ drink_id: ctx.drinkId, member_id: ctx.aliceId });
+
+    const res = await request(ctx.app)
+      .post(`/api/v1/bookings/${booking.body.id}/void`)
+      .set('Authorization', `Bearer ${ctx.allgemeinToken}`)
+      .send({});
+
+    expect(res.status).toBe(200);
+    expect(res.body.voided_at).not.toBeNull();
+  });
+
+  it('Allgemein-Konto darf eine Selbstbuchung eines anderen Mitglieds NICHT stornieren (403)', async () => {
+    const booking = await request(ctx.app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${ctx.aliceToken}`)
+      .send({ drink_id: ctx.drinkId });
+
+    const res = await request(ctx.app)
+      .post(`/api/v1/bookings/${booking.body.id}/void`)
+      .set('Authorization', `Bearer ${ctx.allgemeinToken}`)
+      .send({});
+
+    expect(res.status).toBe(403);
   });
 });

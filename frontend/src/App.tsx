@@ -1,16 +1,23 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext.js';
+import { AuthProvider, useAuth } from './contexts/AuthContext.js';
 import { ToastProvider } from './contexts/ToastContext.js';
 import ProtectedRoute from './components/ProtectedRoute.js';
 import Layout from './components/Layout.js';
 import LoginPage from './pages/LoginPage.js';
 import BookingPage from './pages/BookingPage.js';
+import ThekePage from './pages/ThekePage.js';
 import ProfilePage from './pages/ProfilePage.js';
 import AdminLayout from './pages/admin/AdminLayout.js';
 import MembersPage from './pages/admin/MembersPage.js';
 import DrinksPage from './pages/admin/DrinksPage.js';
 import AdminBookingsPage from './pages/admin/BookingsPage.js';
 import ReportPage from './pages/admin/ReportPage.js';
+
+/** Theken-/Allgemein-Konten buchen für andere, alle übrigen für sich selbst. */
+function BuchenRoute() {
+  const { canBookForOthers } = useAuth();
+  return canBookForOthers ? <ThekePage /> : <BookingPage />;
+}
 
 export default function App() {
   return (
@@ -24,7 +31,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route index element={<Navigate to="/buchen" replace />} />
-              <Route path="/buchen" element={<BookingPage />} />
+              <Route path="/buchen" element={<BuchenRoute />} />
               <Route path="/profil" element={<ProfilePage />} />
 
               {/* Admin-Bereich — nur für Admins */}

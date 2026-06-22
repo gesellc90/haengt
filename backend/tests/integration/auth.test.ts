@@ -173,6 +173,10 @@ describe('GET /api/v1/auth/me', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ username: 'alice', role: 'member' });
+    // M9: /me liefert das öffentliche Member-Objekt inkl. Kategorie & Theken-Flag
+    expect(res.body).toHaveProperty('member_status');
+    expect(res.body).toHaveProperty('can_book_for_others');
+    expect(res.body).not.toHaveProperty('password_hash');
   });
 
   it('gibt 401 ohne Authorization-Header zurück', async () => {

@@ -10,6 +10,10 @@ interface SaldoCardProps {
    * eingezeichnet (wird an TallyStrokes weitergereicht).
    */
   animateLatest?: boolean;
+  /** Eyebrow-Label über dem Betrag (Default: „Dein offener Strich") */
+  label?: string;
+  /** Kursive Unterzeile statt der Standard-Sprüche (z. B. im Theken-Modus) */
+  subline?: string;
 }
 
 function formatCurrency(cents: number): string {
@@ -23,6 +27,8 @@ export default function SaldoCard({
   balanceCents,
   stricheMonat,
   animateLatest = false,
+  label = 'Dein offener Strich',
+  subline,
 }: SaldoCardProps) {
   const isPaid = balanceCents <= 0;
 
@@ -62,7 +68,7 @@ export default function SaldoCard({
           marginBottom: 4,
         }}
       >
-        Dein offener Strich
+        {label}
       </div>
 
       {/* Betrag */}
@@ -90,7 +96,7 @@ export default function SaldoCard({
           marginTop: 6,
         }}
       >
-        {isPaid ? 'Sauber. Du hängst nicht.' : 'Schoppe weiter — oder tilg.'}
+        {subline ?? (isPaid ? 'Sauber. Du hängst nicht.' : 'Schoppe weiter — oder tilg.')}
       </div>
 
       {/* Striche diesen Monat — als echte Tally-Grafik mit optionaler Strichmacher-Animation */}

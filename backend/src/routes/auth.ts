@@ -3,13 +3,15 @@ import rateLimit from 'express-rate-limit';
 import { loginSchema } from '../schemas/auth.js';
 import { AuthError } from '../services/AuthService.js';
 import { authenticate, type AuthenticatedRequest } from '../middleware/authenticate.js';
+import { toPublicMember } from '../services/MembersService.js';
 import type { AuthService } from '../services/AuthService.js';
+import type { MembersService } from '../services/MembersService.js';
 
 /**
  * Erstellt den Auth-Router.
  * Rate-Limit: 5 Versuche pro IP und 15 Minuten auf POST /login.
  */
-export function createAuthRouter(authService: AuthService): Router {
+export function createAuthRouter(authService: AuthService, membersService: MembersService): Router {
   const router = Router();
 
   const loginLimiter = rateLimit({
@@ -55,13 +57,14 @@ export function createAuthRouter(authService: AuthService): Router {
   // ---------------------------------------------------------------------------
   // GET /auth/me  (geschützt)
   // ---------------------------------------------------------------------------
-  router.get('/me', authenticate(authService), (req, res) => {
-    const { auth } = req as AuthenticatedRequest;
-    res.json({
-      id: Number(auth.sub),
-      username: auth.username,
-      role: auth.role,
-    });
+  router.get('/me', authenticate(authService), (req, res, next) => {
+    try {
+      const { auth } = req as AuthenticatedRequest;
+      const member = membersService.findById(Number(auth.sub));
+      res.json(toPublicMember(member));
+    } catch (err) {
+      next(err);
+    }
   });
 
   // ---------------------------------------------------------------------------

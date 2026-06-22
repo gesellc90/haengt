@@ -29,6 +29,8 @@ const memberMock: PublicMember = {
   display_name: 'Max',
   role: 'member',
   is_active: 1,
+  member_status: 'aktiv',
+  can_book_for_others: 0,
   created_at: '2024-01-01T00:00:00.000Z',
   updated_at: '2024-01-01T00:00:00.000Z',
 };
@@ -102,7 +104,9 @@ describe('LoginPage', () => {
     await user.type(screen.getByLabelText(/Losungswort/i), 'falsch');
     await user.click(screen.getByRole('button', { name: /Einloggen/i }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Kürzel oder Losungswort nicht korrekt/i);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /Kürzel oder Losungswort nicht korrekt/i,
+    );
   });
 
   it('zeigt Fehlermeldung bei Rate-Limit (429)', async () => {

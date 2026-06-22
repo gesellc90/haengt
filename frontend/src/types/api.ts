@@ -17,12 +17,16 @@ export interface LoginResponse {
 
 // -- Members ----------------------------------------------------------------
 
+export type MemberStatus = 'aktiv' | 'inaktiv' | 'alter_herr' | 'freund';
+
 export interface PublicMember {
   id: number;
   username: string;
   display_name: string;
   role: 'admin' | 'member';
   is_active: 0 | 1;
+  member_status: MemberStatus;
+  can_book_for_others: 0 | 1;
   created_at: string;
   updated_at: string;
 }
@@ -64,6 +68,7 @@ export interface BookingRow {
   booked_at: string;
   voided_at: string | null;
   void_reason: string | null;
+  booked_by_id: number | null;
 }
 
 export interface PaginatedBookings {

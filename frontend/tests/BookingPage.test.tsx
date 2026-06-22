@@ -39,6 +39,8 @@ vi.mock('../src/api/auth', () => ({
       display_name: 'Test',
       role: 'member',
       is_active: 1,
+      member_status: 'aktiv',
+      can_book_for_others: 0,
       created_at: '',
       updated_at: '',
     } satisfies PublicMember),
@@ -77,6 +79,7 @@ const makeBooking = (overrides: Partial<BookingRow> = {}): BookingRow => ({
   booked_at: new Date().toISOString(),
   voided_at: null,
   void_reason: null,
+  booked_by_id: null,
   ...overrides,
 });
 

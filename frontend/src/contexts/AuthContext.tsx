@@ -27,6 +27,8 @@ interface AuthContextValue extends AuthState {
   /** Gibt true zurück, wenn der User eingeloggt und aktiv ist */
   isAuthenticated: boolean;
   isAdmin: boolean;
+  /** true = Theken-/Allgemein-Konto, das für andere buchen darf */
+  canBookForOthers: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -96,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     isAuthenticated: member !== null && member !== undefined,
     isAdmin: member?.role === 'admin',
+    canBookForOthers: member?.can_book_for_others === 1,
     login,
     logout,
   };

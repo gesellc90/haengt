@@ -258,14 +258,15 @@ Dieser Plan unterteilt das Projekt in 9 aufeinander aufbauende Meilensteine. Jed
 
 ### Frontend
 
-- [ ] `AuthContext`/`GET /auth/me` liefern `can_book_for_others`
-- [ ] Routing: bei `can_book_for_others` rendert `/buchen` den **Theken-Flow** statt der normalen Stube; normale Mitglieder/Admins unverändert
-- [ ] **Mitglieder-Übersicht** (`MemberSelectView`): vier Abschnitte „Aktive", „Inaktive", „Alte Herren", „Freunde der Verbindung" mit Eyebrow-Section-Titles (Korps-Rot-Linie), große Touch-Kacheln je Mitglied (≥ 44px), Such-/Filterfeld
-- [ ] **Mitglieder-Buchungsansicht** (`MemberBookingView`): gewähltes Mitglied + Monats-Saldo oben, Sorten-Kacheln (Reuse `SortenButton`), Strich-Historie des Mitglieds mit Storno, prominenter **„Fertig"-Button** zurück zur Übersicht
-- [ ] `bookingsApi.createForMember(memberId, drinkId)` + `getForMember(memberId)`
-- [ ] Admin `MembersPage`: Spalte/Editor für `member_status` (Dropdown), Toggle `can_book_for_others`
-- [ ] Konsistent mit Hängt!-Tokens (Pergament, Eiche-Header, Caveat-Striche) — kein neuer visueller Stil
-- [ ] **Tests:** Vitest + RTL — Gruppierung der Übersicht nach Kategorie, Flow Auswahl → Buchen → „Fertig" → zurück
+- [x] `AuthContext`/`GET /auth/me` liefern `can_book_for_others`
+- [x] Routing: bei `can_book_for_others` rendert `/buchen` den **Theken-Flow** statt der normalen Stube; normale Mitglieder/Admins unverändert
+- [x] **Mitglieder-Übersicht** (`MemberSelectView`): vier Abschnitte „Aktive", „Inaktive", „Alte Herren", „Freunde der Verbindung" mit Eyebrow-Section-Titles (Korps-Rot-Linie), große Touch-Kacheln je Mitglied (≥ 44px), Such-/Filterfeld
+- [x] **Mitglieder-Buchungsansicht** (`MemberBookingView`): gewähltes Mitglied + Monats-Saldo oben, Sorten-Kacheln (Reuse `SortenButton`), Strich-Historie des Mitglieds mit Storno, prominenter **„Fertig"-Button** zurück zur Übersicht
+- [x] `bookingsApi.createForMember(memberId, drinkId)` + `getForMember(memberId)`
+- [x] `GET /members/bookable`: bebuchbare Mitglieder für Konten mit `can_book_for_others` (ohne Admin-Recht)
+- [x] Admin `MembersPage`: Spalte/Editor für `member_status` (Dropdown), Toggle `can_book_for_others`
+- [x] Konsistent mit Hängt!-Tokens (Pergament, Eiche-Header, Caveat-Striche) — kein neuer visueller Stil
+- [x] **Tests:** Vitest + RTL — Gruppierung der Übersicht nach Kategorie, Flow Auswahl → Buchen → „Fertig" → zurück
 
 ### E2E & Doku
 

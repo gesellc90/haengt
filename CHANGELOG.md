@@ -9,6 +9,11 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- **M9 (in Arbeit) — Allgemein-Konto & Mitglieder-Kategorien, PR 1: Datenschicht**
+  - Migration 007: Spalten `member_status` (`aktiv`|`inaktiv`|`alter_herr`|`freund`) und `can_book_for_others` an `members`. `member_status` ist eine vom `is_active`-Login-/Soft-Delete-Flag unabhängige Kategorie – Mitglieder ohne Login (z. B. „Freunde der Verbindung") bleiben bebuchbar
+  - `MembersRepo.findBookable()`: liefert aktive Mitglieder ohne Buchen-für-andere-Recht, sortiert nach Kategorie (Aktive → Inaktive → Alte Herren → Freunde)
+  - `POST /members` akzeptiert `member_status` (Default `aktiv`), `PATCH /members/:id` zusätzlich `member_status` und `can_book_for_others`
+  - Seed legt ein „Allgemein"-Konto an (`username=allgemein`, `can_book_for_others=1`; Passwort vom Admin zu setzen)
 - Initiale Projektstruktur (Backend, Frontend, Doku, CI)
 - Architekturdokumentation (`ARCHITECTURE.md`)
 - Contribution Guide (`CONTRIBUTING.md`)

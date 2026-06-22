@@ -146,6 +146,38 @@ describe('POST /api/v1/members', () => {
     expect(res.body).not.toHaveProperty('password_hash');
   });
 
+  it('legt ein Mitglied mit member_status an', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .post('/api/v1/members')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        username: 'altherr',
+        display_name: 'Alter Herr',
+        password: 'sicheresPasswort1',
+        member_status: 'alter_herr',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.member_status).toBe('alter_herr');
+    expect(res.body.can_book_for_others).toBe(0);
+  });
+
+  it('setzt member_status=aktiv als Default wenn nicht angegeben', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .post('/api/v1/members')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        username: 'ohnestatus',
+        display_name: 'Ohne Status',
+        password: 'sicheresPasswort1',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.member_status).toBe('aktiv');
+  });
+
   it('legt einen Admin an', async () => {
     const token = await getToken(app, 'admin');
     const res = await request(app)
@@ -307,6 +339,28 @@ describe('PATCH /api/v1/members/:id', () => {
 
     expect(loginRes.status).toBe(200);
     expect(loginRes.body).toHaveProperty('token');
+  });
+
+  it('aktualisiert member_status und can_book_for_others', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .patch('/api/v1/members/2')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ member_status: 'inaktiv', can_book_for_others: true });
+
+    expect(res.status).toBe(200);
+    expect(res.body.member_status).toBe('inaktiv');
+    expect(res.body.can_book_for_others).toBe(1);
+  });
+
+  it('gibt 400 bei ungültigem member_status zurück', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .patch('/api/v1/members/2')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ member_status: 'kein-status' });
+
+    expect(res.status).toBe(400);
   });
 
   it('gibt 404 für unbekannte ID zurück', async () => {

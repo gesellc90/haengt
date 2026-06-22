@@ -112,12 +112,16 @@ describe('ReportService.calculateMonthly', () => {
   });
 
   it('aggregiert Buchungen korrekt', async () => {
-    const { reportService, bookingsRepo, alice, cola, bier } = await setup();
+    const { db, reportService, alice, cola, bier } = await setup();
 
-    // 2 × Cola, 1 × Bier – alle im Mai 2026
-    bookingsRepo.create({ member_id: alice.id, drink_id: cola.id, price_cents_snapshot: 120 });
-    bookingsRepo.create({ member_id: alice.id, drink_id: cola.id, price_cents_snapshot: 120 });
-    bookingsRepo.create({ member_id: alice.id, drink_id: bier.id, price_cents_snapshot: 250 });
+    // 2 × Cola, 1 × Bier – alle im Mai 2026 (explizite Zeitstempel, datums-unabhängig)
+    const insert = db.prepare(
+      `INSERT INTO bookings (member_id, drink_id, price_cents_snapshot, booked_at)
+       VALUES (?, ?, ?, ?)`,
+    );
+    insert.run(alice.id, cola.id, 120, '2026-05-10T12:00:00.000Z');
+    insert.run(alice.id, cola.id, 120, '2026-05-11T12:00:00.000Z');
+    insert.run(alice.id, bier.id, 250, '2026-05-12T12:00:00.000Z');
 
     const report = reportService.calculateMonthly(alice.id, 2026, 5);
 
@@ -134,14 +138,15 @@ describe('ReportService.calculateMonthly', () => {
   });
 
   it('ignoriert stornierte Buchungen', async () => {
-    const { reportService, bookingsRepo, alice, cola } = await setup();
+    const { db, reportService, bookingsRepo, alice, cola } = await setup();
 
-    const booking = bookingsRepo.create({
-      member_id: alice.id,
-      drink_id: cola.id,
-      price_cents_snapshot: 120,
-    });
-    bookingsRepo.void(booking.id, 'Test-Storno');
+    const result = db
+      .prepare(
+        `INSERT INTO bookings (member_id, drink_id, price_cents_snapshot, booked_at)
+         VALUES (?, ?, ?, ?)`,
+      )
+      .run(alice.id, cola.id, 120, '2026-05-10T12:00:00.000Z');
+    bookingsRepo.void(result.lastInsertRowid as number, 'Test-Storno');
 
     const report = reportService.calculateMonthly(alice.id, 2026, 5);
     expect(report.entries).toHaveLength(0);
@@ -173,10 +178,14 @@ describe('ReportService.calculateMonthly', () => {
   });
 
   it('bezieht nur Buchungen des angefragten Mitglieds ein', async () => {
-    const { reportService, bookingsRepo, alice, bob, cola } = await setup();
+    const { db, reportService, alice, bob, cola } = await setup();
 
-    bookingsRepo.create({ member_id: alice.id, drink_id: cola.id, price_cents_snapshot: 120 });
-    bookingsRepo.create({ member_id: bob.id, drink_id: cola.id, price_cents_snapshot: 120 });
+    const insert = db.prepare(
+      `INSERT INTO bookings (member_id, drink_id, price_cents_snapshot, booked_at)
+       VALUES (?, ?, ?, ?)`,
+    );
+    insert.run(alice.id, cola.id, 120, '2026-05-10T12:00:00.000Z');
+    insert.run(bob.id, cola.id, 120, '2026-05-10T12:00:00.000Z');
 
     const report = reportService.calculateMonthly(alice.id, 2026, 5);
     expect(report.entries).toHaveLength(1);
@@ -184,13 +193,18 @@ describe('ReportService.calculateMonthly', () => {
   });
 
   it('sortiert die Summary alphabetisch', async () => {
-    const { reportService, bookingsRepo, alice, cola, bier } = await setup();
+    const { db, reportService, alice, cola, bier } = await setup();
 
-    bookingsRepo.create({ member_id: alice.id, drink_id: cola.id, price_cents_snapshot: 120 });
-    bookingsRepo.create({ member_id: alice.id, drink_id: bier.id, price_cents_snapshot: 250 });
+    const insert = db.prepare(
+      `INSERT INTO bookings (member_id, drink_id, price_cents_snapshot, booked_at)
+       VALUES (?, ?, ?, ?)`,
+    );
+    insert.run(alice.id, cola.id, 120, '2026-05-10T12:00:00.000Z');
+    insert.run(alice.id, bier.id, 250, '2026-05-10T12:00:00.000Z');
 
     const report = reportService.calculateMonthly(alice.id, 2026, 5);
     const names = report.summary.map((s) => s.drink_name);
+    expect(names.length).toBeGreaterThan(0);
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'de')));
   });
 });

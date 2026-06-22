@@ -1,17 +1,18 @@
 # Milestones
 
-Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jeder Meilenstein liefert einen demonstrierbaren Mehrwert und kann in 3–7 Tagen abgeschlossen werden.
+Dieser Plan unterteilt das Projekt in 9 aufeinander aufbauende Meilensteine. Jeder Meilenstein liefert einen demonstrierbaren Mehrwert und kann in 3–7 Tagen abgeschlossen werden.
 
-| #   | Titel                          | Dauer (geschätzt) | Abhängigkeiten              |
-| --- | ------------------------------ | ----------------- | --------------------------- |
-| M1  | Projekt-Setup & Tooling        | 2–3 Tage          | —                           |
-| M2  | Datenbankschicht & Migrationen | 2–3 Tage          | M1                          |
-| M3  | Authentifizierung & Sicherheit | 3–4 Tage          | M2                          |
-| M4  | API / Backend-Logik            | 5–7 Tage          | M3                          |
-| M5  | Frontend (React)               | 5–7 Tage          | M4 (parallel ab M3 möglich) |
-| M6  | Reporting & Export (PDF/CSV)   | 3–4 Tage          | M4                          |
-| M7  | CI/CD, Deployment & E2E-Tests  | 3–4 Tage          | M5, M6                      |
-| M8  | Design System — Hängt!-Marke   | 3–5 Tage          | M5                          |
+| #   | Titel                                   | Dauer (geschätzt) | Abhängigkeiten              |
+| --- | --------------------------------------- | ----------------- | --------------------------- |
+| M1  | Projekt-Setup & Tooling                 | 2–3 Tage          | —                           |
+| M2  | Datenbankschicht & Migrationen          | 2–3 Tage          | M1                          |
+| M3  | Authentifizierung & Sicherheit          | 3–4 Tage          | M2                          |
+| M4  | API / Backend-Logik                     | 5–7 Tage          | M3                          |
+| M5  | Frontend (React)                        | 5–7 Tage          | M4 (parallel ab M3 möglich) |
+| M6  | Reporting & Export (PDF/CSV)            | 3–4 Tage          | M4                          |
+| M7  | CI/CD, Deployment & E2E-Tests           | 3–4 Tage          | M5, M6                      |
+| M8  | Design System — Hängt!-Marke            | 3–5 Tage          | M5                          |
+| M9  | Allgemein-Konto & Mitglieder-Kategorien | 3–5 Tage          | M4, M5                      |
 
 ---
 
@@ -227,6 +228,52 @@ Dieser Plan unterteilt das Projekt in 7 aufeinander aufbauende Meilensteine. Jed
 - [x] **Tests:** Accessibility-Check auf Farbkontraste — Korps-Rot auf Pergament 8,67:1 ✓, alle kritischen Paare ≥ 4,5:1 (WCAG AA). Playwright-Screenshot-Tests: in laufender App manuell zu prüfen (CI-Sandbox kann keine headed Browser starten)
 
 **Definition of Done:** Die App sieht aus wie der Prototyp in `ui_kits/app/index.html`. Pergament-Hintergrund überall, Eiche-Header, Korps-Rot-CTAs, Caveat-Striche. Kein Default-Tailwind-Blau, keine Emojis, kein englischer UI-Text.
+
+---
+
+## M9 — Allgemein-Konto (Theken-Modus) & Mitglieder-Kategorien
+
+**Ziel:** Ein gemeinsames „Allgemein"-Konto, von dem aus am Tresen für beliebige Mitglieder gebucht werden kann, sowie eine Einteilung aller Mitglieder in vier Korporations-Kategorien für eine übersichtliche Auswahl.
+
+**Abhängigkeit:** M4 (Booking-API), M5 (Frontend).
+
+### Festgelegte Entscheidungen
+
+- Das Allgemein-Konto ist ein **normales Mitglied mit Zusatz-Flag** `can_book_for_others` — es erbt alle Member-Rechte, darf aber zusätzlich für andere buchen. Keine neue Rolle (passt zu „sonst gleiche Rechte wie ein normaler Nutzer").
+- Die vier Kategorien sind eine **eigene Dimension** (`member_status`), unabhängig vom bestehenden `is_active`-Login-/Soft-Delete-Flag. Dadurch bleiben auch Mitglieder ohne Login (z. B. „Freunde der Verbindung") bebuchbar.
+- Im Theken-Modus wählt man ein Mitglied, setzt **beliebig viele Striche** (inkl. Storno) und kehrt erst per **„Fertig"-Button** zur Übersicht zurück.
+
+### Datenbank & Backend
+
+- [ ] Migration 007: Spalte `member_status TEXT NOT NULL DEFAULT 'aktiv' CHECK (member_status IN ('aktiv','inaktiv','alter_herr','freund'))` an `members`
+- [ ] Migration 007: Spalte `can_book_for_others INTEGER NOT NULL DEFAULT 0 CHECK (can_book_for_others IN (0,1))` an `members`
+- [ ] Seed: „Allgemein"-Konto anlegen (`username='allgemein'`, `display_name='Allgemein'`, `role='member'`, `can_book_for_others=1`; Passwort wird von einem Admin gesetzt)
+- [ ] `MembersRepo`: neue Felder lesen/schreiben; `findBookable()` — alle bebuchbaren Mitglieder, gruppierbar nach `member_status` (Allgemein-Konto + Admins ausgenommen)
+- [ ] Zod-Schemas: `member_status` in Create-/Update-Member-Schema; `can_book_for_others` nur über Admin-Update setzbar
+- [ ] `POST /bookings` erweitern: optionales `member_id` im Body — wenn gesetzt, nur erlaubt wenn Requester `can_book_for_others=1` (sonst 403 `FORBIDDEN`); ohne `member_id` weiterhin Buchung für sich selbst
+- [ ] Buchungen eines bestimmten Mitglieds für den Theken-Screen ladbar machen (Allgemein-Konto darf fremde Buchungen lesen, beschränkt auf `member_id`-Filter)
+- [ ] `BookingService.void`: Konten mit `can_book_for_others` dürfen die von ihnen für andere angelegten Buchungen innerhalb des 5-Minuten-Fensters stornieren
+- [ ] Audit-Log: `booking_created`/`booking_voided` halten `actor_id` (Allgemein-Konto) **und** Ziel-`member_id` fest („auf wen wurde gebucht")
+- [ ] **Tests:** Supertest — Buchen für anderes Mitglied als Allgemein-Konto (201), als normales Member (403), Lesen fremder Buchungen; Vitest — Repo-Felder, Service-Authz, Storno durch Allgemein-Konto
+
+### Frontend
+
+- [ ] `AuthContext`/`GET /auth/me` liefern `can_book_for_others`
+- [ ] Routing: bei `can_book_for_others` rendert `/buchen` den **Theken-Flow** statt der normalen Stube; normale Mitglieder/Admins unverändert
+- [ ] **Mitglieder-Übersicht** (`MemberSelectView`): vier Abschnitte „Aktive", „Inaktive", „Alte Herren", „Freunde der Verbindung" mit Eyebrow-Section-Titles (Korps-Rot-Linie), große Touch-Kacheln je Mitglied (≥ 44px), Such-/Filterfeld
+- [ ] **Mitglieder-Buchungsansicht** (`MemberBookingView`): gewähltes Mitglied + Monats-Saldo oben, Sorten-Kacheln (Reuse `SortenButton`), Strich-Historie des Mitglieds mit Storno, prominenter **„Fertig"-Button** zurück zur Übersicht
+- [ ] `bookingsApi.createForMember(memberId, drinkId)` + `getForMember(memberId)`
+- [ ] Admin `MembersPage`: Spalte/Editor für `member_status` (Dropdown), Toggle `can_book_for_others`
+- [ ] Konsistent mit Hängt!-Tokens (Pergament, Eiche-Header, Caveat-Striche) — kein neuer visueller Stil
+- [ ] **Tests:** Vitest + RTL — Gruppierung der Übersicht nach Kategorie, Flow Auswahl → Buchen → „Fertig" → zurück
+
+### E2E & Doku
+
+- [ ] Playwright-E2E: Login als Allgemein-Konto → Mitglied aus Kategorie wählen → Strich setzen → Storno → „Fertig" → zurück zur Übersicht; Test-Seed um Allgemein-Konto + kategorisierte Mitglieder erweitern
+- [ ] `ARCHITECTURE.md`: neue Spalten, Endpunkt-Änderungen, Theken-Modus dokumentieren
+- [ ] `CHANGELOG.md`: nutzersichtbare Änderungen unter [Unreleased] pflegen
+
+**Definition of Done:** Login als „Allgemein" zeigt die nach vier Kategorien gruppierte Mitgliederübersicht. Auswahl eines Mitglieds → Striche setzen (mehrere möglich, Storno möglich) → „Fertig" → zurück zur Übersicht. Normale Mitglieder und Admins sehen unverändert ihre eigene Stube. Buchungen für andere sind im Audit-Log dem Allgemein-Konto zugeordnet. Lint, Unit-, Integrations- und E2E-Tests grün.
 
 ---
 

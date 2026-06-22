@@ -42,14 +42,41 @@ if (applied > 0) {
 // ---------------------------------------------------------------------------
 
 const insertMember = db.prepare(`
-  INSERT OR IGNORE INTO members (username, display_name, role)
-  VALUES (@username, @display_name, @role)
+  INSERT OR IGNORE INTO members (username, display_name, role, member_status, can_book_for_others)
+  VALUES (@username, @display_name, @role, @member_status, @can_book_for_others)
 `);
 
 db.transaction(() => {
-  insertMember.run({ username: 'admin', display_name: 'Administrator', role: 'admin' });
-  insertMember.run({ username: 'anna', display_name: 'Anna Muster', role: 'member' });
-  insertMember.run({ username: 'bernd', display_name: 'Bernd Beispiel', role: 'member' });
+  insertMember.run({
+    username: 'admin',
+    display_name: 'Administrator',
+    role: 'admin',
+    member_status: 'aktiv',
+    can_book_for_others: 0,
+  });
+  insertMember.run({
+    username: 'anna',
+    display_name: 'Anna Muster',
+    role: 'member',
+    member_status: 'aktiv',
+    can_book_for_others: 0,
+  });
+  insertMember.run({
+    username: 'bernd',
+    display_name: 'Bernd Beispiel',
+    role: 'member',
+    member_status: 'alter_herr',
+    can_book_for_others: 0,
+  });
+  // Allgemein-Konto: darf für beliebige Mitglieder buchen (Theken-Modus).
+  // Passwort wird – wie beim Admin – von einem Admin gesetzt (bleibt zunächst NULL).
+  insertMember.run({
+    username: 'allgemein',
+    display_name: 'Allgemein',
+    role: 'member',
+    member_status: 'aktiv',
+    can_book_for_others: 1,
+  });
 })();
 
 console.log('[seed] Mitglieder angelegt.');

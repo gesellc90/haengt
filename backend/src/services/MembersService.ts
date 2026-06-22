@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { BCRYPT_COST } from './AuthService.js';
 import type { MembersRepo } from '../db/repos/MembersRepo.js';
 import type { AuditLogRepo } from '../db/repos/AuditLogRepo.js';
-import type { MemberRow } from '../db/types.js';
+import type { MemberRow, MemberStatus } from '../db/types.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 // ---------------------------------------------------------------------------
@@ -52,6 +52,7 @@ export class MembersService {
       display_name: string;
       password: string;
       role?: 'admin' | 'member';
+      member_status?: MemberStatus;
     },
     actorId: number,
   ): Promise<MemberRow> {
@@ -67,6 +68,7 @@ export class MembersService {
       display_name: input.display_name,
       password_hash,
       role: input.role ?? 'member',
+      member_status: input.member_status ?? 'aktiv',
     });
 
     this.auditLog.create({
@@ -74,7 +76,11 @@ export class MembersService {
       actor_id: actorId,
       target_type: 'member',
       target_id: member.id,
-      meta: { username: input.username, role: input.role ?? 'member' },
+      meta: {
+        username: input.username,
+        role: input.role ?? 'member',
+        member_status: input.member_status ?? 'aktiv',
+      },
     });
 
     return member;
@@ -90,6 +96,8 @@ export class MembersService {
       display_name?: string;
       password?: string;
       role?: 'admin' | 'member';
+      member_status?: MemberStatus;
+      can_book_for_others?: boolean;
     },
     actorId: number,
   ): Promise<MemberRow> {
@@ -107,6 +115,9 @@ export class MembersService {
       display_name: input.display_name,
       password_hash,
       role: input.role,
+      member_status: input.member_status,
+      can_book_for_others:
+        input.can_book_for_others === undefined ? undefined : input.can_book_for_others ? 1 : 0,
     });
 
     this.auditLog.create({
@@ -119,6 +130,8 @@ export class MembersService {
           ...(input.display_name !== undefined ? ['display_name'] : []),
           ...(input.password !== undefined ? ['password'] : []),
           ...(input.role !== undefined ? ['role'] : []),
+          ...(input.member_status !== undefined ? ['member_status'] : []),
+          ...(input.can_book_for_others !== undefined ? ['can_book_for_others'] : []),
         ],
       },
     });

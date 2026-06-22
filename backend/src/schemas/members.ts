@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+/** Korporationsstatus – siehe Migration 007. */
+export const memberStatusSchema = z.enum(['aktiv', 'inaktiv', 'alter_herr', 'freund']);
+
 // ---------------------------------------------------------------------------
 // POST /members
 // ---------------------------------------------------------------------------
@@ -13,6 +16,7 @@ export const createMemberSchema = z.object({
   display_name: z.string().min(1, 'Darf nicht leer sein').max(100, 'Maximal 100 Zeichen').trim(),
   password: z.string().min(8, 'Mindestens 8 Zeichen').max(72, 'Maximal 72 Zeichen (bcrypt-Limit)'),
   role: z.enum(['admin', 'member']).default('member'),
+  member_status: memberStatusSchema.default('aktiv'),
 });
 
 export type CreateMemberInput = z.infer<typeof createMemberSchema>;
@@ -35,6 +39,8 @@ export const updateMemberSchema = z
       .max(72, 'Maximal 72 Zeichen (bcrypt-Limit)')
       .optional(),
     role: z.enum(['admin', 'member']).optional(),
+    member_status: memberStatusSchema.optional(),
+    can_book_for_others: z.boolean().optional(),
   })
   .strict()
   .refine((data) => Object.keys(data).length > 0, {

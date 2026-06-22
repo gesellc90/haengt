@@ -49,6 +49,34 @@ describe('MembersRepo', () => {
       expect(() => repo.create({ username: 'dupe', display_name: 'Zwei' })).toThrow();
     });
 
+    it('setzt member_status=aktiv und can_book_for_others=0 als Default', () => {
+      const member = repo.create({ username: 'defaults', display_name: 'Defaults' });
+      expect(member.member_status).toBe('aktiv');
+      expect(member.can_book_for_others).toBe(0);
+    });
+
+    it('übernimmt member_status und can_book_for_others', () => {
+      const member = repo.create({
+        username: 'theke',
+        display_name: 'Allgemein',
+        member_status: 'freund',
+        can_book_for_others: 1,
+      });
+      expect(member.member_status).toBe('freund');
+      expect(member.can_book_for_others).toBe(1);
+    });
+
+    it('lehnt einen ungültigen member_status ab (CHECK-Constraint)', () => {
+      expect(() =>
+        repo.create({
+          username: 'kaputt',
+          display_name: 'Kaputt',
+          // @ts-expect-error – absichtlich ungültiger Wert für den DB-CHECK
+          member_status: 'unbekannt',
+        }),
+      ).toThrow();
+    });
+
     it('username-Vergleich ist case-insensitive (UNIQUE COLLATE NOCASE)', () => {
       repo.create({ username: 'Anna', display_name: 'Anna' });
       expect(() => repo.create({ username: 'ANNA', display_name: 'Anna2' })).toThrow();
@@ -131,6 +159,59 @@ describe('MembersRepo', () => {
       const m = repo.create({ username: 'partial', display_name: 'Orig', role: 'admin' });
       const updated = repo.update(m.id, { display_name: 'Geändert' });
       expect(updated?.role).toBe('admin');
+    });
+
+    it('aktualisiert member_status und can_book_for_others', () => {
+      const m = repo.create({ username: 'cat', display_name: 'Kat' });
+      const updated = repo.update(m.id, { member_status: 'inaktiv', can_book_for_others: 1 });
+      expect(updated?.member_status).toBe('inaktiv');
+      expect(updated?.can_book_for_others).toBe(1);
+    });
+
+    it('lässt member_status/can_book_for_others unverändert wenn nicht angegeben', () => {
+      const m = repo.create({
+        username: 'keep',
+        display_name: 'Keep',
+        member_status: 'alter_herr',
+        can_book_for_others: 1,
+      });
+      const updated = repo.update(m.id, { display_name: 'Neu' });
+      expect(updated?.member_status).toBe('alter_herr');
+      expect(updated?.can_book_for_others).toBe(1);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // findBookable
+  // ---------------------------------------------------------------------------
+
+  describe('findBookable', () => {
+    it('liefert nur aktive Members ohne Buchen-für-andere-Recht', () => {
+      const aktiv = repo.create({ username: 'a', display_name: 'Aktiv', member_status: 'aktiv' });
+      const admin = repo.create({ username: 'adm', display_name: 'Admin', role: 'admin' });
+      const theke = repo.create({
+        username: 'theke',
+        display_name: 'Allgemein',
+        can_book_for_others: 1,
+      });
+      const inaktivKonto = repo.create({ username: 'weg', display_name: 'Weg' });
+      repo.deactivate(inaktivKonto.id);
+
+      const ids = repo.findBookable().map((m) => m.id);
+      expect(ids).toContain(aktiv.id);
+      expect(ids).not.toContain(admin.id);
+      expect(ids).not.toContain(theke.id);
+      expect(ids).not.toContain(inaktivKonto.id);
+    });
+
+    it('sortiert nach Kategorie (Aktive → Inaktive → Alte Herren → Freunde)', () => {
+      repo.create({ username: 'f', display_name: 'Freund', member_status: 'freund' });
+      repo.create({ username: 'ah', display_name: 'AlterHerr', member_status: 'alter_herr' });
+      repo.create({ username: 'ak', display_name: 'Aktiver', member_status: 'aktiv' });
+      repo.create({ username: 'in', display_name: 'Inaktiver', member_status: 'inaktiv' });
+
+      const stati = repo.findBookable().map((m) => m.member_status);
+      expect(stati).toEqual(['aktiv', 'inaktiv', 'alter_herr', 'freund']);
     });
   });
 

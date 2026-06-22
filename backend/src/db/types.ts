@@ -2,6 +2,9 @@
 // DB-Row-Typen (spiegeln exakt die SQL-Schemas wider)
 // ---------------------------------------------------------------------------
 
+/** Korporationsstatus – unabhängig vom is_active-Login-/Soft-Delete-Flag. */
+export type MemberStatus = 'aktiv' | 'inaktiv' | 'alter_herr' | 'freund';
+
 export interface MemberRow {
   id: number;
   username: string;
@@ -9,6 +12,8 @@ export interface MemberRow {
   password_hash: string | null;
   role: 'admin' | 'member';
   is_active: 0 | 1;
+  member_status: MemberStatus;
+  can_book_for_others: 0 | 1;
   created_at: string;
   updated_at: string;
 }

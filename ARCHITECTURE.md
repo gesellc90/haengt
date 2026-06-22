@@ -53,6 +53,11 @@ CREATE TABLE members (
     password_hash   TEXT NOT NULL,
     role            TEXT NOT NULL CHECK(role IN ('member', 'admin')),
     active          INTEGER NOT NULL DEFAULT 1,
+    -- Verbindungs-Kategorie, unabhängig von active (Login/Soft-Delete)
+    member_status       TEXT NOT NULL DEFAULT 'aktiv'
+        CHECK (member_status IN ('aktiv', 'inaktiv', 'alter_herr', 'freund')),
+    -- 1 = darf für beliebige andere Mitglieder buchen (Theken-/Allgemein-Konto)
+    can_book_for_others INTEGER NOT NULL DEFAULT 0 CHECK (can_book_for_others IN (0, 1)),
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -109,6 +114,7 @@ CREATE TABLE audit_log (
 - **Append-Only Buchungen** — keine `DELETE`s, Stornierungen über `voided_at`. Macht Abrechnungen nachvollziehbar.
 - **Preis-Snapshot in `bookings.unit_price_cents`** — damit nachträgliche Preisänderungen alte Abrechnungen nicht verfälschen.
 - **`drink_prices` mit Gültigkeitszeitraum** — wenn man den jeweils aktuellen Preis lookup'en muss (z. B. UI), ist das zeitabhängig korrekt.
+- **Theken-/Allgemein-Konto (`can_book_for_others`)** — ein Konto mit gesetztem Flag bucht stellvertretend für andere. Das Frontend schaltet nach dem Login allein anhand dieses Flags zwischen der eigenen Stube (`BookingPage`) und der nach `member_status` gruppierten Theken-Übersicht (`ThekePage`) um. Damit die Umschaltung schon unmittelbar nach dem Login greift, liefern sowohl `/auth/login` als auch `/auth/me` das vollständige `PublicMember`-Objekt (inkl. `can_book_for_others`, ohne `password_hash`).
 
 ## API-Übersicht
 
@@ -124,13 +130,14 @@ Basis-URL: `/api/v1`. Alle geschützten Endpunkte erwarten `Authorization: Beare
 
 ### Mitglieder
 
-| Methode | Pfad           | Auth  | Beschreibung                 |
-| ------- | -------------- | ----- | ---------------------------- |
-| GET     | `/members`     | Admin | Alle Mitglieder              |
-| POST    | `/members`     | Admin | Neues Mitglied anlegen       |
-| GET     | `/members/:id` | Admin | Einzelnes Mitglied           |
-| PATCH   | `/members/:id` | Admin | Mitglied aktualisieren       |
-| DELETE  | `/members/:id` | Admin | Mitglied deaktivieren (soft) |
+| Methode | Pfad                | Auth  | Beschreibung                                                 |
+| ------- | ------------------- | ----- | ------------------------------------------------------------ |
+| GET     | `/members`          | Admin | Alle Mitglieder                                              |
+| POST    | `/members`          | Admin | Neues Mitglied anlegen                                       |
+| GET     | `/members/bookable` | User  | Bebuchbare Mitglieder (nur Konten mit `can_book_for_others`) |
+| GET     | `/members/:id`      | Admin | Einzelnes Mitglied                                           |
+| PATCH   | `/members/:id`      | Admin | Mitglied aktualisieren                                       |
+| DELETE  | `/members/:id`      | Admin | Mitglied deaktivieren (soft)                                 |
 
 ### Getränke
 

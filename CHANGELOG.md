@@ -25,6 +25,9 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   - `GET /members/bookable`: für Konten mit `can_book_for_others` zugängliche Liste der bebuchbaren Mitglieder (nach Kategorie sortiert), ohne Admin-Recht
   - Theken-Ansicht unter `/buchen`: Konten mit `can_book_for_others` sehen statt der Selbstbuchung eine Mitgliederauswahl (vier Kategorie-Abschnitte + Suchfeld), wählen ein Mitglied und buchen/stornieren in dessen Namen; „Fertig" führt zurück zur Übersicht
   - Admin-Mitgliederverwaltung: Kategorie-Auswahl beim Anlegen sowie inline editierbare Spalten „Kategorie" und „Theke" (Buchen-für-andere-Schalter)
+- **M9 (in Arbeit) — Allgemein-Konto & Mitglieder-Kategorien, PR 4: E2E & Doku**
+  - Playwright-E2E-Spec `06-theke-flow`: Login als Allgemein-Konto → nach Kategorie gruppierte Übersicht → Mitglied wählen → Strich setzen → Storno → „Fertig"; Gegenprobe, dass ein normales Mitglied weiterhin die eigene Stube sieht
+  - `ARCHITECTURE.md`: Members-Schema (`member_status`, `can_book_for_others`), Endpunkt `GET /members/bookable` und Designnotiz zum Theken-Modus ergänzt
 - Initiale Projektstruktur (Backend, Frontend, Doku, CI)
 - Architekturdokumentation (`ARCHITECTURE.md`)
 - Contribution Guide (`CONTRIBUTING.md`)
@@ -54,6 +57,8 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Fixed
 
+- **M9 — Theken-Modus griff erst nach Reload:** `POST /auth/login` lieferte nur ein abgespecktes Member-Objekt (ohne `can_book_for_others`), sodass die Theken-Übersicht direkt nach dem Login nicht erschien. Login gibt nun – wie `/auth/me` – das vollständige `PublicMember`-Objekt zurück
+- **Mobile-Layout:** das letzte Seitenelement (z. B. der „Fertig"-Button) verschwand hinter der fixierten Bottom-TabBar – Platzhalter im `<main>` ergänzt
 - **Backend-Build:** Migrations-`.sql`-Dateien werden jetzt via `backend/scripts/copy-migrations.mjs` nach `dist/db/migrations/` kopiert. Ohne diesen Schritt würde `node dist/db/migrate-cli.js` (genutzt in PR 2 vom Pi-Deploy) zur Laufzeit keine Migrationen finden, weil `tsc` Nicht-TS-Files ignoriert
 - **M1 — Projekt-Setup & Tooling**
   - Mono-Repo mit npm-Workspaces (`backend/`, `frontend/`)

@@ -12,6 +12,7 @@ export const TEST_PASSWORDS = Object.freeze({
   admin: 'admin-passwort',
   anna: 'anna-passwort',
   bernd: 'bernd-passwort',
+  allgemein: 'allgemein-passwort',
 });
 
 /**
@@ -23,6 +24,9 @@ export async function loginViaUi(page: Page, username: string, password: string)
   await page.getByLabel('Kürzel').fill(username);
   await page.getByLabel('Losungswort').fill(password);
   await page.getByRole('button', { name: /anmelden|einloggen|login/i }).click();
+  // Auf die Weiterleitung weg von /login warten — sonst rennen nachfolgende
+  // Navigationen dem noch laufenden Login-Roundtrip davon (Flakiness).
+  await page.waitForURL((url) => !url.pathname.endsWith('/login'));
 }
 
 /**

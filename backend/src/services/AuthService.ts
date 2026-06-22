@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import type { MembersRepo } from '../db/repos/MembersRepo.js';
 import type { AuditLogRepo } from '../db/repos/AuditLogRepo.js';
 import type { TokenBlocklistRepo } from '../db/repos/TokenBlocklistRepo.js';
-import type { MemberRow } from '../db/types.js';
+import { toPublicMember, type PublicMember } from './publicMember.js';
 
 export const BCRYPT_COST = 10;
 
@@ -19,7 +19,7 @@ export interface JwtPayload {
 
 export interface LoginResult {
   token: string;
-  member: Pick<MemberRow, 'id' | 'username' | 'display_name' | 'role'>;
+  member: PublicMember;
 }
 
 export class AuthError extends Error {
@@ -110,12 +110,7 @@ export class AuthService {
 
     return {
       token,
-      member: {
-        id: member.id,
-        username: member.username,
-        display_name: member.display_name,
-        role: member.role,
-      },
+      member: toPublicMember(member),
     };
   }
 

@@ -9,9 +9,10 @@
  *   plus eine „alte" Buchung anlegen (Storno-Fenster bereits abgelaufen).
  *
  * Test-Credentials (NICHT in Produktion verwenden!):
- *   admin  / admin-passwort
- *   anna   / anna-passwort
- *   bernd  / bernd-passwort
+ *   admin      / admin-passwort
+ *   anna       / anna-passwort
+ *   bernd      / bernd-passwort
+ *   allgemein  / allgemein-passwort   (Theken-/Allgemein-Konto, can_book_for_others)
  *
  * Wird als `.mjs` ohne TypeScript geschrieben, damit das globalSetup das
  * Skript direkt mit `node` aufrufen kann — kein tsx/esbuild-Schritt nötig.
@@ -30,6 +31,7 @@ export const TEST_PASSWORDS = Object.freeze({
   admin: 'admin-passwort',
   anna: 'anna-passwort',
   bernd: 'bernd-passwort',
+  allgemein: 'allgemein-passwort',
 });
 
 const db = new Database(dbPath);

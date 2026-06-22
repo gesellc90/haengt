@@ -20,6 +20,11 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   - `GET /bookings/member/:id`: Buchungen eines bestimmten Mitglieds (paginiert) – fremde nur für Konten mit `can_book_for_others`, eigene immer
   - Storno durch das Allgemein-Konto: Konten mit `can_book_for_others` dürfen die von ihnen selbst angelegten Fremdbuchungen im 5-Minuten-Fenster stornieren
   - Audit-Log: `booking_created`/`booking_voided` halten `actor_id` (buchendes Konto) und `meta.member_id` (Ziel) fest
+- **M9 (in Arbeit) — Allgemein-Konto & Mitglieder-Kategorien, PR 3: Theken-Flow (Frontend)**
+  - `GET /auth/me` liefert jetzt das vollständige öffentliche Member-Objekt inkl. `member_status` und `can_book_for_others` (statt nur des JWT-Claims), damit das Frontend den Theken-Modus erkennt
+  - `GET /members/bookable`: für Konten mit `can_book_for_others` zugängliche Liste der bebuchbaren Mitglieder (nach Kategorie sortiert), ohne Admin-Recht
+  - Theken-Ansicht unter `/buchen`: Konten mit `can_book_for_others` sehen statt der Selbstbuchung eine Mitgliederauswahl (vier Kategorie-Abschnitte + Suchfeld), wählen ein Mitglied und buchen/stornieren in dessen Namen; „Fertig" führt zurück zur Übersicht
+  - Admin-Mitgliederverwaltung: Kategorie-Auswahl beim Anlegen sowie inline editierbare Spalten „Kategorie" und „Theke" (Buchen-für-andere-Schalter)
 - Initiale Projektstruktur (Backend, Frontend, Doku, CI)
 - Architekturdokumentation (`ARCHITECTURE.md`)
 - Contribution Guide (`CONTRIBUTING.md`)

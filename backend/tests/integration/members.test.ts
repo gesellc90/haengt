@@ -444,3 +444,61 @@ describe('DELETE /api/v1/members/:id', () => {
     expect(res.body.code).toBe('ALREADY_INACTIVE');
   });
 });
+
+// ---------------------------------------------------------------------------
+// GET /members/bookable (M9 — Theken-/Allgemein-Konto)
+// ---------------------------------------------------------------------------
+
+describe('GET /api/v1/members/bookable', () => {
+  let app: Express;
+  let db: Db;
+
+  beforeEach(async () => {
+    ({ app, db } = await setupApp());
+    const membersRepo = new MembersRepo(db);
+    const passwordHash = await bcrypt.hash('geheim123', 10);
+    membersRepo.create({
+      username: 'allgemein',
+      display_name: 'Allgemein',
+      password_hash: passwordHash,
+      role: 'member',
+      can_book_for_others: 1,
+    });
+    membersRepo.create({
+      username: 'freund',
+      display_name: 'Freund Franz',
+      role: 'member',
+      member_status: 'freund',
+    });
+  });
+
+  it('Allgemein-Konto erhält die bebuchbaren Mitglieder', async () => {
+    const token = await getToken(app, 'allgemein');
+    const res = await request(app)
+      .get('/api/v1/members/bookable')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    // alice + freund sind bebuchbar; admin und das Allgemein-Konto selbst nicht
+    const usernames = (res.body as Array<{ username: string }>).map((m) => m.username);
+    expect(usernames).toContain('alice');
+    expect(usernames).toContain('freund');
+    expect(usernames).not.toContain('admin');
+    expect(usernames).not.toContain('allgemein');
+  });
+
+  it('normales Mitglied erhält 403', async () => {
+    const token = await getToken(app, 'alice');
+    const res = await request(app)
+      .get('/api/v1/members/bookable')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('FORBIDDEN');
+  });
+
+  it('gibt 401 ohne Token zurück', async () => {
+    const res = await request(app).get('/api/v1/members/bookable');
+    expect(res.status).toBe(401);
+  });
+});

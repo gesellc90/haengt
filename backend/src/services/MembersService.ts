@@ -34,6 +34,11 @@ export class MembersService {
     return this.members.findAll(includeInactive);
   }
 
+  /** Bebuchbare Mitglieder für den Theken-/Allgemein-Modus, sortiert nach Kategorie. */
+  findBookable(): MemberRow[] {
+    return this.members.findBookable();
+  }
+
   findById(id: number): MemberRow {
     const member = this.members.findById(id);
     if (!member) {

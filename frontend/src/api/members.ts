@@ -1,5 +1,5 @@
 import { apiFetch } from './client.js';
-import type { PublicMember } from '../types/api.js';
+import type { MemberStatus, PublicMember } from '../types/api.js';
 
 export const membersApi = {
   /** Admin: alle Mitglieder */
@@ -8,17 +8,23 @@ export const membersApi = {
     return apiFetch<PublicMember[]>(`/members${qs}`);
   },
 
+  /** Theken-/Allgemein-Konto: bebuchbare Mitglieder, nach Kategorie sortiert */
+  getBookable(): Promise<PublicMember[]> {
+    return apiFetch<PublicMember[]>('/members/bookable');
+  },
+
   /** Admin: Mitglied anlegen */
   create(data: {
     username: string;
     display_name: string;
     password: string;
     role?: 'admin' | 'member';
+    member_status?: MemberStatus;
   }): Promise<PublicMember> {
     return apiFetch<PublicMember>('/members', { method: 'POST', body: data });
   },
 
-  /** Admin: Mitglied aktualisieren (display_name, role, is_active, password) */
+  /** Admin: Mitglied aktualisieren (display_name, role, is_active, password, Kategorie, Theken-Flag) */
   update(
     id: number,
     data: {
@@ -26,6 +32,8 @@ export const membersApi = {
       role?: 'admin' | 'member';
       is_active?: 0 | 1;
       password?: string;
+      member_status?: MemberStatus;
+      can_book_for_others?: boolean;
     },
   ): Promise<PublicMember> {
     return apiFetch<PublicMember>(`/members/${id}`, { method: 'PATCH', body: data });

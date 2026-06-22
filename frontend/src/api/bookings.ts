@@ -7,11 +7,26 @@ export const bookingsApi = {
     return apiFetch<BookingRow>('/bookings', { method: 'POST', body: { drink_id: drinkId } });
   },
 
+  /** Buchung für ein anderes Mitglied anlegen (Theken-/Allgemein-Konto) */
+  createForMember(memberId: number, drinkId: number): Promise<BookingRow> {
+    return apiFetch<BookingRow>('/bookings', {
+      method: 'POST',
+      body: { drink_id: drinkId, member_id: memberId },
+    });
+  },
+
   /** Eigene Buchungen (paginiert) */
   getMine(limit = 50, beforeId?: number): Promise<PaginatedBookings> {
     const params = new URLSearchParams({ limit: String(limit) });
     if (beforeId !== undefined) params.set('before', String(beforeId));
     return apiFetch<PaginatedBookings>(`/bookings/me?${params.toString()}`);
+  },
+
+  /** Buchungen eines bestimmten Mitglieds (Theken-/Allgemein-Konto) */
+  getForMember(memberId: number, limit = 50, beforeId?: number): Promise<PaginatedBookings> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (beforeId !== undefined) params.set('before', String(beforeId));
+    return apiFetch<PaginatedBookings>(`/bookings/member/${memberId}?${params.toString()}`);
   },
 
   /** Admin: alle Buchungen mit optionalen Filtern */

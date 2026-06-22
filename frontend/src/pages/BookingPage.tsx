@@ -5,173 +5,10 @@ import { ApiError } from '../api/client.js';
 import { useToast } from '../contexts/ToastContext.js';
 import Spinner from '../components/Spinner.js';
 import SaldoCard from '../components/SaldoCard.js';
-import SortenButton from '../components/SortenButton.js';
+import SortenButton, { formatCents } from '../components/SortenButton.js';
+import SectionTitle from '../components/SectionTitle.js';
+import StrichHistory from '../components/StrichHistory.js';
 import type { BookingRow, DrinkWithCurrentPrice } from '../types/api.js';
-
-// ---------------------------------------------------------------------------
-// Hilfsfunktionen
-// ---------------------------------------------------------------------------
-
-function formatCents(cents: number): string {
-  return (cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-}
-
-/** Prüft ob eine Buchung noch innerhalb des 5-Minuten-Storno-Fensters liegt */
-function isVoidable(booking: BookingRow): boolean {
-  if (booking.voided_at !== null) return false;
-  const bookedAt = new Date(booking.booked_at).getTime();
-  return Date.now() - bookedAt < 5 * 60 * 1000;
-}
-
-// ---------------------------------------------------------------------------
-// Strich-Historie
-// ---------------------------------------------------------------------------
-
-interface StrichHistoryProps {
-  bookings: BookingRow[];
-  drinks: DrinkWithCurrentPrice[];
-  onVoid(bookingId: number): void;
-  voidingId: number | null;
-}
-
-function StrichHistory({ bookings, drinks, onVoid, voidingId }: StrichHistoryProps) {
-  const drinkMap = new Map(drinks.map((d) => [d.id, d]));
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  const recent = bookings.filter((b) => new Date(b.booked_at).getTime() >= startOfMonth);
-
-  if (recent.length === 0) {
-    return (
-      <p
-        style={{
-          padding: '24px 0',
-          textAlign: 'center',
-          fontFamily: 'var(--font-serif)',
-          fontStyle: 'italic',
-          fontSize: 15,
-          color: 'var(--tinte-4)',
-        }}
-      >
-        Diesen Monat noch keine Striche gesetzt.
-      </p>
-    );
-  }
-
-  return (
-    <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-      {recent.map((b, i) => {
-        const drink = drinkMap.get(b.drink_id);
-        const voided = b.voided_at !== null;
-        return (
-          <li
-            key={b.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              padding: '12px 0',
-              borderTop: i > 0 ? '1px solid var(--line)' : 'none',
-              opacity: voided ? 0.45 : 1,
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p
-                style={{
-                  fontFamily: 'var(--font-sans)',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: 'var(--tinte)',
-                  margin: 0,
-                  textDecoration: voided ? 'line-through' : 'none',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {drink?.name ?? `Getränk #${b.drink_id}`}
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-sans)',
-                  fontSize: 12,
-                  color: 'var(--tinte-4)',
-                  margin: '2px 0 0',
-                }}
-              >
-                {formatTime(b.booked_at)}
-                {voided && ' · storniert'}
-              </p>
-            </div>
-            <span
-              style={{
-                fontFamily: 'var(--font-sans)',
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--tinte-2)',
-                flexShrink: 0,
-              }}
-            >
-              {formatCents(b.price_cents_snapshot)}
-            </span>
-            {!voided && isVoidable(b) && (
-              <button
-                onClick={() => onVoid(b.id)}
-                disabled={voidingId === b.id}
-                aria-label="Strich stornieren"
-                style={{
-                  minHeight: 36,
-                  flexShrink: 0,
-                  padding: '4px 12px',
-                  borderRadius: 'var(--r-2)',
-                  border: '1px solid var(--korps-rot)',
-                  background: 'transparent',
-                  fontFamily: 'var(--font-sans)',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: 'var(--korps-rot)',
-                  cursor: voidingId === b.id ? 'not-allowed' : 'pointer',
-                  opacity: voidingId === b.id ? 0.5 : 1,
-                  letterSpacing: '0.03em',
-                }}
-              >
-                {voidingId === b.id ? <Spinner size="h-3 w-3" /> : 'Stornieren'}
-              </button>
-            )}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Abschnitts-Titel (Eyebrow-Stil)
-// ---------------------------------------------------------------------------
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2
-      style={{
-        fontFamily: 'var(--font-sans)',
-        fontSize: 11,
-        fontWeight: 700,
-        color: 'var(--tinte-3)',
-        letterSpacing: '0.1em',
-        textTransform: 'uppercase',
-        margin: '0 0 12px',
-        paddingBottom: 6,
-        borderBottom: '2px solid var(--korps-rot)',
-        display: 'inline-block',
-      }}
-    >
-      {children}
-    </h2>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Haupt-Komponente — Stube
@@ -224,6 +61,7 @@ export default function BookingPage() {
       booked_at: new Date().toISOString(),
       voided_at: null,
       void_reason: null,
+      booked_by_id: null,
     };
     setBookings((prev) => [optimistic, ...prev]);
     setBookingDrinkId(drink.id);

@@ -3,7 +3,18 @@ import { membersApi } from '../../api/members.js';
 import { ApiError } from '../../api/client.js';
 import { useToast } from '../../contexts/ToastContext.js';
 import Spinner from '../../components/Spinner.js';
-import type { PublicMember } from '../../types/api.js';
+import type { MemberStatus, PublicMember } from '../../types/api.js';
+
+// ---------------------------------------------------------------------------
+// Kategorie-Beschriftung
+// ---------------------------------------------------------------------------
+
+const CATEGORY_OPTIONS: { value: MemberStatus; label: string }[] = [
+  { value: 'aktiv', label: 'Aktiv' },
+  { value: 'inaktiv', label: 'Inaktiv' },
+  { value: 'alter_herr', label: 'Alter Herr' },
+  { value: 'freund', label: 'Freund' },
+];
 
 // ---------------------------------------------------------------------------
 // Gemeinsame Styles
@@ -105,6 +116,7 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
     display_name: '',
     password: '',
     role: 'member' as 'admin' | 'member',
+    member_status: 'aktiv' as MemberStatus,
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -120,7 +132,13 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
     try {
       const member = await membersApi.create(form);
       onCreated(member);
-      setForm({ username: '', display_name: '', password: '', role: 'member' });
+      setForm({
+        username: '',
+        display_name: '',
+        password: '',
+        role: 'member',
+        member_status: 'aktiv',
+      });
       setOpen(false);
       showToast(`${member.display_name} wurde angelegt.`, 'success');
     } catch (err) {
@@ -199,6 +217,21 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
           <select name="role" value={form.role} onChange={handleChange} style={inputStyle}>
             <option value="member">Mitglied</option>
             <option value="admin">Vorstand</option>
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>Kategorie</label>
+          <select
+            name="member_status"
+            value={form.member_status}
+            onChange={handleChange}
+            style={inputStyle}
+          >
+            {CATEGORY_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -303,6 +336,18 @@ export default function MembersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [includeInactive]);
 
+  async function handleUpdate(
+    id: number,
+    data: { member_status?: MemberStatus; can_book_for_others?: boolean },
+  ) {
+    try {
+      const updated = await membersApi.update(id, data);
+      setMembers((prev) => prev.map((m) => (m.id === id ? updated : m)));
+    } catch (err) {
+      showToast(err instanceof ApiError ? err.message : 'Fehler beim Speichern.', 'error');
+    }
+  }
+
   async function handleDeactivate(id: number, name: string) {
     if (!confirm(`${name} wirklich deaktivieren?`)) return;
     try {
@@ -363,24 +408,26 @@ export default function MembersPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
-                {['Name', 'Kürzel', 'Rolle', 'Status', 'Aktionen'].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: '10px 16px',
-                      textAlign: 'left',
-                      fontFamily: 'var(--font-sans)',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: 'var(--tinte-3)',
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                      borderBottom: '1px solid var(--line)',
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
+                {['Name', 'Kürzel', 'Rolle', 'Kategorie', 'Theke', 'Status', 'Aktionen'].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      style={{
+                        padding: '10px 16px',
+                        textAlign: 'left',
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: 'var(--tinte-3)',
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        borderBottom: '1px solid var(--line)',
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody>
@@ -422,6 +469,47 @@ export default function MembersPage() {
                       {m.role === 'admin' ? 'Vorstand' : 'Mitglied'}
                     </td>
                     <td style={{ padding: '10px 16px' }}>
+                      <select
+                        value={m.member_status}
+                        onChange={(e) =>
+                          void handleUpdate(m.id, {
+                            member_status: e.target.value as MemberStatus,
+                          })
+                        }
+                        aria-label={`Kategorie von ${m.display_name}`}
+                        style={{ ...inputStyle, minHeight: 36, width: 'auto', fontSize: 13 }}
+                      >
+                        {CATEGORY_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td style={{ padding: '10px 16px' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          cursor: 'pointer',
+                          fontFamily: 'var(--font-sans)',
+                          fontSize: 12,
+                          color: 'var(--tinte-3)',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={m.can_book_for_others === 1}
+                          onChange={(e) =>
+                            void handleUpdate(m.id, { can_book_for_others: e.target.checked })
+                          }
+                          aria-label={`Theken-Buchung für ${m.display_name}`}
+                        />
+                        {m.can_book_for_others === 1 ? 'Ja' : 'Nein'}
+                      </label>
+                    </td>
+                    <td style={{ padding: '10px 16px' }}>
                       <span
                         style={{
                           display: 'inline-block',
@@ -461,7 +549,7 @@ export default function MembersPage() {
                   {resetId === m.id && (
                     <tr key={`${m.id}-reset`}>
                       <td
-                        colSpan={5}
+                        colSpan={7}
                         style={{ padding: '4px 16px 14px', borderTop: '1px solid var(--line)' }}
                       >
                         <ResetPasswordForm memberId={m.id} onClose={() => setResetId(null)} />

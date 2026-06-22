@@ -60,6 +60,25 @@ export function createMembersRouter(
   });
 
   // -------------------------------------------------------------------------
+  // GET /members/bookable  (Theken-/Allgemein-Konto)
+  // Bebuchbare Mitglieder, nach Kategorie sortiert. Nur Konten mit
+  // can_book_for_others (sonst 403). MUSS vor /:id stehen.
+  // -------------------------------------------------------------------------
+  router.get('/bookable', auth, (req, res, next) => {
+    try {
+      const requesterId = Number((req as AuthenticatedRequest).auth.sub);
+      const requester = membersService.findById(requesterId);
+      if (requester.can_book_for_others !== 1) {
+        res.status(403).json({ error: 'Keine Berechtigung', code: 'FORBIDDEN' });
+        return;
+      }
+      res.json(membersService.findBookable().map(toPublicMember));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // -------------------------------------------------------------------------
   // GET /members/:id
   // -------------------------------------------------------------------------
   router.get('/:id', auth, admin, (req, res, next) => {

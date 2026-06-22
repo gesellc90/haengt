@@ -227,6 +227,9 @@ export default function Layout() {
         }}
       >
         <Outlet />
+        {/* Platzhalter, damit das letzte Element nicht hinter der fixierten
+            Mobile-TabBar verschwindet (nur < sm sichtbar). */}
+        <div className="sm:hidden" style={{ height: 72 }} aria-hidden />
       </main>
 
       {/* ------------------------------------------------------------------ */}

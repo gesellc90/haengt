@@ -270,9 +270,9 @@ Dieser Plan unterteilt das Projekt in 9 aufeinander aufbauende Meilensteine. Jed
 
 ### E2E & Doku
 
-- [ ] Playwright-E2E: Login als Allgemein-Konto → Mitglied aus Kategorie wählen → Strich setzen → Storno → „Fertig" → zurück zur Übersicht; Test-Seed um Allgemein-Konto + kategorisierte Mitglieder erweitern
-- [ ] `ARCHITECTURE.md`: neue Spalten, Endpunkt-Änderungen, Theken-Modus dokumentieren
-- [ ] `CHANGELOG.md`: nutzersichtbare Änderungen unter [Unreleased] pflegen
+- [x] Playwright-E2E: Login als Allgemein-Konto → Mitglied aus Kategorie wählen → Strich setzen → Storno → „Fertig" → zurück zur Übersicht; Test-Seed um Allgemein-Konto + kategorisierte Mitglieder erweitert
+- [x] `ARCHITECTURE.md`: neue Spalten, Endpunkt-Änderungen, Theken-Modus dokumentiert
+- [x] `CHANGELOG.md`: nutzersichtbare Änderungen unter [Unreleased] gepflegt
 
 **Definition of Done:** Login als „Allgemein" zeigt die nach vier Kategorien gruppierte Mitgliederübersicht. Auswahl eines Mitglieds → Striche setzen (mehrere möglich, Storno möglich) → „Fertig" → zurück zur Übersicht. Normale Mitglieder und Admins sehen unverändert ihre eigene Stube. Buchungen für andere sind im Audit-Log dem Allgemein-Konto zugeordnet. Lint, Unit-, Integrations- und E2E-Tests grün.
 

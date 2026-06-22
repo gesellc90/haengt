@@ -5,16 +5,8 @@ import type { AuditLogRepo } from '../db/repos/AuditLogRepo.js';
 import type { MemberRow, MemberStatus } from '../db/types.js';
 import { AppError } from '../middleware/errorHandler.js';
 
-// ---------------------------------------------------------------------------
-// Öffentliches Member-Objekt (ohne password_hash)
-// ---------------------------------------------------------------------------
-
-export type PublicMember = Omit<MemberRow, 'password_hash'>;
-
-export function toPublicMember(member: MemberRow): PublicMember {
-  const { password_hash: _, ...rest } = member;
-  return rest;
-}
+// Re-Export für Bestandsimporte (Routen importieren toPublicMember von hier).
+export { toPublicMember, type PublicMember } from './publicMember.js';
 
 // ---------------------------------------------------------------------------
 // MembersService — Business-Logik für Mitgliederverwaltung

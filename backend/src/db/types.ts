@@ -42,6 +42,7 @@ export interface BookingRow {
   booked_at: string;
   voided_at: string | null;
   void_reason: string | null;
+  booked_by_id: number | null;
 }
 
 export interface AuditLogRow {

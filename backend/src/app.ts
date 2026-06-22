@@ -59,7 +59,7 @@ export function createApp({ logger, db, env }: AppOptions): Express {
 
   const membersService = new MembersService(membersRepo, auditLogRepo);
   const drinksService = new DrinksService(drinksRepo, auditLogRepo);
-  const bookingService = new BookingService(bookingsRepo, drinksRepo, auditLogRepo);
+  const bookingService = new BookingService(bookingsRepo, drinksRepo, auditLogRepo, membersRepo);
   const reportService = new ReportService(bookingsRepo, membersRepo);
 
   // -- Routen -----------------------------------------------------------------

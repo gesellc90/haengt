@@ -250,11 +250,11 @@ Dieser Plan unterteilt das Projekt in 9 aufeinander aufbauende Meilensteine. Jed
 - [ ] Seed: „Allgemein"-Konto anlegen (`username='allgemein'`, `display_name='Allgemein'`, `role='member'`, `can_book_for_others=1`; Passwort wird von einem Admin gesetzt)
 - [ ] `MembersRepo`: neue Felder lesen/schreiben; `findBookable()` — alle bebuchbaren Mitglieder, gruppierbar nach `member_status` (Allgemein-Konto + Admins ausgenommen)
 - [ ] Zod-Schemas: `member_status` in Create-/Update-Member-Schema; `can_book_for_others` nur über Admin-Update setzbar
-- [ ] `POST /bookings` erweitern: optionales `member_id` im Body — wenn gesetzt, nur erlaubt wenn Requester `can_book_for_others=1` (sonst 403 `FORBIDDEN`); ohne `member_id` weiterhin Buchung für sich selbst
-- [ ] Buchungen eines bestimmten Mitglieds für den Theken-Screen ladbar machen (Allgemein-Konto darf fremde Buchungen lesen, beschränkt auf `member_id`-Filter)
-- [ ] `BookingService.void`: Konten mit `can_book_for_others` dürfen die von ihnen für andere angelegten Buchungen innerhalb des 5-Minuten-Fensters stornieren
-- [ ] Audit-Log: `booking_created`/`booking_voided` halten `actor_id` (Allgemein-Konto) **und** Ziel-`member_id` fest („auf wen wurde gebucht")
-- [ ] **Tests:** Supertest — Buchen für anderes Mitglied als Allgemein-Konto (201), als normales Member (403), Lesen fremder Buchungen; Vitest — Repo-Felder, Service-Authz, Storno durch Allgemein-Konto
+- [x] `POST /bookings` erweitern: optionales `member_id` im Body — wenn gesetzt, nur erlaubt wenn Requester `can_book_for_others=1` (sonst 403 `FORBIDDEN`); ohne `member_id` weiterhin Buchung für sich selbst
+- [x] Buchungen eines bestimmten Mitglieds für den Theken-Screen ladbar machen (`GET /bookings/member/:id`; Allgemein-Konto darf fremde Buchungen lesen, beschränkt auf `member_id`-Filter)
+- [x] `BookingService.void`: Konten mit `can_book_for_others` dürfen die von ihnen für andere angelegten Buchungen innerhalb des 5-Minuten-Fensters stornieren (über neue Spalte `booked_by_id`, Migration 008)
+- [x] Audit-Log: `booking_created`/`booking_voided` halten `actor_id` (Allgemein-Konto) **und** Ziel-`member_id` fest („auf wen wurde gebucht")
+- [x] **Tests:** Supertest — Buchen für anderes Mitglied als Allgemein-Konto (201), als normales Member (403), Lesen fremder Buchungen; Vitest — Repo-Felder, Service-Authz, Storno durch Allgemein-Konto
 
 ### Frontend
 

@@ -41,8 +41,8 @@ export function createBookingsRouter(
     }
 
     try {
-      const memberId = Number((req as AuthenticatedRequest).auth.sub);
-      const booking = bookingService.create(memberId, parsed.data.drink_id);
+      const actorId = Number((req as AuthenticatedRequest).auth.sub);
+      const booking = bookingService.create(actorId, parsed.data.drink_id, parsed.data.member_id);
       res.status(201).json(booking);
     } catch (err) {
       next(err);
@@ -63,6 +63,38 @@ export function createBookingsRouter(
     try {
       const memberId = Number((req as AuthenticatedRequest).auth.sub);
       const result = bookingService.findByMember(memberId, parsed.data.limit, parsed.data.before);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // GET /bookings/member/:id  (Theken-/Allgemein-Konto)
+  // Buchungen eines bestimmten Mitglieds, paginiert. Nur Konten mit
+  // can_book_for_others dürfen fremde Buchungen lesen (sonst 403).
+  // -------------------------------------------------------------------------
+  router.get('/member/:id', auth, (req, res, next) => {
+    const memberId = parseId(req.params['id'] ?? '');
+    if (memberId === null) {
+      res.status(400).json({ error: 'Ungültige ID' });
+      return;
+    }
+
+    const parsed = myBookingsSchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Ungültige Parameter', details: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const actorId = Number((req as AuthenticatedRequest).auth.sub);
+      const result = bookingService.findForMemberAs(
+        actorId,
+        memberId,
+        parsed.data.limit,
+        parsed.data.before,
+      );
       res.json(result);
     } catch (err) {
       next(err);

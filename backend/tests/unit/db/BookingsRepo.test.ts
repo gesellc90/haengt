@@ -50,6 +50,25 @@ describe('BookingsRepo', () => {
       expect(booking.drink_id).toBe(drinkId);
       expect(booking.price_cents_snapshot).toBe(PRICE);
       expect(booking.voided_at).toBeNull();
+      expect(booking.booked_by_id).toBeNull();
+    });
+
+    it('speichert booked_by_id bei Fremdbuchung', () => {
+      const agent = membersRepo.create({
+        username: 'allgemein',
+        display_name: 'Allgemein',
+        can_book_for_others: 1,
+      });
+
+      const booking = repo.create({
+        member_id: memberId,
+        drink_id: drinkId,
+        price_cents_snapshot: PRICE,
+        booked_by_id: agent.id,
+      });
+
+      expect(booking.member_id).toBe(memberId);
+      expect(booking.booked_by_id).toBe(agent.id);
     });
 
     it('schlägt bei ungültigem member_id (FK) fehl', () => {

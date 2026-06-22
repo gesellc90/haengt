@@ -14,6 +14,12 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   - `MembersRepo.findBookable()`: liefert aktive Mitglieder ohne Buchen-für-andere-Recht, sortiert nach Kategorie (Aktive → Inaktive → Alte Herren → Freunde)
   - `POST /members` akzeptiert `member_status` (Default `aktiv`), `PATCH /members/:id` zusätzlich `member_status` und `can_book_for_others`
   - Seed legt ein „Allgemein"-Konto an (`username=allgemein`, `can_book_for_others=1`; Passwort vom Admin zu setzen)
+- **M9 (in Arbeit) — Allgemein-Konto & Mitglieder-Kategorien, PR 2: Buchen für andere**
+  - Migration 008: Spalte `booked_by_id` an `bookings` (nullable, `ON DELETE SET NULL`). Hält fest, wer eine Buchung ausgelöst hat; `NULL` = Selbstbuchung, sonst die ID des buchenden Kontos. `member_id` bleibt das Ziel der Buchung
+  - `POST /bookings` akzeptiert optionales `member_id`: nur Konten mit `can_book_for_others=1` dürfen für andere buchen (sonst `403 FORBIDDEN`), unbekanntes Ziel ergibt `404`
+  - `GET /bookings/member/:id`: Buchungen eines bestimmten Mitglieds (paginiert) – fremde nur für Konten mit `can_book_for_others`, eigene immer
+  - Storno durch das Allgemein-Konto: Konten mit `can_book_for_others` dürfen die von ihnen selbst angelegten Fremdbuchungen im 5-Minuten-Fenster stornieren
+  - Audit-Log: `booking_created`/`booking_voided` halten `actor_id` (buchendes Konto) und `meta.member_id` (Ziel) fest
 - Initiale Projektstruktur (Backend, Frontend, Doku, CI)
 - Architekturdokumentation (`ARCHITECTURE.md`)
 - Contribution Guide (`CONTRIBUTING.md`)

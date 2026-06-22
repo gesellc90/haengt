@@ -6,6 +6,13 @@ import { z } from 'zod';
 
 export const createBookingSchema = z.object({
   drink_id: z.number().int('Muss eine ganze Zahl sein').min(1, 'Ungültige Getränke-ID'),
+  // Optionales Ziel-Mitglied (Theken-/Allgemein-Konto). Ohne Angabe bucht der
+  // eingeloggte Nutzer für sich selbst.
+  member_id: z
+    .number()
+    .int('Muss eine ganze Zahl sein')
+    .min(1, 'Ungültige Mitglieds-ID')
+    .optional(),
 });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;

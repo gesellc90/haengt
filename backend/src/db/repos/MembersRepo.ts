@@ -8,6 +8,7 @@ export interface CreateMemberInput {
   role?: 'admin' | 'member';
   member_status?: MemberStatus;
   can_book_for_others?: 0 | 1;
+  email?: string | null;
 }
 
 export interface UpdateMemberInput {
@@ -17,6 +18,8 @@ export interface UpdateMemberInput {
   is_active?: 0 | 1;
   member_status?: MemberStatus;
   can_book_for_others?: 0 | 1;
+  email?: string | null;
+  avatar_path?: string | null;
 }
 
 export class MembersRepo {
@@ -39,11 +42,19 @@ export class MembersRepo {
     return this.db.prepare<[], MemberRow>(sql).all();
   }
 
+  findByEmail(email: string): MemberRow | undefined {
+    return this.db
+      .prepare<[string], MemberRow>('SELECT * FROM members WHERE email = ? COLLATE NOCASE')
+      .get(email);
+  }
+
   create(input: CreateMemberInput): MemberRow {
     const result = this.db
       .prepare(
-        `INSERT INTO members (username, display_name, password_hash, role, member_status, can_book_for_others)
-         VALUES (@username, @display_name, @password_hash, @role, @member_status, @can_book_for_others)`,
+        `INSERT INTO members
+           (username, display_name, password_hash, role, member_status, can_book_for_others, email)
+         VALUES
+           (@username, @display_name, @password_hash, @role, @member_status, @can_book_for_others, @email)`,
       )
       .run({
         username: input.username,
@@ -52,6 +63,7 @@ export class MembersRepo {
         role: input.role ?? 'member',
         member_status: input.member_status ?? 'aktiv',
         can_book_for_others: input.can_book_for_others ?? 0,
+        email: input.email ?? null,
       });
 
     return this.findById(result.lastInsertRowid as number)!;
@@ -69,7 +81,9 @@ export class MembersRepo {
              role                = @role,
              is_active           = @is_active,
              member_status       = @member_status,
-             can_book_for_others = @can_book_for_others
+             can_book_for_others = @can_book_for_others,
+             email               = @email,
+             avatar_path         = @avatar_path
          WHERE id = @id`,
       )
       .run({
@@ -81,6 +95,8 @@ export class MembersRepo {
         is_active: input.is_active ?? existing.is_active,
         member_status: input.member_status ?? existing.member_status,
         can_book_for_others: input.can_book_for_others ?? existing.can_book_for_others,
+        email: input.email !== undefined ? input.email : existing.email,
+        avatar_path: input.avatar_path !== undefined ? input.avatar_path : existing.avatar_path,
       });
 
     return this.findById(id);

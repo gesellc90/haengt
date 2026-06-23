@@ -7,6 +7,13 @@ export const memberStatusSchema = z.enum(['aktiv', 'inaktiv', 'alter_herr', 'fre
 // POST /members
 // ---------------------------------------------------------------------------
 
+export const emailSchema = z
+  .string()
+  .trim()
+  .email('Ungültige E-Mail-Adresse')
+  .max(254, 'Maximal 254 Zeichen')
+  .transform((v) => v.toLowerCase());
+
 export const createMemberSchema = z.object({
   username: z
     .string()
@@ -17,6 +24,7 @@ export const createMemberSchema = z.object({
   password: z.string().min(8, 'Mindestens 8 Zeichen').max(72, 'Maximal 72 Zeichen (bcrypt-Limit)'),
   role: z.enum(['admin', 'member']).default('member'),
   member_status: memberStatusSchema.default('aktiv'),
+  email: emailSchema.optional(),
 });
 
 export type CreateMemberInput = z.infer<typeof createMemberSchema>;
@@ -41,6 +49,7 @@ export const updateMemberSchema = z
     role: z.enum(['admin', 'member']).optional(),
     member_status: memberStatusSchema.optional(),
     can_book_for_others: z.boolean().optional(),
+    email: emailSchema.nullable().optional(),
   })
   .strict()
   .refine((data) => Object.keys(data).length > 0, {

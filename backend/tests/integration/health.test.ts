@@ -12,6 +12,7 @@ const testEnv = {
   DB_PATH: ':memory:',
   JWT_SECRET: 'test-secret-that-is-at-least-32-characters-long',
   JWT_EXPIRES_IN: '8h',
+  AVATAR_DIR: '/tmp',
 };
 
 describe('GET /api/v1/health', () => {

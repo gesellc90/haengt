@@ -41,6 +41,8 @@ vi.mock('../src/api/auth', () => ({
       is_active: 1,
       member_status: 'aktiv',
       can_book_for_others: 0,
+      email: null,
+      avatar_path: null,
       created_at: '',
       updated_at: '',
     } satisfies PublicMember),

@@ -33,6 +33,7 @@ const testEnv = {
   DB_PATH: ':memory:',
   JWT_SECRET: TEST_JWT_SECRET,
   JWT_EXPIRES_IN: '8h',
+  AVATAR_DIR: '/tmp',
 };
 
 // ---------------------------------------------------------------------------

@@ -54,6 +54,8 @@ const makeMember = (
   is_active: 1,
   member_status,
   can_book_for_others: 0,
+  email: null,
+  avatar_path: null,
   created_at: '',
   updated_at: '',
 });

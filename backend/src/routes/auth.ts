@@ -1,18 +1,44 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
+import multer from 'multer';
+import sharp from 'sharp';
 import { loginSchema } from '../schemas/auth.js';
+import { updateSelfSchema } from '../schemas/profile.js';
 import { AuthError } from '../services/AuthService.js';
 import { authenticate, type AuthenticatedRequest } from '../middleware/authenticate.js';
 import { toPublicMember } from '../services/MembersService.js';
 import type { AuthService } from '../services/AuthService.js';
 import type { MembersService } from '../services/MembersService.js';
 
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+const AVATAR_SIZE_PX = 256;
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: AVATAR_MAX_BYTES },
+  fileFilter(_req, file, cb) {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Nur Bilddateien erlaubt'));
+    }
+  },
+});
+
 /**
  * Erstellt den Auth-Router.
  * Rate-Limit: 5 Versuche pro IP und 15 Minuten auf POST /login.
  */
-export function createAuthRouter(authService: AuthService, membersService: MembersService): Router {
+export function createAuthRouter(
+  authService: AuthService,
+  membersService: MembersService,
+  avatarDir: string,
+): Router {
   const router = Router();
+
+  const auth = authenticate(authService);
 
   const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 Minuten
@@ -57,10 +83,80 @@ export function createAuthRouter(authService: AuthService, membersService: Membe
   // ---------------------------------------------------------------------------
   // GET /auth/me  (geschützt)
   // ---------------------------------------------------------------------------
-  router.get('/me', authenticate(authService), (req, res, next) => {
+  router.get('/me', auth, (req, res, next) => {
     try {
-      const { auth } = req as AuthenticatedRequest;
-      const member = membersService.findById(Number(auth.sub));
+      const { auth: payload } = req as AuthenticatedRequest;
+      const member = membersService.findById(Number(payload.sub));
+      res.json(toPublicMember(member));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // PATCH /auth/me — Eigenes Profil ändern (display_name, email, password)
+  // ---------------------------------------------------------------------------
+  router.patch('/me', auth, async (req, res, next) => {
+    const parsed = updateSelfSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Ungültige Eingabe', details: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const { auth: payload } = req as AuthenticatedRequest;
+      const actorId = Number(payload.sub);
+      const member = await membersService.update(actorId, parsed.data, actorId);
+      res.json(toPublicMember(member));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // POST /auth/me/avatar — Profilbild hochladen (max 5 MB, Bild → 256×256 WebP)
+  // ---------------------------------------------------------------------------
+  router.post('/me/avatar', auth, upload.single('avatar'), async (req, res, next) => {
+    if (!req.file) {
+      res.status(400).json({ error: 'Keine Datei übermittelt' });
+      return;
+    }
+
+    try {
+      const { auth: payload } = req as AuthenticatedRequest;
+      const memberId = Number(payload.sub);
+
+      fs.mkdirSync(avatarDir, { recursive: true });
+      const filename = `${memberId}.webp`;
+      const dest = path.join(avatarDir, filename);
+
+      await sharp(req.file.buffer)
+        .resize(AVATAR_SIZE_PX, AVATAR_SIZE_PX, { fit: 'cover' })
+        .webp({ quality: 85 })
+        .toFile(dest);
+
+      const member = await membersService.update(memberId, { avatar_path: filename }, memberId);
+      res.json(toPublicMember(member));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // DELETE /auth/me/avatar — Profilbild entfernen
+  // ---------------------------------------------------------------------------
+  router.delete('/me/avatar', auth, async (req, res, next) => {
+    try {
+      const { auth: payload } = req as AuthenticatedRequest;
+      const memberId = Number(payload.sub);
+      const existing = membersService.findById(memberId);
+
+      if (existing.avatar_path) {
+        const filePath = path.join(avatarDir, existing.avatar_path);
+        fs.rmSync(filePath, { force: true });
+      }
+
+      const member = await membersService.update(memberId, { avatar_path: null }, memberId);
       res.json(toPublicMember(member));
     } catch (err) {
       next(err);
@@ -70,9 +166,9 @@ export function createAuthRouter(authService: AuthService, membersService: Membe
   // ---------------------------------------------------------------------------
   // POST /auth/logout  (geschützt)
   // ---------------------------------------------------------------------------
-  router.post('/logout', authenticate(authService), (req, res) => {
-    const { auth } = req as AuthenticatedRequest;
-    authService.logout(auth.jti, auth.exp);
+  router.post('/logout', auth, (req, res) => {
+    const { auth: payload } = req as AuthenticatedRequest;
+    authService.logout(payload.jti, payload.exp);
     res.status(204).send();
   });
 

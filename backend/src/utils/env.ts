@@ -14,6 +14,8 @@ const envSchema = z.object({
   /** Mindestens 32 Zeichen – zufälliger String, nie in die Versionskontrolle! */
   JWT_SECRET: z.string().min(32, 'JWT_SECRET muss mindestens 32 Zeichen lang sein'),
   JWT_EXPIRES_IN: z.string().default('8h'),
+  /** Verzeichnis für Profilbilder. Wird beim Start angelegt wenn nicht vorhanden. */
+  AVATAR_DIR: z.string().default('./data/avatars'),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -1,18 +1,19 @@
 # Milestones
 
-Dieser Plan unterteilt das Projekt in 9 aufeinander aufbauende Meilensteine. Jeder Meilenstein liefert einen demonstrierbaren Mehrwert und kann in 3–7 Tagen abgeschlossen werden.
+Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Jeder Meilenstein liefert einen demonstrierbaren Mehrwert und kann in 3–7 Tagen abgeschlossen werden.
 
-| #   | Titel                                   | Dauer (geschätzt) | Abhängigkeiten              |
-| --- | --------------------------------------- | ----------------- | --------------------------- |
-| M1  | Projekt-Setup & Tooling                 | 2–3 Tage          | —                           |
-| M2  | Datenbankschicht & Migrationen          | 2–3 Tage          | M1                          |
-| M3  | Authentifizierung & Sicherheit          | 3–4 Tage          | M2                          |
-| M4  | API / Backend-Logik                     | 5–7 Tage          | M3                          |
-| M5  | Frontend (React)                        | 5–7 Tage          | M4 (parallel ab M3 möglich) |
-| M6  | Reporting & Export (PDF/CSV)            | 3–4 Tage          | M4                          |
-| M7  | CI/CD, Deployment & E2E-Tests           | 3–4 Tage          | M5, M6                      |
-| M8  | Design System — Hängt!-Marke            | 3–5 Tage          | M5                          |
-| M9  | Allgemein-Konto & Mitglieder-Kategorien | 3–5 Tage          | M4, M5                      |
+| #   | Titel                                         | Dauer (geschätzt) | Abhängigkeiten              |
+| --- | --------------------------------------------- | ----------------- | --------------------------- |
+| M1  | Projekt-Setup & Tooling                       | 2–3 Tage          | —                           |
+| M2  | Datenbankschicht & Migrationen                | 2–3 Tage          | M1                          |
+| M3  | Authentifizierung & Sicherheit                | 3–4 Tage          | M2                          |
+| M4  | API / Backend-Logik                           | 5–7 Tage          | M3                          |
+| M5  | Frontend (React)                              | 5–7 Tage          | M4 (parallel ab M3 möglich) |
+| M6  | Reporting & Export (PDF/CSV)                  | 3–4 Tage          | M4                          |
+| M7  | CI/CD, Deployment & E2E-Tests                 | 3–4 Tage          | M5, M6                      |
+| M8  | Design System — Hängt!-Marke                  | 3–5 Tage          | M5                          |
+| M9  | Allgemein-Konto & Mitglieder-Kategorien       | 3–5 Tage          | M4, M5                      |
+| M10 | Erweitertes Mitglieder-Profil (Bild & E-Mail) | 3–4 Tage          | M3, M5, M7                  |
 
 ---
 
@@ -275,6 +276,54 @@ Dieser Plan unterteilt das Projekt in 9 aufeinander aufbauende Meilensteine. Jed
 - [x] `CHANGELOG.md`: nutzersichtbare Änderungen unter [Unreleased] gepflegt
 
 **Definition of Done:** Login als „Allgemein" zeigt die nach vier Kategorien gruppierte Mitgliederübersicht. Auswahl eines Mitglieds → Striche setzen (mehrere möglich, Storno möglich) → „Fertig" → zurück zur Übersicht. Normale Mitglieder und Admins sehen unverändert ihre eigene Stube. Buchungen für andere sind im Audit-Log dem Allgemein-Konto zugeordnet. Lint, Unit-, Integrations- und E2E-Tests grün.
+
+---
+
+## M10 — Erweitertes Mitglieder-Profil (Profilbild & E-Mail)
+
+**Ziel:** Das Mitglieder-Profil um ein **Profilbild** und eine **E-Mail-Adresse** erweitern. Beide Felder sind pflegbar — vom Mitglied selbst (Self-Service) und zusätzlich von Admins. Die E-Mail-Verifizierung ist bewusst **nicht** Teil von M10, sondern als eigener späterer Milestone vorgesehen (siehe Hinweis am Ende).
+
+**Abhängigkeit:** M3 (Auth), M5 (Frontend), M7 (Deployment — StateDirectory für Bilddateien).
+
+### Festgelegte Entscheidungen
+
+- **Pflege durch Mitglied selbst + Admin.** Bisher gibt es keinen Self-Service — Mitglieder können nichts an sich ändern. M10 führt daher einen geschützten Self-Service-Endpunkt ein (`PATCH /auth/me`); Admins behalten den vollen Zugriff über `PATCH /members/:id`.
+- **Profilbild im Dateisystem des Pi**, nicht als BLOB in SQLite. Dateien liegen unter dem `StateDirectory` (`/var/lib/getraenke/avatars/`), die DB hält nur den Pfad/Dateinamen. Auslieferung über eine statische Route. Vorteil: schlanke DB, effiziente Auslieferung; Backup muss den Ordner mitnehmen (Doku-Punkt).
+- **E-Mail optional**, aber **eindeutig wenn gesetzt** (case-insensitive, `COLLATE NOCASE`) — damit eine spätere Verifizierung/Passwort-Reset-Funktion sauber daran anknüpfen kann.
+- **Keine E-Mail-Verifizierung in M10.** Die Adresse wird nur gespeichert/gepflegt; ein „verifiziert"-Status kommt später (kein SMTP-Versand in diesem Milestone nötig).
+
+### Datenbank & Backend
+
+- [ ] Migration 009: Spalte `email TEXT` an `members` (nullable, `COLLATE NOCASE`); partieller `UNIQUE`-Index nur für gesetzte Werte (`CREATE UNIQUE INDEX … WHERE email IS NOT NULL`)
+- [ ] Migration 009: Spalte `avatar_path TEXT` an `members` (nullable; relativer Dateiname im Avatar-Verzeichnis)
+- [ ] `MembersRepo`: `email`/`avatar_path` lesen/schreiben; `findByEmail()` für Eindeutigkeitsprüfung
+- [ ] Zod-Schemas: E-Mail-Format-Validierung (optional, trim, lowercase) im Create-/Update-Member-Schema **und** im neuen Self-Service-Schema
+- [ ] **Self-Service-Endpunkt** `PATCH /auth/me`: eingeloggtes Mitglied ändert eigene `email` (Konflikt → 409 `EMAIL_TAKEN`); Audit-Log-Eintrag
+- [ ] **Avatar-Upload** `POST /auth/me/avatar` (multipart, `multer`): MIME-Whitelist (`image/png|jpeg|webp`), Größenlimit (z. B. ≤ 2 MB), Bild via `sharp` auf z. B. 256×256 normalisieren, unter `StateDirectory/avatars/` speichern, alten Avatar ersetzen; `DELETE /auth/me/avatar` entfernt das Bild
+- [ ] Admin-Pendants: `PATCH /members/:id` akzeptiert zusätzlich `email`; Avatar-Verwaltung für beliebige Mitglieder (`POST/DELETE /members/:id/avatar`)
+- [ ] **Statische Auslieferung** der Avatare (eigene Route, z. B. `GET /avatars/:file`) mit korrekten Cache-Headern; `toPublicMember` liefert eine `avatar_url` statt des nackten Pfads
+- [ ] Konfiguration: ENV-Variable für das Avatar-Verzeichnis (Dev: `backend/data/avatars`, Prod: `/var/lib/getraenke/avatars`)
+- [ ] **Tests:** Supertest — `PATCH /auth/me` (200, E-Mail-Konflikt 409, ungültiges Format 400), Avatar-Upload (201, falscher MIME 415/400, zu groß 413), Admin-Update; Vitest — Repo-Eindeutigkeit, Service-Validierung, Avatar-Dateihandling
+
+### Frontend
+
+- [ ] `PublicMember`-Typ + API-Client um `email` und `avatar_url` erweitern
+- [ ] `ProfilePage`: Bearbeiten-Modus für **E-Mail** (Inline-Form mit Validierung, Speichern via `PATCH /auth/me`) und **Profilbild** (Upload mit Vorschau, Entfernen)
+- [ ] Echtes Profilbild statt der Initialen anzeigen, wo vorhanden (Avatar in `Layout`/`WordmarkHeader`; Fallback weiterhin Initialen)
+- [ ] Admin `MembersPage`: E-Mail-Spalte/Editor und Avatar-Verwaltung pro Mitglied
+- [ ] Konsistent mit Hängt!-Tokens (Pergament, Eiche-Header) — kein neuer visueller Stil
+- [ ] **Tests:** Vitest + RTL — E-Mail bearbeiten/speichern, Validierungsfehler, Avatar-Vorschau/Upload, Fallback auf Initialen
+
+### E2E & Doku
+
+- [ ] Playwright-E2E: Mitglied loggt sich ein → öffnet Profil → ändert E-Mail → lädt Profilbild hoch → Bild erscheint im Header; Gegenprobe Konflikt bei doppelter E-Mail
+- [ ] `ARCHITECTURE.md`: neue Spalten (`email`, `avatar_path`), Self-Service-/Avatar-Endpunkte, Datei-Speicher-Entscheidung und statische Auslieferung dokumentieren
+- [ ] `docs/DEPLOYMENT.md`: Avatar-Verzeichnis im `StateDirectory` + Backup-Hinweis ergänzen
+- [ ] `CHANGELOG.md`: nutzersichtbare Änderungen unter [Unreleased] pflegen
+
+**Definition of Done:** Ein eingeloggtes Mitglied kann im Profil seine E-Mail-Adresse setzen/ändern und ein Profilbild hoch- und wieder abladen; das Bild erscheint im Header (Fallback: Initialen). Admins können dieselben Felder für beliebige Mitglieder pflegen. E-Mail-Adressen sind eindeutig. Bilddateien liegen im `StateDirectory` und überleben Deployments. Lint, Unit-, Integrations- und E2E-Tests grün.
+
+> **Späterer Milestone — E-Mail-Verifizierung:** Setzt einen Versandweg voraus. Empfehlung für das Pi-Setup: **kein** Direktversand vom Pi (Deliverability/Spam), sondern ein externer SMTP-Relay/Transaktionsdienst — z. B. Brevo oder Mailgun (Free-Tier, SMTP) oder das Postfach des Vereinsproviders bzw. Gmail-SMTP mit App-Passwort. Technik dann: `nodemailer` + SMTP-Credentials in ENV, Spalte `email_verified_at`, einmaliger ablaufender Token (gehasht gespeichert), Bestätigungs-Endpunkt `GET /auth/verify-email?token=…` mit konfigurierter Basis-URL, Resend-Flow + Rate-Limit.
 
 ---
 

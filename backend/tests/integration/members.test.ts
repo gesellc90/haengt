@@ -32,6 +32,7 @@ const testEnv = {
   DB_PATH: ':memory:',
   JWT_SECRET: TEST_JWT_SECRET,
   JWT_EXPIRES_IN: '8h',
+  AVATAR_DIR: '/tmp',
 };
 
 // ---------------------------------------------------------------------------
@@ -500,5 +501,155 @@ describe('GET /api/v1/members/bookable', () => {
   it('gibt 401 ohne Token zurück', async () => {
     const res = await request(app).get('/api/v1/members/bookable');
     expect(res.status).toBe(401);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// E-Mail-Feld (M10)
+// ---------------------------------------------------------------------------
+
+describe('POST /api/v1/members — E-Mail (M10)', () => {
+  let app: Express;
+
+  beforeEach(async () => {
+    ({ app } = await setupApp());
+  });
+
+  it('legt ein Mitglied mit E-Mail an und gibt sie zurück', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .post('/api/v1/members')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        username: 'mitmail',
+        display_name: 'Mit Mail',
+        password: 'sicheresPasswort1',
+        email: 'mitmail@example.com',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.email).toBe('mitmail@example.com');
+  });
+
+  it('normalisiert E-Mail auf Kleinschreibung', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .post('/api/v1/members')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        username: 'grossmail',
+        display_name: 'Gross Mail',
+        password: 'sicheresPasswort1',
+        email: 'GROSS@EXAMPLE.COM',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.email).toBe('gross@example.com');
+  });
+
+  it('gibt 409 bei doppelter E-Mail-Adresse zurück', async () => {
+    const token = await getToken(app, 'admin');
+    await request(app).post('/api/v1/members').set('Authorization', `Bearer ${token}`).send({
+      username: 'erste',
+      display_name: 'Erste',
+      password: 'sicheresPasswort1',
+      email: 'doppelt@example.com',
+    });
+
+    const res = await request(app)
+      .post('/api/v1/members')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        username: 'zweite',
+        display_name: 'Zweite',
+        password: 'sicheresPasswort1',
+        email: 'doppelt@example.com',
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('EMAIL_TAKEN');
+  });
+
+  it('gibt 400 bei ungültigem E-Mail-Format zurück', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .post('/api/v1/members')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        username: 'badmail',
+        display_name: 'Bad Mail',
+        password: 'sicheresPasswort1',
+        email: 'kein-email',
+      });
+
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('PATCH /api/v1/members/:id — E-Mail (M10)', () => {
+  let app: Express;
+
+  beforeEach(async () => {
+    ({ app } = await setupApp());
+  });
+
+  it('setzt eine E-Mail-Adresse', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .patch('/api/v1/members/2')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ email: 'alice@example.com' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.email).toBe('alice@example.com');
+  });
+
+  it('gibt 409 wenn E-Mail bereits von anderem Mitglied genutzt', async () => {
+    const token = await getToken(app, 'admin');
+    // admin (ID 1) bekommt eine E-Mail
+    await request(app)
+      .patch('/api/v1/members/1')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ email: 'belegt@example.com' });
+
+    // alice (ID 2) versucht dieselbe E-Mail zu setzen
+    const res = await request(app)
+      .patch('/api/v1/members/2')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ email: 'belegt@example.com' });
+
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('EMAIL_TAKEN');
+  });
+
+  it('darf die eigene E-Mail unverändert re-setzen (kein Konflikt)', async () => {
+    const token = await getToken(app, 'admin');
+    await request(app)
+      .patch('/api/v1/members/2')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ email: 'alice@example.com' });
+
+    const res = await request(app)
+      .patch('/api/v1/members/2')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ email: 'alice@example.com' });
+
+    expect(res.status).toBe(200);
+  });
+
+  it('löscht eine E-Mail-Adresse (null)', async () => {
+    const token = await getToken(app, 'admin');
+    await request(app)
+      .patch('/api/v1/members/2')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ email: 'alice@example.com' });
+
+    const res = await request(app)
+      .patch('/api/v1/members/2')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ email: null });
+
+    expect(res.status).toBe(200);
+    expect(res.body.email).toBeNull();
   });
 });

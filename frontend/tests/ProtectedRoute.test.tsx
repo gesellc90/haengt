@@ -54,6 +54,8 @@ const memberMock: PublicMember = {
   is_active: 1,
   member_status: 'aktiv',
   can_book_for_others: 0,
+  email: null,
+  avatar_path: null,
   created_at: '2024-01-01T00:00:00.000Z',
   updated_at: '2024-01-01T00:00:00.000Z',
 };

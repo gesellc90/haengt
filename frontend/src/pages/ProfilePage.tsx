@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { authApi } from '../api/auth.js';
 import { bookingsApi } from '../api/bookings.js';
 import { drinksApi } from '../api/drinks.js';
+import { ApiError } from '../api/client.js';
 import { useAuth } from '../contexts/AuthContext.js';
 import { useToast } from '../contexts/ToastContext.js';
 import Spinner from '../components/Spinner.js';
@@ -55,18 +57,111 @@ function SectionTitle({ id, children }: { id?: string; children: React.ReactNode
 }
 
 // ---------------------------------------------------------------------------
+// Avatar-Kreis (Bild oder Initialen-Fallback)
+// ---------------------------------------------------------------------------
+
+function AvatarCircle({
+  avatarPath,
+  displayName,
+  size,
+}: {
+  avatarPath: string | null;
+  displayName: string;
+  size: number;
+}) {
+  const initials = displayName
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  if (avatarPath) {
+    return (
+      <img
+        src={`/avatars/${avatarPath}`}
+        alt={displayName}
+        width={size}
+        height={size}
+        style={{
+          borderRadius: '50%',
+          objectFit: 'cover',
+          border: '2px solid var(--line)',
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      aria-label={`Initialen ${initials}`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: 'var(--korps-rot)',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'var(--font-sans)',
+        fontSize: size * 0.35,
+        fontWeight: 700,
+        flexShrink: 0,
+        userSelect: 'none',
+      }}
+    >
+      {initials}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Stil-Helfer: Eingabefeld
+// ---------------------------------------------------------------------------
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  boxSizing: 'border-box',
+  padding: '8px 10px',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 14,
+  color: 'var(--tinte)',
+  background: 'var(--bg)',
+  border: '1px solid var(--line)',
+  borderRadius: 'var(--r-2)',
+  outline: 'none',
+};
+
+// ---------------------------------------------------------------------------
 // Komponente
 // ---------------------------------------------------------------------------
 
 export default function ProfilePage() {
-  const { member } = useAuth();
+  const { member, updateMember } = useAuth();
   const { showToast } = useToast();
 
+  // -- Buchungshistorie -------------------------------------------------------
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [drinks, setDrinks] = useState<DrinkWithCurrentPrice[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // -- Profil bearbeiten ------------------------------------------------------
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (member) {
+      setEditName(member.display_name);
+      setEditEmail(member.email ?? '');
+    }
+  }, [member]);
 
   useEffect(() => {
     drinksApi
@@ -106,6 +201,71 @@ export default function ProfilePage() {
     setIsLoadingMore(false);
   }
 
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!member) return;
+
+    const data: { display_name?: string; email?: string | null } = {};
+    const trimmedName = editName.trim();
+    if (trimmedName && trimmedName !== member.display_name) {
+      data.display_name = trimmedName;
+    }
+    const trimmedEmail = editEmail.trim();
+    const currentEmail = member.email ?? '';
+    if (trimmedEmail !== currentEmail) {
+      data.email = trimmedEmail === '' ? null : trimmedEmail;
+    }
+
+    if (Object.keys(data).length === 0) {
+      showToast('Keine Änderungen festgestellt.', 'info');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updated = await authApi.updateMe(data);
+      updateMember(updated);
+      showToast('Profil gespeichert.', 'success');
+    } catch (err) {
+      const msg =
+        err instanceof ApiError && err.code === 'EMAIL_TAKEN'
+          ? 'Diese E-Mail-Adresse wird bereits verwendet.'
+          : 'Speichern fehlgeschlagen.';
+      showToast(msg, 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setIsUploadingAvatar(true);
+    try {
+      const updated = await authApi.uploadAvatar(file);
+      updateMember(updated);
+      showToast('Profilbild gespeichert.', 'success');
+    } catch {
+      showToast('Bild konnte nicht hochgeladen werden.', 'error');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
+
+  async function handleDeleteAvatar() {
+    setIsUploadingAvatar(true);
+    try {
+      const updated = await authApi.deleteAvatar();
+      updateMember(updated);
+      showToast('Profilbild entfernt.', 'success');
+    } catch {
+      showToast('Profilbild konnte nicht entfernt werden.', 'error');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
+
   // -- Monatssumme ----------------------------------------------------------
 
   const now = new Date();
@@ -139,40 +299,189 @@ export default function ProfilePage() {
         }}
       >
         <SectionTitle>Profil</SectionTitle>
-        <dl style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {[
-            { label: 'Name', value: member?.display_name },
-            { label: 'Kürzel', value: member?.username },
-            { label: 'Rolle', value: member?.role === 'admin' ? 'Vorstand' : 'Mitglied' },
-          ].map(({ label, value }) => (
-            <div key={label} style={{ display: 'flex', gap: 12 }}>
-              <dt
+
+        {/* Avatar + Metadaten nebeneinander */}
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <AvatarCircle
+              avatarPath={member?.avatar_path ?? null}
+              displayName={member?.display_name ?? ''}
+              size={72}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              aria-label="Profilbild hochladen"
+              style={{ display: 'none' }}
+              onChange={(e) => void handleAvatarChange(e)}
+            />
+            {isUploadingAvatar ? (
+              <Spinner size="h-4 w-4" />
+            ) : (
+              <div
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
+              >
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: 'var(--korps-rot)',
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  {member?.avatar_path ? 'Ändern' : 'Bild hochladen'}
+                </button>
+                {member?.avatar_path && (
+                  <button
+                    type="button"
+                    onClick={() => void handleDeleteAvatar()}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 11,
+                      color: 'var(--tinte-4)',
+                      cursor: 'pointer',
+                      padding: '2px 4px',
+                    }}
+                  >
+                    Entfernen
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <dl style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+            {[
+              { label: 'Name', value: member?.display_name },
+              { label: 'Kürzel', value: member?.username },
+              { label: 'Rolle', value: member?.role === 'admin' ? 'Vorstand' : 'Mitglied' },
+              { label: 'E-Mail', value: member?.email ?? '–' },
+            ].map(({ label, value }) => (
+              <div key={label} style={{ display: 'flex', gap: 12 }}>
+                <dt
+                  style={{
+                    width: 64,
+                    flexShrink: 0,
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'var(--tinte-3)',
+                    letterSpacing: '0.04em',
+                    paddingTop: 1,
+                  }}
+                >
+                  {label}
+                </dt>
+                <dd
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 14,
+                    color: 'var(--tinte)',
+                    margin: 0,
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Profil bearbeiten                                                  */}
+      {/* ------------------------------------------------------------------ */}
+      <section
+        style={{
+          background: 'var(--bg-card)',
+          borderRadius: 'var(--r-3)',
+          border: '1px solid var(--line)',
+          padding: '20px',
+          boxShadow: 'var(--sh-1)',
+        }}
+      >
+        <SectionTitle>Profil bearbeiten</SectionTitle>
+        <form onSubmit={(e) => void handleSaveProfile(e)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span
                 style={{
-                  width: 80,
-                  flexShrink: 0,
                   fontFamily: 'var(--font-sans)',
                   fontSize: 12,
                   fontWeight: 600,
                   color: 'var(--tinte-3)',
                   letterSpacing: '0.04em',
-                  paddingTop: 1,
                 }}
               >
-                {label}
-              </dt>
-              <dd
+                Anzeigename
+              </span>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                maxLength={100}
+                required
+                style={inputStyle}
+              />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span
                 style={{
                   fontFamily: 'var(--font-sans)',
-                  fontSize: 14,
-                  color: 'var(--tinte)',
-                  margin: 0,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: 'var(--tinte-3)',
+                  letterSpacing: '0.04em',
                 }}
               >
-                {value}
-              </dd>
-            </div>
-          ))}
-        </dl>
+                E-Mail-Adresse
+              </span>
+              <input
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                maxLength={254}
+                placeholder="Keine Angabe"
+                style={inputStyle}
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={isSaving}
+              style={{
+                minHeight: 44,
+                padding: '0 20px',
+                alignSelf: 'flex-start',
+                background: isSaving ? 'var(--tinte-5)' : 'var(--korps-rot)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 'var(--r-2)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: isSaving ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                letterSpacing: '0.02em',
+              }}
+            >
+              {isSaving && <Spinner size="h-4 w-4" />}
+              {isSaving ? 'Wird gespeichert…' : 'Speichern'}
+            </button>
+          </div>
+        </form>
       </section>
 
       {/* ------------------------------------------------------------------ */}

@@ -24,6 +24,8 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   login(username: string, password: string): Promise<void>;
   logout(): Promise<void>;
+  /** Aktualisiert den Member-State nach einem Profil-Update ohne erneuten API-Call. */
+  updateMember(m: PublicMember): void;
   /** Gibt true zurück, wenn der User eingeloggt und aktiv ist */
   isAuthenticated: boolean;
   isAdmin: boolean;
@@ -93,6 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateMember = useCallback((m: PublicMember) => {
+    setMember(m);
+  }, []);
+
   const value: AuthContextValue = {
     member,
     isLoading,
@@ -101,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     canBookForOthers: member?.can_book_for_others === 1,
     login,
     logout,
+    updateMember,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

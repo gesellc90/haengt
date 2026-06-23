@@ -102,3 +102,37 @@ export async function apiFetch<T = unknown>(
 
   return json as T;
 }
+
+/**
+ * Lädt eine FormData-Datei hoch (POST, multipart). Kein Content-Type-Header —
+ * der Browser setzt ihn inkl. Boundary automatisch.
+ */
+export async function apiUpload<T = unknown>(path: string, formData: FormData): Promise<T> {
+  const token = getToken();
+  const headers: HeadersInit = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch {
+    throw new ApiError(response.status, 'Ungültige Server-Antwort');
+  }
+
+  if (!response.ok) {
+    const err = json as { error?: string; code?: string; details?: unknown };
+    if (response.status === 401) {
+      clearToken();
+      window.dispatchEvent(new Event('auth:unauthorized'));
+    }
+    throw new ApiError(response.status, err.error ?? 'Unbekannter Fehler', err.code, err.details);
+  }
+
+  return json as T;
+}

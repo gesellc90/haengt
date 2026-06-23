@@ -230,4 +230,89 @@ describe('MembersRepo', () => {
       expect(repo.deactivate(9999)).toBe(false);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // email + avatar_path (M10)
+  // ---------------------------------------------------------------------------
+
+  describe('create mit email', () => {
+    it('speichert eine E-Mail-Adresse', () => {
+      const m = repo.create({ username: 'ema', display_name: 'Ema', email: 'ema@example.com' });
+      expect(m.email).toBe('ema@example.com');
+    });
+
+    it('email ist null wenn nicht angegeben', () => {
+      const m = repo.create({ username: 'nomail', display_name: 'No Mail' });
+      expect(m.email).toBeNull();
+    });
+
+    it('schlägt bei doppelter E-Mail-Adresse fehl (UNIQUE-Index)', () => {
+      repo.create({ username: 'e1', display_name: 'Eins', email: 'gleich@example.com' });
+      expect(() =>
+        repo.create({ username: 'e2', display_name: 'Zwei', email: 'gleich@example.com' }),
+      ).toThrow();
+    });
+
+    it('E-Mail-Vergleich ist case-insensitive (COLLATE NOCASE)', () => {
+      repo.create({ username: 'gross', display_name: 'Gross', email: 'Test@Example.com' });
+      expect(() =>
+        repo.create({ username: 'klein', display_name: 'Klein', email: 'test@example.com' }),
+      ).toThrow();
+    });
+
+    it('mehrere NULL-Werte sind erlaubt (partieller Index)', () => {
+      repo.create({ username: 'n1', display_name: 'N1', email: null });
+      expect(() => repo.create({ username: 'n2', display_name: 'N2', email: null })).not.toThrow();
+    });
+  });
+
+  describe('findByEmail', () => {
+    it('findet ein Mitglied anhand der E-Mail', () => {
+      const m = repo.create({ username: 'finde', display_name: 'Finde', email: 'finde@test.de' });
+      const found = repo.findByEmail('finde@test.de');
+      expect(found?.id).toBe(m.id);
+    });
+
+    it('findet case-insensitiv', () => {
+      repo.create({ username: 'ci', display_name: 'CI', email: 'ci@test.de' });
+      expect(repo.findByEmail('CI@TEST.DE')).toBeDefined();
+    });
+
+    it('gibt undefined zurück wenn nicht gefunden', () => {
+      expect(repo.findByEmail('niemand@test.de')).toBeUndefined();
+    });
+  });
+
+  describe('update mit email + avatar_path', () => {
+    it('setzt eine E-Mail-Adresse', () => {
+      const m = repo.create({ username: 'upde', display_name: 'UpdE' });
+      const updated = repo.update(m.id, { email: 'neu@test.de' });
+      expect(updated?.email).toBe('neu@test.de');
+    });
+
+    it('löscht eine E-Mail-Adresse (null)', () => {
+      const m = repo.create({ username: 'del', display_name: 'Del', email: 'del@test.de' });
+      const updated = repo.update(m.id, { email: null });
+      expect(updated?.email).toBeNull();
+    });
+
+    it('lässt email unverändert wenn nicht angegeben', () => {
+      const m = repo.create({ username: 'keep2', display_name: 'Keep2', email: 'keep@test.de' });
+      const updated = repo.update(m.id, { display_name: 'Neu' });
+      expect(updated?.email).toBe('keep@test.de');
+    });
+
+    it('setzt und liest avatar_path', () => {
+      const m = repo.create({ username: 'av', display_name: 'Av' });
+      const updated = repo.update(m.id, { avatar_path: '42.webp' });
+      expect(updated?.avatar_path).toBe('42.webp');
+    });
+
+    it('löscht avatar_path (null)', () => {
+      const m = repo.create({ username: 'avdel', display_name: 'AvDel' });
+      repo.update(m.id, { avatar_path: '42.webp' });
+      const cleared = repo.update(m.id, { avatar_path: null });
+      expect(cleared?.avatar_path).toBeNull();
+    });
+  });
 });

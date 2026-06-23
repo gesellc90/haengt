@@ -50,12 +50,20 @@ export class MembersService {
       password: string;
       role?: 'admin' | 'member';
       member_status?: MemberStatus;
+      email?: string;
     },
     actorId: number,
   ): Promise<MemberRow> {
     const existing = this.members.findByUsername(input.username);
     if (existing) {
       throw new AppError('Username bereits vergeben', 409, 'USERNAME_TAKEN');
+    }
+
+    if (input.email) {
+      const emailTaken = this.members.findByEmail(input.email);
+      if (emailTaken) {
+        throw new AppError('E-Mail-Adresse bereits vergeben', 409, 'EMAIL_TAKEN');
+      }
     }
 
     const password_hash = await bcrypt.hash(input.password, BCRYPT_COST);
@@ -66,6 +74,7 @@ export class MembersService {
       password_hash,
       role: input.role ?? 'member',
       member_status: input.member_status ?? 'aktiv',
+      email: input.email ?? null,
     });
 
     this.auditLog.create({
@@ -95,12 +104,20 @@ export class MembersService {
       role?: 'admin' | 'member';
       member_status?: MemberStatus;
       can_book_for_others?: boolean;
+      email?: string | null;
     },
     actorId: number,
   ): Promise<MemberRow> {
     const existing = this.members.findById(id);
     if (!existing) {
       throw new AppError('Mitglied nicht gefunden', 404, 'NOT_FOUND');
+    }
+
+    if (input.email !== undefined && input.email !== null) {
+      const emailTaken = this.members.findByEmail(input.email);
+      if (emailTaken && emailTaken.id !== id) {
+        throw new AppError('E-Mail-Adresse bereits vergeben', 409, 'EMAIL_TAKEN');
+      }
     }
 
     let password_hash: string | undefined = undefined;
@@ -115,6 +132,7 @@ export class MembersService {
       member_status: input.member_status,
       can_book_for_others:
         input.can_book_for_others === undefined ? undefined : input.can_book_for_others ? 1 : 0,
+      email: input.email,
     });
 
     this.auditLog.create({
@@ -129,6 +147,7 @@ export class MembersService {
           ...(input.role !== undefined ? ['role'] : []),
           ...(input.member_status !== undefined ? ['member_status'] : []),
           ...(input.can_book_for_others !== undefined ? ['can_book_for_others'] : []),
+          ...(input.email !== undefined ? ['email'] : []),
         ],
       },
     });

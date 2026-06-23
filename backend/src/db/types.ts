@@ -14,6 +14,8 @@ export interface MemberRow {
   is_active: 0 | 1;
   member_status: MemberStatus;
   can_book_for_others: 0 | 1;
+  email: string | null;
+  avatar_path: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -105,6 +105,7 @@ export class MembersService {
       member_status?: MemberStatus;
       can_book_for_others?: boolean;
       email?: string | null;
+      avatar_path?: string | null;
     },
     actorId: number,
   ): Promise<MemberRow> {
@@ -133,6 +134,7 @@ export class MembersService {
       can_book_for_others:
         input.can_book_for_others === undefined ? undefined : input.can_book_for_others ? 1 : 0,
       email: input.email,
+      avatar_path: input.avatar_path,
     });
 
     this.auditLog.create({
@@ -148,6 +150,7 @@ export class MembersService {
           ...(input.member_status !== undefined ? ['member_status'] : []),
           ...(input.can_book_for_others !== undefined ? ['can_book_for_others'] : []),
           ...(input.email !== undefined ? ['email'] : []),
+          ...(input.avatar_path !== undefined ? ['avatar_path'] : []),
         ],
       },
     });

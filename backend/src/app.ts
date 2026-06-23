@@ -62,9 +62,12 @@ export function createApp({ logger, db, env }: AppOptions): Express {
   const bookingService = new BookingService(bookingsRepo, drinksRepo, auditLogRepo, membersRepo);
   const reportService = new ReportService(bookingsRepo, membersRepo);
 
+  // -- Profilbilder (statische Auslieferung vor API-Routen) -------------------
+  app.use('/avatars', express.static(env.AVATAR_DIR));
+
   // -- Routen -----------------------------------------------------------------
   app.use('/api/v1', healthRouter);
-  app.use('/api/v1/auth', createAuthRouter(authService, membersService));
+  app.use('/api/v1/auth', createAuthRouter(authService, membersService, env.AVATAR_DIR));
   app.use('/api/v1/members', createMembersRouter(authService, membersService));
   app.use('/api/v1/drinks', createDrinksRouter(authService, drinksService));
   app.use('/api/v1/bookings', createBookingsRouter(authService, bookingService));

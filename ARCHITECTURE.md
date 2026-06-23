@@ -58,9 +58,15 @@ CREATE TABLE members (
         CHECK (member_status IN ('aktiv', 'inaktiv', 'alter_herr', 'freund')),
     -- 1 = darf für beliebige andere Mitglieder buchen (Theken-/Allgemein-Konto)
     can_book_for_others INTEGER NOT NULL DEFAULT 0 CHECK (can_book_for_others IN (0, 1)),
+    -- optional, eindeutig wenn gesetzt (case-insensitive), Basis für späteren Passwort-Reset
+    email           TEXT COLLATE NOCASE,
+    -- relativer Dateiname im Avatar-Verzeichnis (z. B. "42.webp"); NULL = kein Bild
+    avatar_path     TEXT,
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+-- Partieller UNIQUE-Index: NULLs sind ausgenommen (SQLite-Semantik)
+CREATE UNIQUE INDEX idx_members_email ON members (email) WHERE email IS NOT NULL;
 
 -- Getränke-Katalog
 CREATE TABLE drinks (
@@ -115,6 +121,7 @@ CREATE TABLE audit_log (
 - **Preis-Snapshot in `bookings.unit_price_cents`** — damit nachträgliche Preisänderungen alte Abrechnungen nicht verfälschen.
 - **`drink_prices` mit Gültigkeitszeitraum** — wenn man den jeweils aktuellen Preis lookup'en muss (z. B. UI), ist das zeitabhängig korrekt.
 - **Theken-/Allgemein-Konto (`can_book_for_others`)** — ein Konto mit gesetztem Flag bucht stellvertretend für andere. Das Frontend schaltet nach dem Login allein anhand dieses Flags zwischen der eigenen Stube (`BookingPage`) und der nach `member_status` gruppierten Theken-Übersicht (`ThekePage`) um. Damit die Umschaltung schon unmittelbar nach dem Login greift, liefern sowohl `/auth/login` als auch `/auth/me` das vollständige `PublicMember`-Objekt (inkl. `can_book_for_others`, ohne `password_hash`).
+- **Profilbilder im Dateisystem** — Avatare liegen unter `AVATAR_DIR` (Dev: `./data/avatars`, Prod: `/var/lib/getraenke/avatars/`), die DB hält nur den Dateinamen. Upload via `multer` → Normalisierung durch `sharp` (256×256, WebP, Q85). Auslieferung über `GET /avatars/:file` (express.static). Das Verzeichnis muss ins Deployment-Backup aufgenommen werden.
 
 ## API-Übersicht
 
@@ -122,11 +129,14 @@ Basis-URL: `/api/v1`. Alle geschützten Endpunkte erwarten `Authorization: Beare
 
 ### Auth
 
-| Methode | Pfad           | Auth | Beschreibung                    |
-| ------- | -------------- | ---- | ------------------------------- |
-| POST    | `/auth/login`  | —    | Login mit Username + Passwort   |
-| POST    | `/auth/logout` | User | Token serverseitig invalidieren |
-| GET     | `/auth/me`     | User | Aktuelles Profil                |
+| Methode | Pfad              | Auth | Beschreibung                                      |
+| ------- | ----------------- | ---- | ------------------------------------------------- |
+| POST    | `/auth/login`     | —    | Login mit Username + Passwort                     |
+| POST    | `/auth/logout`    | User | Token serverseitig invalidieren                   |
+| GET     | `/auth/me`        | User | Aktuelles Profil (vollständiges `PublicMember`)   |
+| PATCH   | `/auth/me`        | User | Eigenen Anzeigenamen, E-Mail oder Passwort ändern |
+| POST    | `/auth/me/avatar` | User | Profilbild hochladen (max 5 MB → 256×256 WebP)    |
+| DELETE  | `/auth/me/avatar` | User | Profilbild entfernen                              |
 
 ### Mitglieder
 

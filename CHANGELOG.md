@@ -9,6 +9,14 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- **M10 — Erweitertes Mitgliederprofil (Profilbild & E-Mail)**
+  - Migration 009: Spalte `email` (nullable, `COLLATE NOCASE`, partieller `UNIQUE`-Index für gesetzte Werte) und `avatar_path` an `members`
+  - Self-Service-Endpunkte: `PATCH /auth/me` (Anzeigename, E-Mail, Passwort), `POST /auth/me/avatar` (Upload → 256×256 WebP via `sharp`), `DELETE /auth/me/avatar`
+  - Eindeutigkeitsprüfung der E-Mail im Service-Layer → 409 `EMAIL_TAKEN`
+  - Profilbilder im Dateisystem unter `AVATAR_DIR` (Dev: `./data/avatars`, Prod: `/var/lib/getraenke/avatars/`), ausgeliefert über `GET /avatars/:file`
+  - Frontend `ProfilePage`: Avatar-Kreis (Bild oder Initialen-Fallback), Upload/Löschen-Buttons, E-Mail-Anzeige in der Profil-Karte, Bearbeitungsformular für Anzeigename + E-Mail
+  - `AuthContext.updateMember()` für lokale State-Aktualisierung nach Profil-Änderungen ohne Re-Login
+  - Playwright-E2E-Spec `07-profil`: E-Mail setzen + in Karte sehen, Profilbild hochladen + Avatar erscheint, Konflikt-Toast bei doppelter E-Mail
 - **M9 (in Arbeit) — Allgemein-Konto & Mitglieder-Kategorien, PR 1: Datenschicht**
   - Migration 007: Spalten `member_status` (`aktiv`|`inaktiv`|`alter_herr`|`freund`) und `can_book_for_others` an `members`. `member_status` ist eine vom `is_active`-Login-/Soft-Delete-Flag unabhängige Kategorie – Mitglieder ohne Login (z. B. „Freunde der Verbindung") bleiben bebuchbar
   - `MembersRepo.findBookable()`: liefert aktive Mitglieder ohne Buchen-für-andere-Recht, sortiert nach Kategorie (Aktive → Inaktive → Alte Herren → Freunde)

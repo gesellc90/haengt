@@ -42,7 +42,12 @@ export function createBookingsRouter(
 
     try {
       const actorId = Number((req as AuthenticatedRequest).auth.sub);
-      const booking = bookingService.create(actorId, parsed.data.drink_id, parsed.data.member_id);
+      const booking = bookingService.create(
+        actorId,
+        parsed.data.drink_id,
+        parsed.data.member_id,
+        parsed.data.zeiger_id,
+      );
       res.status(201).json(booking);
     } catch (err) {
       next(err);

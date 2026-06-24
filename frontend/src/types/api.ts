@@ -90,9 +90,9 @@ export interface ZeigerRow {
   verbindung_id: number | null;
   status: ZeigerStatus;
   created_by: number;
-  created_at: string;
-  anzahl_bundesbrueder: number | null;
-  anzahl_gaeste: number | null;
+  opened_at: string;
+  anzahl_bundesbrueder: number;
+  anzahl_gaeste: number;
   closed_at: string | null;
   closed_by: number | null;
 }

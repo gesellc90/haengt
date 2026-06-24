@@ -294,7 +294,7 @@ function ZeigerCard({
           </span>
         )}
         <span style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--tinte-4)' }}>
-          {new Date(zeiger.created_at).toLocaleDateString('de-DE')}
+          {new Date(zeiger.opened_at).toLocaleDateString('de-DE')}
         </span>
       </div>
     </button>

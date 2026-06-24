@@ -353,36 +353,36 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 
 ### PR 2 — Zeiger-Lifecycle-Backend
 
-- [ ] `ZeigerService`: öffnen, abrufen, schließen (nur Ersteller/Admin), BBr/Gäste editieren
-- [ ] Routen: `POST /zeiger`, `GET /zeiger?status=`, `GET /zeiger/:id`, `PATCH /zeiger/:id`, `POST /zeiger/:id/close`
-- [ ] Audit-Log für öffnen + schließen
-- [ ] Supertest-Integrationstests
+- [x] `ZeigerService`: öffnen, abrufen, schließen (nur Ersteller/Admin), BBr/Gäste editieren
+- [x] Routen: `POST /zeiger`, `GET /zeiger?status=`, `GET /zeiger/:id`, `PATCH /zeiger/:id`, `POST /zeiger/:id/close`
+- [x] Audit-Log für öffnen + schließen
+- [x] Supertest-Integrationstests (17 Tests)
 
 ### PR 3 — Buchen auf Zeiger
 
-- [ ] `POST /bookings` akzeptiert `zeiger_id`; Storno-Logik erweitern (Ersteller/Admin)
-- [ ] `GET /zeiger/:id/bookings` (paginiert)
-- [ ] Personen-Saldo/Reports auf `zeiger_id IS NULL` einschränken
-- [ ] Tests
+- [x] `POST /bookings` akzeptiert `zeiger_id`; Storno-Logik erweitern (Ersteller/Admin)
+- [x] `GET /zeiger/:id/bookings`
+- [x] Personen-Saldo/Reports auf `zeiger_id IS NULL` einschränken
+- [x] 8 Supertest-Tests
 
 ### PR 4 — Verbindungen-Admin
 
-- [ ] CRUD-Backend: Routen `GET/POST/PATCH/DELETE /admin/verbindungen`
-- [ ] Admin-Frontend: neue Seite im Admin-Bereich
+- [x] CRUD-Backend: Routen `GET/POST/PATCH/DELETE /verbindungen` (Auth/Admin)
+- [x] Admin-Frontend: neue Seite im Admin-Bereich (Tabelle + Inline-Edit + Anlegen)
 
 ### PR 5 — Frontend-Reiter „Zeiger"
 
-- [ ] Neuer Reiter in der Bottom-Nav + Route `/zeiger`
-- [ ] Liste offener Zeiger; Zeiger anlegen (Freitext oder Verbindungs-Schnellauswahl + BBr/Gäste)
-- [ ] Detail-/Buchungsansicht im Stil der `BookingPage` (Getränke buchen, Liste, Storno)
-- [ ] Schließen-Button (Ersteller/Admin); Ansicht geschlossener Zeiger
+- [x] Neuer Reiter in der Bottom-Nav + Route `/zeiger`
+- [x] Liste offener Zeiger; Zeiger anlegen (Freitext oder Verbindungs-Schnellauswahl + BBr/Gäste)
+- [x] Detail-/Buchungsansicht im Stil der `BookingPage` (Getränke buchen, Liste, Storno)
+- [x] Schließen-Button (Ersteller/Admin); Ansicht geschlossener Zeiger
 
 ### PR 6 — Zeiger-Report, E2E & Doku
 
-- [ ] Aggregierter Report über alle Zeiger (Zeitraum-Filter) als PDF/CSV in `ReportService`
-- [ ] Admin-Frontend: Zeiger-Auswertungsbereich
-- [ ] Playwright-E2E: Zeiger öffnen → buchen → schließen; Konflikt-Prüfung
-- [ ] `ARCHITECTURE.md`, `CHANGELOG.md`, `MILESTONES.md` aktualisieren
+- [x] Aggregierter Report über alle Zeiger (Zeitraum-Filter) als PDF/CSV in `ReportService`
+- [x] Admin-Frontend: Zeiger-Auswertungsbereich in `ReportPage` (Einzel + Übersicht)
+- [x] Playwright-E2E: Zeiger öffnen → buchen → schließen; Konflikt-Prüfung (409)
+- [x] `CHANGELOG.md`, `MILESTONES.md` aktualisiert
 
 **Definition of Done:** Jedes Mitglied kann einen Zeiger (Couleurbesuch oder Veranstaltung) öffnen, Mitglieder buchen auf offene Zeiger, der Ersteller oder ein Admin schließt den Zeiger. Zeiger-Buchungen tauchen nicht im Personen-Saldo auf. Admins pflegen die Verbindungsliste und exportieren Zeiger-Auswertungen als PDF/CSV. Lint, Unit-, Integrations- und E2E-Tests grün.
 

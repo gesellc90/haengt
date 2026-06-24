@@ -73,7 +73,7 @@ export function createApp({ logger, db, env }: AppOptions): Express {
     membersRepo,
     zeigerRepo,
   );
-  const reportService = new ReportService(bookingsRepo, membersRepo);
+  const reportService = new ReportService(bookingsRepo, membersRepo, zeigerRepo, verbindungenRepo);
   const zeigerService = new ZeigerService(zeigerRepo, verbindungenRepo, auditLogRepo, bookingsRepo);
 
   // -- Profilbilder (statische Auslieferung vor API-Routen) -------------------

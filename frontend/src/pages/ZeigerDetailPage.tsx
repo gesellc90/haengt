@@ -352,7 +352,7 @@ export default function ZeigerDetailPage() {
             {zeiger.art === 'besuch' ? 'Couleurbesuch' : 'Veranstaltung'}
             {verbindung ? ` · ${verbindung.name}` : ''}
             {' · '}
-            {new Date(zeiger.created_at).toLocaleDateString('de-DE')}
+            {new Date(zeiger.opened_at).toLocaleDateString('de-DE')}
           </p>
           {(zeiger.anzahl_bundesbrueder !== null || zeiger.anzahl_gaeste !== null) && (
             <p

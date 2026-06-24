@@ -1,5 +1,7 @@
 import type { BookingsRepo, BookingWithDrinkName } from '../db/repos/BookingsRepo.js';
 import type { MembersRepo } from '../db/repos/MembersRepo.js';
+import type { ZeigerRepo } from '../db/repos/ZeigerRepo.js';
+import type { VerbindungenRepo } from '../db/repos/VerbindungenRepo.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 // ---------------------------------------------------------------------------
@@ -11,6 +13,21 @@ export interface DrinkSummary {
   drink_name: string;
   count: number;
   total_cents: number;
+}
+
+export interface ZeigerSummaryReport {
+  zeiger_id: number;
+  titel: string;
+  art: 'veranstaltung' | 'besuch';
+  verbindung_name: string | null;
+  status: 'offen' | 'geschlossen';
+  opened_at: string;
+  closed_at: string | null;
+  anzahl_bundesbrueder: number;
+  anzahl_gaeste: number;
+  entries: BookingWithDrinkName[];
+  summary: DrinkSummary[];
+  grand_total_cents: number;
 }
 
 export interface MonthlyReport {
@@ -89,6 +106,8 @@ export class ReportService {
   constructor(
     private readonly bookings: BookingsRepo,
     private readonly members: MembersRepo,
+    private readonly zeiger: ZeigerRepo,
+    private readonly verbindungen: VerbindungenRepo,
   ) {}
 
   /**
@@ -115,5 +134,51 @@ export class ReportService {
       const entries = this.bookings.findWithDrinkName(m.id, from, to);
       return toReport(m.id, m.display_name, year, month, entries);
     });
+  }
+
+  /**
+   * Zeiger-Auswertung für einen einzelnen Zeiger.
+   * Wirft AppError(404) wenn der Zeiger nicht existiert.
+   */
+  calculateZeiger(zeigerId: number): ZeigerSummaryReport {
+    const z = this.zeiger.findById(zeigerId);
+    if (!z) throw new AppError('Zeiger nicht gefunden', 404, 'NOT_FOUND');
+
+    const verbindung =
+      z.verbindung_id !== null ? this.verbindungen.findById(z.verbindung_id) : undefined;
+
+    const entries = this.bookings.findByZeigerWithDrinkName(zeigerId);
+    const summary = buildSummary(entries);
+    const grand_total_cents = summary.reduce((acc, s) => acc + s.total_cents, 0);
+
+    return {
+      zeiger_id: z.id,
+      titel: z.titel,
+      art: z.art,
+      verbindung_name: verbindung?.name ?? null,
+      status: z.status,
+      opened_at: z.opened_at,
+      closed_at: z.closed_at,
+      anzahl_bundesbrueder: z.anzahl_bundesbrueder,
+      anzahl_gaeste: z.anzahl_gaeste,
+      entries,
+      summary,
+      grand_total_cents,
+    };
+  }
+
+  /**
+   * Zeiger-Auswertung für alle Zeiger, optional nach Zeitraum gefiltert.
+   * `from`/`to` sind ISO-Datum-Strings (YYYY-MM-DD).
+   */
+  calculateAllZeiger(from?: string, to?: string): ZeigerSummaryReport[] {
+    const all = this.zeiger.findAll();
+    const filtered = all.filter((z) => {
+      const date = z.opened_at.slice(0, 10);
+      if (from && date < from) return false;
+      if (to && date > to) return false;
+      return true;
+    });
+    return filtered.map((z) => this.calculateZeiger(z.id));
   }
 }

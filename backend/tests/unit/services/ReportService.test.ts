@@ -14,6 +14,8 @@ import { createTestDb } from '../db/helpers.js';
 import { MembersRepo } from '../../../src/db/repos/MembersRepo.js';
 import { DrinksRepo } from '../../../src/db/repos/DrinksRepo.js';
 import { BookingsRepo } from '../../../src/db/repos/BookingsRepo.js';
+import { ZeigerRepo } from '../../../src/db/repos/ZeigerRepo.js';
+import { VerbindungenRepo } from '../../../src/db/repos/VerbindungenRepo.js';
 import { ReportService, monthBounds } from '../../../src/services/ReportService.js';
 import { AppError } from '../../../src/middleware/errorHandler.js';
 import type { Db } from '../../../src/db/client.js';
@@ -27,7 +29,9 @@ async function setup() {
   const membersRepo = new MembersRepo(db);
   const drinksRepo = new DrinksRepo(db);
   const bookingsRepo = new BookingsRepo(db);
-  const reportService = new ReportService(bookingsRepo, membersRepo);
+  const zeigerRepo = new ZeigerRepo(db);
+  const verbindungenRepo = new VerbindungenRepo(db);
+  const reportService = new ReportService(bookingsRepo, membersRepo, zeigerRepo, verbindungenRepo);
 
   const hash = await bcrypt.hash('pw', 10);
   const alice = membersRepo.create({

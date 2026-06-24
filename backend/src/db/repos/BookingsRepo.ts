@@ -82,6 +82,23 @@ export class BookingsRepo {
     return this.db.prepare<[number], BookingRow>(sql).all(zeigerId);
   }
 
+  findByZeigerWithDrinkName(zeigerId: number): BookingWithDrinkName[] {
+    return this.db
+      .prepare<[number], BookingWithDrinkName>(
+        `SELECT b.id                   AS booking_id,
+                b.booked_at,
+                b.drink_id,
+                d.name                 AS drink_name,
+                b.price_cents_snapshot AS price_cents
+         FROM bookings b
+         JOIN drinks d ON d.id = b.drink_id
+         WHERE b.zeiger_id = ?
+           AND b.voided_at IS NULL
+         ORDER BY b.booked_at ASC, b.id ASC`,
+      )
+      .all(zeigerId);
+  }
+
   /** Admin-Filter-Abfrage mit optionalen Filtern. */
   findMany(filter: BookingFilter = {}, limit = 100): BookingRow[] {
     const conditions: string[] = [];

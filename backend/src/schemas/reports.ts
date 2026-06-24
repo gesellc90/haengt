@@ -49,3 +49,30 @@ export const allMembersReportQuerySchema = yearMonthSchema.extend({
 });
 
 export type AllMembersReportQuery = z.infer<typeof allMembersReportQuerySchema>;
+
+// ---------------------------------------------------------------------------
+// GET /reports/zeiger/:id?format=
+// ---------------------------------------------------------------------------
+
+export const zeigerReportQuerySchema = z.object({
+  format: z.enum(['csv', 'pdf']),
+});
+
+export type ZeigerReportQuery = z.infer<typeof zeigerReportQuerySchema>;
+
+// ---------------------------------------------------------------------------
+// GET /reports/zeiger?from=&to=&format=
+// ---------------------------------------------------------------------------
+
+const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Muss im Format YYYY-MM-DD sein')
+  .optional();
+
+export const allZeigerReportQuerySchema = z.object({
+  from: isoDate,
+  to: isoDate,
+  format: z.enum(['csv', 'pdf']),
+});
+
+export type AllZeigerReportQuery = z.infer<typeof allZeigerReportQuerySchema>;

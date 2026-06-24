@@ -45,6 +45,34 @@ export interface BookingRow {
   voided_at: string | null;
   void_reason: string | null;
   booked_by_id: number | null;
+  /** NULL = Personenbuchung; gesetzt = Zeiger-Buchung (läuft auf Vereinskasse). */
+  zeiger_id: number | null;
+}
+
+export interface VerbindungRow {
+  id: number;
+  name: string;
+  zirkel: string | null;
+  ort: string | null;
+  active: 0 | 1;
+  created_at: string;
+}
+
+export type ZeigerArt = 'veranstaltung' | 'besuch';
+export type ZeigerStatus = 'offen' | 'geschlossen';
+
+export interface ZeigerRow {
+  id: number;
+  titel: string;
+  art: ZeigerArt;
+  verbindung_id: number | null;
+  created_by: number;
+  anzahl_bundesbrueder: number;
+  anzahl_gaeste: number;
+  status: ZeigerStatus;
+  opened_at: string;
+  closed_at: string | null;
+  closed_by: number | null;
 }
 
 export interface AuditLogRow {

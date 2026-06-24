@@ -154,4 +154,21 @@ db.transaction(() => {
 })();
 
 console.log('[seed] Preise angelegt.');
+
+// ---------------------------------------------------------------------------
+// Verbindungen (Schnellauswahl für Couleurbesuche)
+// ---------------------------------------------------------------------------
+
+const insertVerbindung = db.prepare(`
+  INSERT OR IGNORE INTO verbindungen (name, zirkel, ort)
+  VALUES (@name, @zirkel, @ort)
+`);
+
+db.transaction(() => {
+  insertVerbindung.run({ name: 'Saxonia', zirkel: 'Sax.', ort: 'Musterstadt' });
+  insertVerbindung.run({ name: 'Germania', zirkel: 'Germ.', ort: 'Beispielburg' });
+  insertVerbindung.run({ name: 'Franconia', zirkel: 'Fran.', ort: 'Testingen' });
+})();
+
+console.log('[seed] Verbindungen angelegt.');
 console.log('[seed] ✓ Seed abgeschlossen.');

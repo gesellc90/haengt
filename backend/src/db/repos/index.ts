@@ -3,3 +3,5 @@ export { DrinksRepo } from './DrinksRepo.js';
 export { BookingsRepo } from './BookingsRepo.js';
 export { AuditLogRepo } from './AuditLogRepo.js';
 export { TokenBlocklistRepo } from './TokenBlocklistRepo.js';
+export { VerbindungenRepo } from './VerbindungenRepo.js';
+export { ZeigerRepo } from './ZeigerRepo.js';

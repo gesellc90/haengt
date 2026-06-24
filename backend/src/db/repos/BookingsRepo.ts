@@ -19,6 +19,8 @@ export interface CreateBookingInput {
   price_cents_snapshot: number;
   /** Wer die Buchung ausgelöst hat; NULL = Selbstbuchung. */
   booked_by_id?: number | null;
+  /** Zeiger, auf den die Buchung geht; NULL = Personenbuchung. */
+  zeiger_id?: number | null;
 }
 
 export interface BookingFilter {
@@ -104,14 +106,15 @@ export class BookingsRepo {
   create(input: CreateBookingInput): BookingRow {
     const result = this.db
       .prepare(
-        `INSERT INTO bookings (member_id, drink_id, price_cents_snapshot, booked_by_id)
-         VALUES (@member_id, @drink_id, @price_cents_snapshot, @booked_by_id)`,
+        `INSERT INTO bookings (member_id, drink_id, price_cents_snapshot, booked_by_id, zeiger_id)
+         VALUES (@member_id, @drink_id, @price_cents_snapshot, @booked_by_id, @zeiger_id)`,
       )
       .run({
         member_id: input.member_id,
         drink_id: input.drink_id,
         price_cents_snapshot: input.price_cents_snapshot,
         booked_by_id: input.booked_by_id ?? null,
+        zeiger_id: input.zeiger_id ?? null,
       });
 
     return this.findById(result.lastInsertRowid as number)!;

@@ -14,6 +14,7 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 | M8  | Design System — Hängt!-Marke                  | 3–5 Tage          | M5                          |
 | M9  | Allgemein-Konto & Mitglieder-Kategorien       | 3–5 Tage          | M4, M5                      |
 | M10 | Erweitertes Mitglieder-Profil (Bild & E-Mail) | 3–4 Tage          | M3, M5, M7                  |
+| M11 | Zeiger (Couleurbesuch & Verbindungsveranst.)  | 4–6 Tage          | M4, M5, M9                  |
 
 ---
 
@@ -323,6 +324,67 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 **Definition of Done:** Ein eingeloggtes Mitglied kann im Profil seine E-Mail-Adresse setzen/ändern und ein Profilbild hoch- und wieder abladen; das Bild erscheint im Header (Fallback: Initialen). Admins können dieselben Felder für beliebige Mitglieder pflegen. E-Mail-Adressen sind eindeutig. Bilddateien liegen im `StateDirectory` und überleben Deployments. Lint, Unit-, Integrations- und E2E-Tests grün.
 
 > **Späterer Milestone — E-Mail-Verifizierung:** Setzt einen Versandweg voraus. Empfehlung für das Pi-Setup: **kein** Direktversand vom Pi (Deliverability/Spam), sondern ein externer SMTP-Relay/Transaktionsdienst — z. B. Brevo oder Mailgun (Free-Tier, SMTP) oder das Postfach des Vereinsproviders bzw. Gmail-SMTP mit App-Passwort. Technik dann: `nodemailer` + SMTP-Credentials in ENV, Spalte `email_verified_at`, einmaliger ablaufender Token (gehasht gespeichert), Bestätigungs-Endpunkt `GET /auth/verify-email?token=…` mit konfigurierter Basis-URL, Resend-Flow + Rate-Limit.
+
+---
+
+## M11 — Zeiger (Couleurbesuch & Verbindungsveranstaltungen)
+
+**Ziel:** Gemeinsame Strichliste für Anlässe (Couleurbesuch, Kneipabend), auf die jedes Mitglied buchen kann. Die Kosten trägt die Vereins-/Veranstaltungskasse — Zeiger-Buchungen erscheinen _nicht_ im Personen-Saldo. Mehrere Zeiger können gleichzeitig offen sein.
+
+**Abhängigkeit:** M4 (Buchungen), M5 (Frontend), M9 (Theken-Flow).
+
+### Festgelegte Entscheidungen
+
+- **Kostenträger:** Vereins-/Veranstaltungskasse. Zeiger-Buchungen (`bookings.zeiger_id IS NOT NULL`) zählen nicht zum Personen-Saldo.
+- **Berechtigung:** Jedes Mitglied darf Zeiger öffnen und darauf buchen. Schließen: Ersteller oder Admin.
+- **Verbindungen:** Admin-pflegbare Tabelle (`verbindungen`) als Schnellauswahl bei Couleurbesuchen; Freitext bleibt immer möglich (`titel`).
+- **Abschluss:** Aggregierter Admin-Report über alle Zeiger (Zeitraum-Filter) als PDF/CSV, in den bestehenden `ReportService` integriert.
+- **Storno:** Eigene Buchung im 5-Min-Fenster (solange Zeiger offen); Ersteller/Admin dürfen jede Buchung auf ihrem offenen Zeiger stornieren.
+
+### PR 1 — Datenschicht
+
+- [x] Migration 010: Tabellen `verbindungen` + `zeiger`; `bookings.zeiger_id` (nullable FK)
+- [x] `VerbindungRow`, `ZeigerRow`, `ZeigerArt`, `ZeigerStatus` in `db/types.ts`
+- [x] `VerbindungenRepo`: `findAll/findById/create/update/deactivate`
+- [x] `ZeigerRepo`: `findAll(status?)/findById/create/update`
+- [x] `BookingsRepo.create` um `zeiger_id` erweitert
+- [x] Seed: 3 Beispiel-Verbindungen
+- [x] Vitest: 16 Unit-Tests (VerbindungenRepo + ZeigerRepo)
+
+### PR 2 — Zeiger-Lifecycle-Backend
+
+- [ ] `ZeigerService`: öffnen, abrufen, schließen (nur Ersteller/Admin), BBr/Gäste editieren
+- [ ] Routen: `POST /zeiger`, `GET /zeiger?status=`, `GET /zeiger/:id`, `PATCH /zeiger/:id`, `POST /zeiger/:id/close`
+- [ ] Audit-Log für öffnen + schließen
+- [ ] Supertest-Integrationstests
+
+### PR 3 — Buchen auf Zeiger
+
+- [ ] `POST /bookings` akzeptiert `zeiger_id`; Storno-Logik erweitern (Ersteller/Admin)
+- [ ] `GET /zeiger/:id/bookings` (paginiert)
+- [ ] Personen-Saldo/Reports auf `zeiger_id IS NULL` einschränken
+- [ ] Tests
+
+### PR 4 — Verbindungen-Admin
+
+- [ ] CRUD-Backend: Routen `GET/POST/PATCH/DELETE /admin/verbindungen`
+- [ ] Admin-Frontend: neue Seite im Admin-Bereich
+
+### PR 5 — Frontend-Reiter „Zeiger"
+
+- [ ] Neuer Reiter in der Bottom-Nav + Route `/zeiger`
+- [ ] Liste offener Zeiger; Zeiger anlegen (Freitext oder Verbindungs-Schnellauswahl + BBr/Gäste)
+- [ ] Detail-/Buchungsansicht im Stil der `BookingPage` (Getränke buchen, Liste, Storno)
+- [ ] Schließen-Button (Ersteller/Admin); Ansicht geschlossener Zeiger
+
+### PR 6 — Zeiger-Report, E2E & Doku
+
+- [ ] Aggregierter Report über alle Zeiger (Zeitraum-Filter) als PDF/CSV in `ReportService`
+- [ ] Admin-Frontend: Zeiger-Auswertungsbereich
+- [ ] Playwright-E2E: Zeiger öffnen → buchen → schließen; Konflikt-Prüfung
+- [ ] `ARCHITECTURE.md`, `CHANGELOG.md`, `MILESTONES.md` aktualisieren
+
+**Definition of Done:** Jedes Mitglied kann einen Zeiger (Couleurbesuch oder Veranstaltung) öffnen, Mitglieder buchen auf offene Zeiger, der Ersteller oder ein Admin schließt den Zeiger. Zeiger-Buchungen tauchen nicht im Personen-Saldo auf. Admins pflegen die Verbindungsliste und exportieren Zeiger-Auswertungen als PDF/CSV. Lint, Unit-, Integrations- und E2E-Tests grün.
 
 ---
 

@@ -12,8 +12,10 @@ test.describe('Zeiger-Flow', () => {
     const apiCtx = await apiRequest.newContext();
 
     // 1. Admin legt Zeiger via API an
-    await loginViaApi(apiCtx, page, 'admin', TEST_PASSWORDS.admin);
+    const token = await loginViaApi(apiCtx, page, 'admin', TEST_PASSWORDS.admin);
+    const headers = { Authorization: `Bearer ${token}` };
     const createRes = await apiCtx.post(`${apiBase()}/api/v1/zeiger`, {
+      headers,
       data: { titel: 'E2E-Testzeiger', art: 'veranstaltung' },
     });
     expect(createRes.ok(), 'Zeiger anlegen sollte 201 liefern').toBeTruthy();
@@ -43,7 +45,8 @@ test.describe('Zeiger-Flow', () => {
 
     await annaPage.close();
 
-    // 4. Admin schließt den Zeiger
+    // 4. Admin navigiert per UI zur Detail-Seite und schließt den Zeiger
+    await page.goto('/buchen'); // localStorage-Token aktivieren
     await page.goto(`/zeiger/${zeiger.id}`);
     await expect(page.getByRole('button', { name: /Zeiger schließen/i })).toBeVisible({
       timeout: 5_000,

@@ -65,9 +65,15 @@ export function createApp({ logger, db, env }: AppOptions): Express {
 
   const membersService = new MembersService(membersRepo, auditLogRepo);
   const drinksService = new DrinksService(drinksRepo, auditLogRepo);
-  const bookingService = new BookingService(bookingsRepo, drinksRepo, auditLogRepo, membersRepo);
+  const bookingService = new BookingService(
+    bookingsRepo,
+    drinksRepo,
+    auditLogRepo,
+    membersRepo,
+    zeigerRepo,
+  );
   const reportService = new ReportService(bookingsRepo, membersRepo);
-  const zeigerService = new ZeigerService(zeigerRepo, verbindungenRepo, auditLogRepo);
+  const zeigerService = new ZeigerService(zeigerRepo, verbindungenRepo, auditLogRepo, bookingsRepo);
 
   // -- Profilbilder (statische Auslieferung vor API-Routen) -------------------
   app.use('/avatars', express.static(env.AVATAR_DIR));

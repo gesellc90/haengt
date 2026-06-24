@@ -2,6 +2,7 @@ import type { BookingsRepo, PaginatedBookings, BookingFilter } from '../db/repos
 import type { DrinksRepo } from '../db/repos/DrinksRepo.js';
 import type { MembersRepo } from '../db/repos/MembersRepo.js';
 import type { AuditLogRepo } from '../db/repos/AuditLogRepo.js';
+import type { ZeigerRepo } from '../db/repos/ZeigerRepo.js';
 import type { BookingRow } from '../db/types.js';
 import { AppError } from '../middleware/errorHandler.js';
 
@@ -18,6 +19,7 @@ export class BookingService {
     private readonly drinks: DrinksRepo,
     private readonly auditLog: AuditLogRepo,
     private readonly members: MembersRepo,
+    private readonly zeiger: ZeigerRepo,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -26,10 +28,19 @@ export class BookingService {
   // actorId  = wer bucht (eingeloggtes Konto)
   // targetId = optionales Ziel-Mitglied; nur erlaubt, wenn der Actor
   //            can_book_for_others = 1 hat (Theken-/Allgemein-Konto).
+  // zeigerId = optionaler offener Zeiger; Buchung wird dem Zeiger zugeordnet.
   // ---------------------------------------------------------------------------
 
-  create(actorId: number, drinkId: number, targetId?: number): BookingRow {
+  create(actorId: number, drinkId: number, targetId?: number, zeigerId?: number): BookingRow {
     const memberId = this.resolveBookingTarget(actorId, targetId);
+
+    if (zeigerId !== undefined) {
+      const z = this.zeiger.findById(zeigerId);
+      if (!z) throw new AppError('Zeiger nicht gefunden', 404, 'NOT_FOUND');
+      if (z.status === 'geschlossen') {
+        throw new AppError('Zeiger ist bereits geschlossen', 409, 'ZEIGER_CLOSED');
+      }
+    }
 
     // Getränk muss existieren und verfügbar sein
     const drink = this.drinks.findById(drinkId);
@@ -50,6 +61,7 @@ export class BookingService {
       drink_id: drinkId,
       price_cents_snapshot: currentPrice.price_cents,
       booked_by_id: isForOther ? actorId : null,
+      zeiger_id: zeigerId ?? null,
     });
 
     this.auditLog.create({

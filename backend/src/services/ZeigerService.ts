@@ -1,7 +1,8 @@
 import type { ZeigerRepo } from '../db/repos/ZeigerRepo.js';
 import type { VerbindungenRepo } from '../db/repos/VerbindungenRepo.js';
 import type { AuditLogRepo } from '../db/repos/AuditLogRepo.js';
-import type { ZeigerRow } from '../db/types.js';
+import type { BookingsRepo } from '../db/repos/BookingsRepo.js';
+import type { ZeigerRow, BookingRow } from '../db/types.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 export class ZeigerService {
@@ -9,6 +10,7 @@ export class ZeigerService {
     private readonly zeiger: ZeigerRepo,
     private readonly verbindungen: VerbindungenRepo,
     private readonly auditLog: AuditLogRepo,
+    private readonly bookings: BookingsRepo,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -94,6 +96,19 @@ export class ZeigerService {
     });
 
     return updated;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Zeiger schließen
+  // ---------------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------------
+  // Buchungen eines Zeigers
+  // ---------------------------------------------------------------------------
+
+  findBookings(id: number): BookingRow[] {
+    this.findById(id); // wirft 404 wenn nicht vorhanden
+    return this.bookings.findByZeiger(id);
   }
 
   // ---------------------------------------------------------------------------

@@ -13,6 +13,9 @@ export const createBookingSchema = z.object({
     .int('Muss eine ganze Zahl sein')
     .min(1, 'Ungültige Mitglieds-ID')
     .optional(),
+  // Optionaler Zeiger: Buchung wird dem Zeiger-Tab zugeordnet statt der
+  // persönlichen Abrechnung.
+  zeiger_id: z.number().int('Muss eine ganze Zahl sein').min(1, 'Ungültige Zeiger-ID').optional(),
 });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;

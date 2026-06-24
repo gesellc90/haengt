@@ -101,6 +101,24 @@ export function createZeigerRouter(authService: AuthService, zeigerService: Zeig
   });
 
   // -------------------------------------------------------------------------
+  // GET /zeiger/:id/bookings  (Member + Admin)
+  // Alle aktiven Buchungen eines Zeigers.
+  // -------------------------------------------------------------------------
+  router.get('/:id/bookings', auth, (req, res, next) => {
+    const id = parseId(req.params['id'] ?? '');
+    if (id === null) {
+      res.status(400).json({ error: 'Ungültige ID' });
+      return;
+    }
+
+    try {
+      res.json(zeigerService.findBookings(id));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // -------------------------------------------------------------------------
   // POST /zeiger/:id/close  (Member + Admin)
   // Zeiger schließen. Optional: letzte BBr/Gäste-Zahlen übergeben.
   // -------------------------------------------------------------------------

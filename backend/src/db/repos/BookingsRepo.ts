@@ -46,7 +46,9 @@ export class BookingsRepo {
   }
 
   /**
-   * Paginierte Liste von Buchungen eines Mitglieds (Cursor-basiert über `beforeId`).
+   * Paginierte Liste persönlicher Buchungen eines Mitglieds (Cursor-basiert über `beforeId`).
+   * Zeiger-Buchungen (zeiger_id IS NOT NULL) werden ausgeschlossen – sie erscheinen
+   * ausschließlich im Zeiger-Report, nicht in der persönlichen Übersicht.
    * Reihenfolge: neueste zuerst.
    */
   findByMember(memberId: number, limit = 50, beforeId?: number): PaginatedBookings {
@@ -55,6 +57,7 @@ export class BookingsRepo {
       SELECT * FROM bookings
       WHERE member_id = ?
         AND voided_at IS NULL
+        AND zeiger_id IS NULL
     `;
 
     if (beforeId !== undefined) {
@@ -69,6 +72,14 @@ export class BookingsRepo {
     const hasMore = rows.length > limit;
 
     return { items: rows.slice(0, limit), hasMore };
+  }
+
+  /** Alle Buchungen eines Zeigers (inkl. stornierter wenn gewünscht). */
+  findByZeiger(zeigerId: number, includeVoided = false): BookingRow[] {
+    const sql = includeVoided
+      ? 'SELECT * FROM bookings WHERE zeiger_id = ? ORDER BY booked_at ASC, id ASC'
+      : 'SELECT * FROM bookings WHERE zeiger_id = ? AND voided_at IS NULL ORDER BY booked_at ASC, id ASC';
+    return this.db.prepare<[number], BookingRow>(sql).all(zeigerId);
   }
 
   /** Admin-Filter-Abfrage mit optionalen Filtern. */
@@ -156,6 +167,7 @@ export class BookingsRepo {
            AND b.booked_at >= ?
            AND b.booked_at <  ?
            AND b.voided_at IS NULL
+           AND b.zeiger_id IS NULL
          ORDER BY b.booked_at ASC, b.id ASC`,
       )
       .all(memberId, fromDate, toDate);
@@ -176,6 +188,7 @@ export class BookingsRepo {
          WHERE member_id = ?
            AND booked_at BETWEEN ? AND ?
            AND voided_at IS NULL
+           AND zeiger_id IS NULL
          GROUP BY drink_id`,
       )
       .all(memberId, fromDate, toDate);

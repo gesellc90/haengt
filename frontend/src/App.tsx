@@ -12,6 +12,7 @@ import MembersPage from './pages/admin/MembersPage.js';
 import DrinksPage from './pages/admin/DrinksPage.js';
 import AdminBookingsPage from './pages/admin/BookingsPage.js';
 import ReportPage from './pages/admin/ReportPage.js';
+import VerbindungenPage from './pages/admin/VerbindungenPage.js';
 
 /** Theken-/Allgemein-Konten buchen für andere, alle übrigen für sich selbst. */
 function BuchenRoute() {
@@ -42,6 +43,7 @@ export default function App() {
                   <Route path="getraenke" element={<DrinksPage />} />
                   <Route path="buchungen" element={<AdminBookingsPage />} />
                   <Route path="berichte" element={<ReportPage />} />
+                  <Route path="verbindungen" element={<VerbindungenPage />} />
                 </Route>
               </Route>
 

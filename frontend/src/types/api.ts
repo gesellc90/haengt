@@ -77,3 +77,14 @@ export interface PaginatedBookings {
   items: BookingRow[];
   hasMore: boolean;
 }
+
+// -- Verbindungen -----------------------------------------------------------
+
+export interface VerbindungRow {
+  id: number;
+  name: string;
+  zirkel: string | null;
+  ort: string | null;
+  active: 0 | 1;
+  created_at: string;
+}

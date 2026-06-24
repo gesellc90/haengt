@@ -27,6 +27,7 @@ import { createDrinksRouter } from './routes/drinks.js';
 import { createBookingsRouter } from './routes/bookings.js';
 import { createReportsRouter } from './routes/reports.js';
 import { createZeigerRouter } from './routes/zeiger.js';
+import { createVerbindungenRouter } from './routes/verbindungen.js';
 import { createErrorHandler } from './middleware/errorHandler.js';
 
 export interface AppOptions {
@@ -86,6 +87,7 @@ export function createApp({ logger, db, env }: AppOptions): Express {
   app.use('/api/v1/bookings', createBookingsRouter(authService, bookingService));
   app.use('/api/v1/reports', createReportsRouter(authService, reportService));
   app.use('/api/v1/zeiger', createZeigerRouter(authService, zeigerService));
+  app.use('/api/v1/verbindungen', createVerbindungenRouter(authService, verbindungenRepo));
 
   // -- Frontend (SPA) ---------------------------------------------------------
   // Im Production-Build liegen die gebauten React-Assets in frontend/dist,

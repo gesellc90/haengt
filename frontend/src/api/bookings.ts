@@ -7,6 +7,14 @@ export const bookingsApi = {
     return apiFetch<BookingRow>('/bookings', { method: 'POST', body: { drink_id: drinkId } });
   },
 
+  /** Buchung auf einen Zeiger setzen */
+  createForZeiger(drinkId: number, zeigerId: number): Promise<BookingRow> {
+    return apiFetch<BookingRow>('/bookings', {
+      method: 'POST',
+      body: { drink_id: drinkId, zeiger_id: zeigerId },
+    });
+  },
+
   /** Buchung für ein anderes Mitglied anlegen (Theken-/Allgemein-Konto) */
   createForMember(memberId: number, drinkId: number): Promise<BookingRow> {
     return apiFetch<BookingRow>('/bookings', {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Beer, BookOpen, Settings } from 'lucide-react';
+import { Beer, BookOpen, Settings, Flag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.js';
 import { useToast } from '../contexts/ToastContext.js';
 import ToastContainer from './Toast.js';
@@ -10,6 +10,7 @@ import WordmarkHeader from './WordmarkHeader.js';
 // Nav-Icons (Lucide-Aliase für semantische Namen)
 // ---------------------------------------------------------------------------
 const IconStube = () => <Beer size={20} aria-hidden />;
+const IconZeiger = () => <Flag size={20} aria-hidden />;
 const IconBuch = () => <BookOpen size={20} aria-hidden />;
 const IconVerwaltung = () => <Settings size={20} aria-hidden />;
 
@@ -130,6 +131,26 @@ export default function Layout() {
               }}
             >
               Buchen
+            </NavLink>
+            <NavLink
+              to="/zeiger"
+              className={navClass}
+              style={({ isActive }) => ({
+                display: 'flex',
+                alignItems: 'center',
+                minHeight: 44,
+                borderRadius: 'var(--r-2)',
+                padding: '8px 12px',
+                fontSize: 14,
+                fontFamily: 'var(--font-sans)',
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'background 150ms',
+                background: isActive ? 'var(--korps-rot)' : 'transparent',
+                color: isActive ? 'var(--kreide)' : 'var(--fg-2)',
+              })}
+            >
+              Zeiger
             </NavLink>
             <NavLink
               to="/profil"
@@ -253,6 +274,10 @@ export default function Layout() {
         <NavLink to="/buchen" style={({ isActive }) => tabStyle(isActive)}>
           <IconStube />
           Stube
+        </NavLink>
+        <NavLink to="/zeiger" style={({ isActive }) => tabStyle(isActive)}>
+          <IconZeiger />
+          Zeiger
         </NavLink>
         <NavLink to="/profil" style={({ isActive }) => tabStyle(isActive)}>
           <IconBuch />

@@ -13,6 +13,8 @@ import DrinksPage from './pages/admin/DrinksPage.js';
 import AdminBookingsPage from './pages/admin/BookingsPage.js';
 import ReportPage from './pages/admin/ReportPage.js';
 import VerbindungenPage from './pages/admin/VerbindungenPage.js';
+import ZeigerPage from './pages/ZeigerPage.js';
+import ZeigerDetailPage from './pages/ZeigerDetailPage.js';
 
 /** Theken-/Allgemein-Konten buchen für andere, alle übrigen für sich selbst. */
 function BuchenRoute() {
@@ -33,6 +35,8 @@ export default function App() {
             <Route element={<Layout />}>
               <Route index element={<Navigate to="/buchen" replace />} />
               <Route path="/buchen" element={<BuchenRoute />} />
+              <Route path="/zeiger" element={<ZeigerPage />} />
+              <Route path="/zeiger/:id" element={<ZeigerDetailPage />} />
               <Route path="/profil" element={<ProfilePage />} />
 
               {/* Admin-Bereich — nur für Admins */}

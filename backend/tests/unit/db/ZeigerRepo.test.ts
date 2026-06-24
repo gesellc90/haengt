@@ -14,7 +14,9 @@ describe('VerbindungenRepo', () => {
     repo = new VerbindungenRepo(db);
   });
 
-  afterEach(() => db.close());
+  afterEach(() => {
+    db.close();
+  });
 
   it('legt eine Verbindung an und gibt sie zurück', () => {
     const v = repo.create({ name: 'Saxonia', zirkel: 'Sax.', ort: 'Musterstadt' });
@@ -79,7 +81,9 @@ describe('ZeigerRepo', () => {
     memberId = m.id;
   });
 
-  afterEach(() => db.close());
+  afterEach(() => {
+    db.close();
+  });
 
   it('legt einen Zeiger an und gibt ihn zurück', () => {
     const z = repo.create({

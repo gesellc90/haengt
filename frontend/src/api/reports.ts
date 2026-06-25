@@ -104,3 +104,23 @@ export async function downloadAllMembersReport({ year, month }: DownloadAllParam
   const { blob, filename } = await downloadBlob(`/api/v1/reports/all?${qs}`);
   triggerDownload(blob, filename);
 }
+
+/** Zeiger-Detailbericht (einzelner Zeiger). */
+export async function downloadZeigerReport(zeigerId: number, format: ReportFormat): Promise<void> {
+  const qs = new URLSearchParams({ format });
+  const { blob, filename } = await downloadBlob(`/api/v1/reports/zeiger/${zeigerId}?${qs}`);
+  triggerDownload(blob, filename);
+}
+
+/** Zeiger-Übersicht (alle Zeiger, optionaler Zeitraum). */
+export async function downloadAllZeigerReport(
+  format: ReportFormat,
+  from?: string,
+  to?: string,
+): Promise<void> {
+  const params = new URLSearchParams({ format });
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  const { blob, filename } = await downloadBlob(`/api/v1/reports/zeiger?${params}`);
+  triggerDownload(blob, filename);
+}

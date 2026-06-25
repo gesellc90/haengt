@@ -73,6 +73,9 @@ export default function AdminLayout() {
         <NavLink to="/admin/berichte" style={({ isActive }) => tabStyle(isActive)}>
           Berichte
         </NavLink>
+        <NavLink to="/admin/verbindungen" style={({ isActive }) => tabStyle(isActive)}>
+          Verbindungen
+        </NavLink>
       </nav>
 
       {/* Unter-Seite */}

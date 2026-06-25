@@ -9,7 +9,11 @@
  */
 
 import PDFDocument from 'pdfkit';
-import type { MonthlyReport, DrinkSummary } from '../services/ReportService.js';
+import type {
+  MonthlyReport,
+  DrinkSummary,
+  ZeigerSummaryReport,
+} from '../services/ReportService.js';
 
 // ---------------------------------------------------------------------------
 // Konstanten & Hilfsfunktionen
@@ -311,6 +315,143 @@ export function generateAllMembersPdf(reports: MonthlyReport[]): Promise<Buffer>
     for (const report of reports) {
       doc.addPage(PAGE_OPTS);
       writeMemberPage(doc, report);
+    }
+
+    doc.end();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Zeiger-PDF (einzelner Zeiger)
+// ---------------------------------------------------------------------------
+
+function writeZeigerPage(doc: PDFKit.PDFDocument, report: ZeigerSummaryReport): void {
+  const left = doc.page.margins.left;
+  const right = doc.page.width - doc.page.margins.right;
+  const contentWidth = right - left;
+  const artLabel = report.art === 'besuch' ? 'Couleurbesuch' : 'Veranstaltung';
+
+  doc.rect(left, doc.y, contentWidth, 2).fill(PRIMARY_COLOR).fillColor('#000');
+  doc.moveDown(0.5);
+  doc.font(FONT_BOLD).fontSize(16).fillColor(PRIMARY_COLOR).text(report.titel, left);
+  doc
+    .font(FONT_NORMAL)
+    .fontSize(10)
+    .fillColor('#475569')
+    .text(
+      [
+        artLabel,
+        report.verbindung_name ?? null,
+        `Eröffnet: ${fmtDate(report.opened_at)}`,
+        report.closed_at ? `Geschlossen: ${fmtDate(report.closed_at)}` : 'Status: offen',
+      ]
+        .filter(Boolean)
+        .join('  ·  '),
+      left,
+    );
+  if (report.anzahl_bundesbrueder !== null || report.anzahl_gaeste !== null) {
+    const parts: string[] = [];
+    if (report.anzahl_bundesbrueder !== null)
+      parts.push(`${report.anzahl_bundesbrueder} Bundesbrüder`);
+    if (report.anzahl_gaeste !== null) parts.push(`${report.anzahl_gaeste} Gäste`);
+    doc.text(parts.join('  ·  '), left);
+  }
+  doc.moveDown(0.5);
+  drawHRule(doc, PRIMARY_COLOR);
+
+  doc.font(FONT_BOLD).fontSize(10).fillColor('#000').text('Buchungen', left);
+  doc.moveDown(0.3);
+  drawTable(
+    doc,
+    [
+      { label: 'Datum', width: 70 },
+      { label: 'Uhrzeit', width: 50 },
+      { label: 'Getränk', width: contentWidth - 230 },
+      { label: 'Betrag', width: 80, align: 'right' },
+    ],
+    report.entries.length > 0
+      ? report.entries.map((e) => [
+          fmtDate(e.booked_at),
+          fmtTime(e.booked_at),
+          e.drink_name,
+          eur(e.price_cents),
+        ])
+      : [['', '', '(keine Buchungen)', '']],
+  );
+  doc.moveDown(0.8);
+  drawHRule(doc);
+
+  doc.font(FONT_BOLD).fontSize(10).fillColor('#000').text('Zusammenfassung', left);
+  doc.moveDown(0.3);
+  drawTable(
+    doc,
+    [
+      { label: 'Getränk', width: contentWidth - 200 },
+      { label: 'Anzahl', width: 80, align: 'right' },
+      { label: 'Gesamt', width: 100, align: 'right' },
+    ],
+    [
+      ...report.summary.map((s) => [s.drink_name, String(s.count), eur(s.total_cents)]),
+      ['Gesamt', String(report.entries.length), eur(report.grand_total_cents)],
+    ],
+  );
+}
+
+export function generateZeigerPdf(report: ZeigerSummaryReport): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument(PAGE_OPTS);
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+    writeZeigerPage(doc, report);
+    doc.end();
+  });
+}
+
+export function generateAllZeigerPdf(reports: ZeigerSummaryReport[]): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument(PAGE_OPTS);
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    const left = doc.page.margins.left;
+    const right = doc.page.width - doc.page.margins.right;
+    const contentWidth = right - left;
+    const totalCents = reports.reduce((s, r) => s + r.grand_total_cents, 0);
+
+    doc.font(FONT_BOLD).fontSize(20).fillColor(PRIMARY_COLOR).text('Zeiger-Auswertung', left, 120);
+    doc
+      .font(FONT_NORMAL)
+      .fontSize(12)
+      .fillColor('#475569')
+      .text(`${reports.length} Zeiger · Erstellt am ${new Date().toLocaleDateString('de-DE')}`);
+    doc.moveDown(2);
+
+    drawTable(
+      doc,
+      [
+        { label: 'Titel', width: contentWidth - 260 },
+        { label: 'Art', width: 100 },
+        { label: 'Status', width: 70 },
+        { label: 'Gesamt', width: 80, align: 'right' },
+      ],
+      [
+        ...reports.map((r) => [
+          r.titel,
+          r.art === 'besuch' ? 'Couleurbesuch' : 'Veranstaltung',
+          r.status === 'offen' ? 'Offen' : 'Geschlossen',
+          eur(r.grand_total_cents),
+        ]),
+        ['Gesamt', '', '', eur(totalCents)],
+      ],
+    );
+
+    for (const report of reports) {
+      doc.addPage(PAGE_OPTS);
+      writeZeigerPage(doc, report);
     }
 
     doc.end();

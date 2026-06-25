@@ -77,3 +77,33 @@ export interface PaginatedBookings {
   items: BookingRow[];
   hasMore: boolean;
 }
+
+// -- Zeiger -----------------------------------------------------------------
+
+export type ZeigerArt = 'veranstaltung' | 'besuch';
+export type ZeigerStatus = 'offen' | 'geschlossen';
+
+export interface ZeigerRow {
+  id: number;
+  titel: string;
+  art: ZeigerArt;
+  verbindung_id: number | null;
+  status: ZeigerStatus;
+  created_by: number;
+  opened_at: string;
+  anzahl_bundesbrueder: number;
+  anzahl_gaeste: number;
+  closed_at: string | null;
+  closed_by: number | null;
+}
+
+// -- Verbindungen -----------------------------------------------------------
+
+export interface VerbindungRow {
+  id: number;
+  name: string;
+  zirkel: string | null;
+  ort: string | null;
+  active: 0 | 1;
+  created_at: string;
+}

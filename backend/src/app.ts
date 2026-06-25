@@ -11,18 +11,23 @@ import {
   BookingsRepo,
   AuditLogRepo,
   TokenBlocklistRepo,
+  VerbindungenRepo,
+  ZeigerRepo,
 } from './db/repos/index.js';
 import { AuthService } from './services/AuthService.js';
 import { MembersService } from './services/MembersService.js';
 import { DrinksService } from './services/DrinksService.js';
 import { BookingService } from './services/BookingService.js';
 import { ReportService } from './services/ReportService.js';
+import { ZeigerService } from './services/ZeigerService.js';
 import { healthRouter } from './routes/health.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createMembersRouter } from './routes/members.js';
 import { createDrinksRouter } from './routes/drinks.js';
 import { createBookingsRouter } from './routes/bookings.js';
 import { createReportsRouter } from './routes/reports.js';
+import { createZeigerRouter } from './routes/zeiger.js';
+import { createVerbindungenRouter } from './routes/verbindungen.js';
 import { createErrorHandler } from './middleware/errorHandler.js';
 
 export interface AppOptions {
@@ -48,6 +53,8 @@ export function createApp({ logger, db, env }: AppOptions): Express {
   const tokenBlocklistRepo = new TokenBlocklistRepo(db);
   const drinksRepo = new DrinksRepo(db);
   const bookingsRepo = new BookingsRepo(db);
+  const verbindungenRepo = new VerbindungenRepo(db);
+  const zeigerRepo = new ZeigerRepo(db);
 
   const authService = new AuthService(
     membersRepo,
@@ -59,8 +66,15 @@ export function createApp({ logger, db, env }: AppOptions): Express {
 
   const membersService = new MembersService(membersRepo, auditLogRepo);
   const drinksService = new DrinksService(drinksRepo, auditLogRepo);
-  const bookingService = new BookingService(bookingsRepo, drinksRepo, auditLogRepo, membersRepo);
-  const reportService = new ReportService(bookingsRepo, membersRepo);
+  const bookingService = new BookingService(
+    bookingsRepo,
+    drinksRepo,
+    auditLogRepo,
+    membersRepo,
+    zeigerRepo,
+  );
+  const reportService = new ReportService(bookingsRepo, membersRepo, zeigerRepo, verbindungenRepo);
+  const zeigerService = new ZeigerService(zeigerRepo, verbindungenRepo, auditLogRepo, bookingsRepo);
 
   // -- Profilbilder (statische Auslieferung vor API-Routen) -------------------
   app.use('/avatars', express.static(env.AVATAR_DIR));
@@ -72,6 +86,8 @@ export function createApp({ logger, db, env }: AppOptions): Express {
   app.use('/api/v1/drinks', createDrinksRouter(authService, drinksService));
   app.use('/api/v1/bookings', createBookingsRouter(authService, bookingService));
   app.use('/api/v1/reports', createReportsRouter(authService, reportService));
+  app.use('/api/v1/zeiger', createZeigerRouter(authService, zeigerService));
+  app.use('/api/v1/verbindungen', createVerbindungenRouter(authService, verbindungenRepo));
 
   // -- Frontend (SPA) ---------------------------------------------------------
   // Im Production-Build liegen die gebauten React-Assets in frontend/dist,

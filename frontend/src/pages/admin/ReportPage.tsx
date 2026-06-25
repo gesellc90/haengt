@@ -9,13 +9,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { membersApi } from '../../api/members.js';
+import { zeigerApi } from '../../api/zeiger.js';
 import {
   downloadMonthlyReport,
   downloadAllMembersReport,
+  downloadZeigerReport,
+  downloadAllZeigerReport,
   type ReportFormat,
 } from '../../api/reports.js';
 import { useToast } from '../../contexts/ToastContext.js';
-import type { PublicMember } from '../../types/api.js';
+import type { PublicMember, ZeigerRow } from '../../types/api.js';
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktionen
@@ -180,6 +183,16 @@ export default function ReportPage() {
   const [loadingPdf, setLoadingPdf] = useState(false);
   const [loadingAll, setLoadingAll] = useState(false);
 
+  // Zeiger-Auswertung
+  const [zeiger, setZeiger] = useState<ZeigerRow[]>([]);
+  const [selectedZeigerId, setSelectedZeigerId] = useState<number | null>(null);
+  const [zeigerFrom, setZeigerFrom] = useState('');
+  const [zeigerTo, setZeigerTo] = useState('');
+  const [loadingZeigerCsv, setLoadingZeigerCsv] = useState(false);
+  const [loadingZeigerPdf, setLoadingZeigerPdf] = useState(false);
+  const [loadingAllZeigerCsv, setLoadingAllZeigerCsv] = useState(false);
+  const [loadingAllZeigerPdf, setLoadingAllZeigerPdf] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     setMembersLoading(true);
@@ -201,6 +214,18 @@ export default function ReportPage() {
       cancelled = true;
     };
   }, [showToast]);
+
+  useEffect(() => {
+    zeigerApi
+      .getAll()
+      .then((list) => {
+        setZeiger(list);
+        if (list.length > 0) setSelectedZeigerId(list[0]!.id);
+      })
+      .catch(() => {
+        /* Zeiger-Ladefehler ignorieren – Sektion bleibt leer */
+      });
+  }, []);
 
   const handleDownload = useCallback(
     async (format: ReportFormat) => {
@@ -233,6 +258,43 @@ export default function ReportPage() {
 
   const noMember = selectedMemberId === null;
   const busy = loadingCsv || loadingPdf || loadingAll;
+
+  const handleZeigerDownload = useCallback(
+    async (format: ReportFormat) => {
+      if (selectedZeigerId === null) return;
+      const setter = format === 'csv' ? setLoadingZeigerCsv : setLoadingZeigerPdf;
+      setter(true);
+      try {
+        await downloadZeigerReport(selectedZeigerId, format);
+        showToast('Download gestartet.', 'success');
+      } catch {
+        showToast('Download fehlgeschlagen.', 'error');
+      } finally {
+        setter(false);
+      }
+    },
+    [selectedZeigerId, showToast],
+  );
+
+  const handleAllZeigerDownload = useCallback(
+    async (format: ReportFormat) => {
+      const setter = format === 'csv' ? setLoadingAllZeigerCsv : setLoadingAllZeigerPdf;
+      setter(true);
+      try {
+        await downloadAllZeigerReport(format, zeigerFrom || undefined, zeigerTo || undefined);
+        showToast('Download gestartet.', 'success');
+      } catch {
+        showToast('Download fehlgeschlagen.', 'error');
+      } finally {
+        setter(false);
+      }
+    },
+    [zeigerFrom, zeigerTo, showToast],
+  );
+
+  const noZeiger = selectedZeigerId === null;
+  const busyZeiger =
+    loadingZeigerCsv || loadingZeigerPdf || loadingAllZeigerCsv || loadingAllZeigerPdf;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -365,6 +427,116 @@ export default function ReportPage() {
           disabled={busy}
           onClick={() => void handleDownloadAll()}
         />
+      </div>
+
+      {/* Zeiger-Auswertung (Einzel) */}
+      {zeiger.length > 0 && (
+        <div style={cardStyle}>
+          <SectionTitle>Zeiger-Auswertung</SectionTitle>
+          <p
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
+              fontSize: 14,
+              color: 'var(--tinte-3)',
+              marginBottom: 20,
+              marginTop: -8,
+            }}
+          >
+            Buchungen und Zusammenfassung für einen einzelnen Zeiger.
+          </p>
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="zeiger-select" style={labelStyle}>
+              Zeiger
+            </label>
+            <select
+              id="zeiger-select"
+              value={selectedZeigerId ?? ''}
+              onChange={(e) => setSelectedZeigerId(Number(e.target.value))}
+              style={selectStyle}
+            >
+              {zeiger.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.titel} ({z.status === 'offen' ? 'offen' : 'geschlossen'} ·{' '}
+                  {new Date(z.opened_at).toLocaleDateString('de-DE')})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+            <DownloadButton
+              label="CSV herunterladen"
+              loading={loadingZeigerCsv}
+              disabled={noZeiger || busyZeiger}
+              onClick={() => void handleZeigerDownload('csv')}
+              variant="secondary"
+            />
+            <DownloadButton
+              label="PDF herunterladen"
+              loading={loadingZeigerPdf}
+              disabled={noZeiger || busyZeiger}
+              onClick={() => void handleZeigerDownload('pdf')}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Zeiger-Übersicht (alle, Zeitraum-Filter) */}
+      <div style={cardStyle}>
+        <SectionTitle>Zeiger-Übersicht</SectionTitle>
+        <p
+          style={{
+            fontFamily: 'var(--font-serif)',
+            fontStyle: 'italic',
+            fontSize: 14,
+            color: 'var(--tinte-3)',
+            marginBottom: 20,
+            marginTop: -8,
+          }}
+        >
+          Aggregierte Auswertung aller Zeiger, optional nach Zeitraum gefiltert.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2" style={{ marginBottom: 16 }}>
+          <div>
+            <label htmlFor="zeiger-from" style={labelStyle}>
+              Von (Datum)
+            </label>
+            <input
+              id="zeiger-from"
+              type="date"
+              value={zeigerFrom}
+              onChange={(e) => setZeigerFrom(e.target.value)}
+              style={selectStyle}
+            />
+          </div>
+          <div>
+            <label htmlFor="zeiger-to" style={labelStyle}>
+              Bis (Datum)
+            </label>
+            <input
+              id="zeiger-to"
+              type="date"
+              value={zeigerTo}
+              onChange={(e) => setZeigerTo(e.target.value)}
+              style={selectStyle}
+            />
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+          <DownloadButton
+            label="Übersicht (CSV)"
+            loading={loadingAllZeigerCsv}
+            disabled={busyZeiger}
+            onClick={() => void handleAllZeigerDownload('csv')}
+            variant="secondary"
+          />
+          <DownloadButton
+            label="Übersicht (PDF)"
+            loading={loadingAllZeigerPdf}
+            disabled={busyZeiger}
+            onClick={() => void handleAllZeigerDownload('pdf')}
+          />
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,18 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- **M11 — Zeiger (Couleurbesuch & Verbindungsveranstaltungen)**
+  - Migration 010: Tabellen `verbindungen` und `zeiger` (STRICT); `bookings.zeiger_id` als nullable FK — Zeiger-Buchungen zählen nicht zum Personen-Saldo
+  - `VerbindungenRepo`, `ZeigerRepo` mit vollständigem CRUD; `BookingsRepo.create` um `zeiger_id` erweitert
+  - `ZeigerService`: öffnen, abrufen, aktualisieren (BBr/Gäste), schließen (Ersteller oder Admin); Audit-Log für öffnen + schließen
+  - Routen `POST/GET /zeiger`, `GET/PATCH /zeiger/:id`, `POST /zeiger/:id/close`, `GET /zeiger/:id/bookings`
+  - `POST /bookings` akzeptiert `zeiger_id`; Storno auf Zeiger-Buchungen möglich; `GET /bookings/me` und Reports schließen Zeiger-Buchungen aus (`zeiger_id IS NULL`)
+  - Admin-CRUD für Verbindungen: `GET/POST/PATCH/DELETE /verbindungen` (GET für alle Auth, Mutationen nur Admin); Admin-Frontend `VerbindungenPage` mit Tabelle, Inline-Edit und Reaktivieren
+  - Frontend-Reiter „Zeiger" (`/zeiger`, `/zeiger/:id`): Liste offen/geschlossen, Anlegen-Formular (Freitext + Verbindungs-Schnellauswahl + BBr/Gäste), Detail-/Buchungsansicht mit Storno, Schließen-Button
+  - Zeiger-Report in `ReportService`: `calculateZeiger(id)` und `calculateAllZeiger(from?, to?)`; CSV + PDF-Export; Admin-Frontend in `ReportPage` — Einzel-Zeiger und Übersicht (Zeitraum-Filter)
+  - E2E-Spec `08-zeiger-flow`: Zeiger öffnen → buchen → schließen; Konflikt-Prüfung (Buchung auf geschlossenen Zeiger → 409)
+  - 258 Backend-Tests (Unit + Integration), 65 Frontend-Tests, E2E-Spec grün
+
 - **M10 — Erweitertes Mitgliederprofil (Profilbild & E-Mail)**
   - Migration 009: Spalte `email` (nullable, `COLLATE NOCASE`, partieller `UNIQUE`-Index für gesetzte Werte) und `avatar_path` an `members`
   - Self-Service-Endpunkte: `PATCH /auth/me` (Anzeigename, E-Mail, Passwort), `POST /auth/me/avatar` (Upload → 256×256 WebP via `sharp`), `DELETE /auth/me/avatar`

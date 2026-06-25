@@ -58,8 +58,8 @@ test.describe('Zeiger-Flow', () => {
     });
     await page.getByRole('button', { name: /Zeiger schließen/i }).click();
 
-    // Status-Badge soll auf „Geschlossen" wechseln
-    await expect(page.getByText('Geschlossen')).toBeVisible({ timeout: 5_000 });
+    // Status-Badge soll auf „Geschlossen" wechseln (exact: true schließt Toast aus)
+    await expect(page.getByText('Geschlossen', { exact: true })).toBeVisible({ timeout: 5_000 });
 
     // 5. Auf einem geschlossenen Zeiger sind keine Buchungen mehr möglich
     await expect(page.getByRole('heading', { name: /Strich setzen/i })).not.toBeVisible();

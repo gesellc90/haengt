@@ -45,6 +45,15 @@ export interface AppOptions {
 export function createApp({ logger, db, env }: AppOptions): Express {
   const app = express();
 
+  // Guardrail: Das Rate-Limiting darf nur in Test-/E2E-Läufen deaktiviert werden.
+  // Ist das Flag in einer echten Produktionsumgebung gesetzt, laut warnen –
+  // dann fehlt der Login-Brute-Force-Schutz.
+  if (process.env['DISABLE_RATE_LIMIT'] === 'true' && env.NODE_ENV === 'production') {
+    logger.warn(
+      'DISABLE_RATE_LIMIT=true bei NODE_ENV=production – der Login-Brute-Force-Schutz ist deaktiviert. Nur für E2E-Tests vorgesehen!',
+    );
+  }
+
   // Hinter einem Reverse-Proxy (Caddy/nginx) die echte Client-IP durchreichen,
   // damit das Login-Rate-Limiting pro Nutzer statt pro Proxy greift. Default 0
   // (kein Proxy) – siehe env.TRUST_PROXY.

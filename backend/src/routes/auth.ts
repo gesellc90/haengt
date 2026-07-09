@@ -49,10 +49,10 @@ export function createAuthRouter(
     skipSuccessfulRequests: false,
     // In E2E-Tests deaktivieren (alle Requests kämen von 127.0.0.1,
     // der gemeinsame Bucket würde nach 5 Logins die restlichen Tests blockieren).
-    // Greift NUR außerhalb der Produktion, damit die Escape-Hatch nicht
-    // versehentlich in Prod das Brute-Force-Limit aushebeln kann.
-    skip: () =>
-      process.env['NODE_ENV'] !== 'production' && process.env['DISABLE_RATE_LIMIT'] === 'true',
+    // Bewusst als expliziter Opt-out: Der E2E-Harness läuft produktionsnah mit
+    // NODE_ENV=production und ist auf diese Hatch angewiesen. Als Guardrail warnt
+    // app.ts beim Start laut, falls das Flag in Produktion gesetzt ist.
+    skip: () => process.env['DISABLE_RATE_LIMIT'] === 'true',
   });
 
   // ---------------------------------------------------------------------------

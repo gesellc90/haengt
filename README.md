@@ -13,16 +13,16 @@ Lokale Web-App zur Getränkeabrechnung einer Verbindung. Mitglieder buchen ihre 
 
 ## Tech-Stack
 
-| Bereich     | Technologie                          |
-|-------------|--------------------------------------|
-| Backend     | Node.js 20 LTS, Express              |
-| Datenbank   | SQLite (better-sqlite3)              |
-| Frontend    | React 18, Vite, TailwindCSS          |
-| Auth        | JWT + bcrypt                         |
-| Tests       | Vitest, Supertest, Playwright        |
-| Linting     | ESLint, Prettier                     |
-| CI/CD       | GitHub Actions (Self-Hosted Runner)  |
-| Hosting     | Raspberry Pi 4/5, systemd            |
+| Bereich   | Technologie                         |
+| --------- | ----------------------------------- |
+| Backend   | Node.js 20 LTS, Express             |
+| Datenbank | SQLite (better-sqlite3)             |
+| Frontend  | React 18, Vite, TailwindCSS         |
+| Auth      | JWT + bcrypt                        |
+| Tests     | Vitest, Supertest, Playwright       |
+| Linting   | ESLint, Prettier                    |
+| CI/CD     | GitHub Actions (Self-Hosted Runner) |
+| Hosting   | Raspberry Pi 4/5, systemd           |
 
 ## Projektstruktur
 
@@ -46,8 +46,8 @@ getraenkeabrechnung/
 
 ```bash
 # 1. Repository klonen
-git clone https://github.com/gesellc90/h-ngt.git
-cd h-ngt
+git clone https://github.com/gesellc90/haengt.git
+cd haengt
 
 # 2. Dependencies installieren (Backend & Frontend)
 npm run install:all
@@ -68,24 +68,31 @@ Backend läuft anschließend unter `http://localhost:3001`, Frontend unter `http
 
 ### Standard-Logindaten (Seed)
 
-| Rolle    | Benutzer | Passwort   |
-|----------|----------|------------|
-| Admin    | `admin`  | `admin123` |
-| Mitglied | `demo`   | `demo123`  |
+Der Seed legt die Mitglieder `admin`, `anna`, `bernd` und das Theken-Konto
+`allgemein` an. In der Entwicklungsumgebung (`NODE_ENV=development`) setzt der
+Seed automatisch ein Passwort **nur für den Admin**:
 
-> ⚠️ Vor dem Produktiv-Deployment **unbedingt** ändern.
+| Rolle | Benutzer | Passwort   |
+| ----- | -------- | ---------- |
+| Admin | `admin`  | `admin123` |
+
+Die übrigen Mitglieder haben zunächst **kein** Passwort — ein Admin vergibt es
+über die Mitgliederverwaltung. (Die E2E-Suite setzt eigene Test-Passwörter,
+siehe [`docs/TESTING.md`](docs/TESTING.md).)
+
+> ⚠️ Vor dem Produktiv-Deployment das Admin-Passwort **unbedingt** ändern.
 
 ## Häufige Skripte
 
-| Befehl                        | Beschreibung                               |
-|-------------------------------|--------------------------------------------|
-| `npm run dev`                 | Backend + Frontend im Watch-Mode           |
-| `npm run lint`                | ESLint über das gesamte Projekt            |
-| `npm test`                    | Unit- und Integrationstests                |
-| `npm run test:e2e`            | Playwright E2E-Tests                       |
-| `npm run build`               | Production-Build des Frontends             |
-| `npm run db:migrate`          | Datenbankmigrationen ausführen             |
-| `npm run deploy:pi`           | Deployment auf den Raspberry Pi            |
+| Befehl               | Beschreibung                     |
+| -------------------- | -------------------------------- |
+| `npm run dev`        | Backend + Frontend im Watch-Mode |
+| `npm run lint`       | ESLint über das gesamte Projekt  |
+| `npm test`           | Unit- und Integrationstests      |
+| `npm run test:e2e`   | Playwright E2E-Tests             |
+| `npm run build`      | Production-Build des Frontends   |
+| `npm run db:migrate` | Datenbankmigrationen ausführen   |
+| `npm run deploy:pi`  | Deployment auf den Raspberry Pi  |
 
 ## Deployment
 

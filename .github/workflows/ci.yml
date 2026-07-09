@@ -6,13 +6,16 @@
 #   3. Tests Backend + Frontend (parallel, sobald TypeCheck grün)
 #   4. Build-Artefakte (nur auf main, sobald Tests grün)
 #
-# Pipeline läuft auf jedem Push (alle Branches) und auf jedem Pull Request.
+# Pipeline läuft auf Push nach main und auf jedem Pull Request. Feature-Branches
+# werden über das pull_request-Event abgedeckt, sobald ein PR offen ist – das
+# vermeidet doppelte Runs (Branch-Push + PR) für denselben Commit.
 # Mehrere Pushes auf denselben Branch brechen ältere Runs ab (Concurrency).
 
 name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 # Ältere Runs für denselben Branch abbrechen, sobald ein neuer Push ankommt.
@@ -168,8 +171,8 @@ jobs:
       - name: Dependencies installieren
         run: npm ci
 
-      - name: Vitest (Backend)
-        run: npm run test --workspace=backend
+      - name: Vitest (Backend) inkl. Coverage-Gate
+        run: npm run test:coverage --workspace=backend
 
   # ---------------------------------------------------------------------------
   # 3b) Unit-Tests Frontend (Vitest + React Testing Library).

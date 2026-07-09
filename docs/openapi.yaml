@@ -7,6 +7,14 @@ info:
     REST-API für die vereinsinterne Getränkeabrechnung.
     Alle geschützten Endpunkte erwarten einen JWT im `Authorization`-Header.
 
+    > **Hinweis zum Abdeckungsgrad:** Diese Spezifikation beschreibt die
+    > Kern-Endpunkte (Auth, Members, Drinks, Bookings, Reports/monthly).
+    > Noch **nicht** in dieser Datei ausmodelliert sind:
+    > `POST|DELETE /auth/me/avatar`, `GET /members/bookable`,
+    > `GET /reports/all`, `GET /reports/zeiger[/:id]`, sowie die Ressourcen
+    > `/zeiger` und `/verbindungen`. Die vollständige, gepflegte Endpunkt-
+    > Übersicht steht in [`ARCHITECTURE.md`](../ARCHITECTURE.md#api-übersicht).
+
 servers:
   - url: /api/v1
     description: Lokaler Dev-Server (http://localhost:3001/api/v1)

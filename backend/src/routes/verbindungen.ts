@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/authenticate.js';
+import { authenticate, type AuthenticatedRequest } from '../middleware/authenticate.js';
 import { requireRole } from '../middleware/requireRole.js';
 import {
   createVerbindungSchema,
@@ -7,7 +7,7 @@ import {
   listVerbindungenSchema,
 } from '../schemas/verbindungen.js';
 import type { AuthService } from '../services/AuthService.js';
-import type { VerbindungenRepo } from '../db/repos/VerbindungenRepo.js';
+import type { VerbindungenService } from '../services/VerbindungenService.js';
 
 function parseId(raw: string): number | null {
   const id = Number(raw);
@@ -16,7 +16,7 @@ function parseId(raw: string): number | null {
 
 export function createVerbindungenRouter(
   authService: AuthService,
-  verbindungenRepo: VerbindungenRepo,
+  verbindungenService: VerbindungenService,
 ): Router {
   const router = Router();
   const auth = authenticate(authService);
@@ -34,7 +34,7 @@ export function createVerbindungenRouter(
     }
 
     try {
-      const rows = verbindungenRepo.findAll(parsed.data.includeInactive ?? false);
+      const rows = verbindungenService.findAll(parsed.data.includeInactive ?? false);
       res.json(rows);
     } catch (err) {
       next(err);
@@ -52,11 +52,15 @@ export function createVerbindungenRouter(
     }
 
     try {
-      const row = verbindungenRepo.create({
-        name: parsed.data.name,
-        zirkel: parsed.data.zirkel ?? null,
-        ort: parsed.data.ort ?? null,
-      });
+      const actorId = Number((req as AuthenticatedRequest).auth.sub);
+      const row = verbindungenService.create(
+        {
+          name: parsed.data.name,
+          zirkel: parsed.data.zirkel ?? null,
+          ort: parsed.data.ort ?? null,
+        },
+        actorId,
+      );
       res.status(201).json(row);
     } catch (err) {
       next(err);
@@ -80,11 +84,8 @@ export function createVerbindungenRouter(
     }
 
     try {
-      const updated = verbindungenRepo.update(id, parsed.data);
-      if (!updated) {
-        res.status(404).json({ error: 'Verbindung nicht gefunden', code: 'NOT_FOUND' });
-        return;
-      }
+      const actorId = Number((req as AuthenticatedRequest).auth.sub);
+      const updated = verbindungenService.update(id, parsed.data, actorId);
       res.json(updated);
     } catch (err) {
       next(err);
@@ -102,11 +103,8 @@ export function createVerbindungenRouter(
     }
 
     try {
-      const ok = verbindungenRepo.deactivate(id);
-      if (!ok) {
-        res.status(404).json({ error: 'Verbindung nicht gefunden', code: 'NOT_FOUND' });
-        return;
-      }
+      const actorId = Number((req as AuthenticatedRequest).auth.sub);
+      verbindungenService.deactivate(id, actorId);
       res.status(204).send();
     } catch (err) {
       next(err);

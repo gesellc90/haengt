@@ -8,7 +8,23 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       include: ['src/**/*.ts'],
-      exclude: ['src/server.ts', 'src/**/*.d.ts'],
+      // Bootstrap-/CLI-Skripte und triviale Wrapper sind keine Unit-Test-Ziele:
+      // sie werden über E2E bzw. beim App-Start abgedeckt, nicht in Vitest.
+      exclude: [
+        'src/server.ts',
+        'src/db/seed.ts',
+        'src/db/migrate-cli.ts',
+        'src/utils/logger.ts',
+        'src/**/*.d.ts',
+      ],
+      // Mindest-Abdeckung als Ratsche gegen stille Erosion. Werte mit Puffer
+      // unter dem Ist-Stand, damit normale Änderungen nicht grundlos rot werden.
+      thresholds: {
+        statements: 82,
+        lines: 82,
+        functions: 85,
+        branches: 75,
+      },
     },
   },
 });

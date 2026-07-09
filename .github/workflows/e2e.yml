@@ -1,7 +1,8 @@
 # End-to-End-Tests (Playwright) — Hängt! – Jeder Strich zählt!
 #
-# Trigger: jeder Push, jeder Pull Request. Läuft ausschließlich auf
-# ubuntu-latest (nicht auf dem Pi).
+# Trigger: Push nach main und jeder Pull Request. Läuft ausschließlich auf
+# ubuntu-latest (nicht auf dem Pi). Feature-Branches werden über das
+# pull_request-Event abgedeckt – das vermeidet doppelte Runs pro Commit.
 #
 # Eigener Workflow statt Job in ci.yml: E2E ist deutlich langsamer als
 # Unit-/Integrationstests, ein E2E-Fehler soll die schnelle CI-Pipeline
@@ -11,6 +12,7 @@ name: E2E
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 concurrency:

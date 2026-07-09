@@ -189,25 +189,4 @@ export class BookingsRepo {
       )
       .all(memberId, fromDate, toDate);
   }
-
-  /** Aggregation für Reporting: Summe pro Getränk in einem Zeitraum. */
-  sumByDrink(
-    memberId: number,
-    fromDate: string,
-    toDate: string,
-  ): Array<{ drink_id: number; count: number; total_cents: number }> {
-    return this.db
-      .prepare<[number, string, string], { drink_id: number; count: number; total_cents: number }>(
-        `SELECT drink_id,
-                COUNT(*)                     AS count,
-                SUM(price_cents_snapshot)    AS total_cents
-         FROM bookings
-         WHERE member_id = ?
-           AND booked_at BETWEEN ? AND ?
-           AND voided_at IS NULL
-           AND zeiger_id IS NULL
-         GROUP BY drink_id`,
-      )
-      .all(memberId, fromDate, toDate);
-  }
 }

@@ -21,6 +21,7 @@ import { DrinksService } from './services/DrinksService.js';
 import { BookingService } from './services/BookingService.js';
 import { ReportService } from './services/ReportService.js';
 import { ZeigerService } from './services/ZeigerService.js';
+import { VerbindungenService } from './services/VerbindungenService.js';
 import { healthRouter } from './routes/health.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createMembersRouter } from './routes/members.js';
@@ -119,6 +120,7 @@ export function createApp({ logger, db, env }: AppOptions): Express {
   );
   const reportService = new ReportService(bookingsRepo, membersRepo, zeigerRepo, verbindungenRepo);
   const zeigerService = new ZeigerService(zeigerRepo, verbindungenRepo, auditLogRepo, bookingsRepo);
+  const verbindungenService = new VerbindungenService(verbindungenRepo, auditLogRepo);
 
   // -- Profilbilder (statische Auslieferung vor API-Routen) -------------------
   app.use('/avatars', express.static(env.AVATAR_DIR));
@@ -131,7 +133,7 @@ export function createApp({ logger, db, env }: AppOptions): Express {
   app.use('/api/v1/bookings', createBookingsRouter(authService, bookingService));
   app.use('/api/v1/reports', createReportsRouter(authService, reportService));
   app.use('/api/v1/zeiger', createZeigerRouter(authService, zeigerService));
-  app.use('/api/v1/verbindungen', createVerbindungenRouter(authService, verbindungenRepo));
+  app.use('/api/v1/verbindungen', createVerbindungenRouter(authService, verbindungenService));
 
   // -- Frontend (SPA) ---------------------------------------------------------
   // Im Production-Build liegen die gebauten React-Assets in frontend/dist,

@@ -220,38 +220,4 @@ describe('BookingsRepo', () => {
       expect(repo.findMany({ includeVoided: true })).toHaveLength(1);
     });
   });
-
-  // ---------------------------------------------------------------------------
-  // sumByDrink
-  // ---------------------------------------------------------------------------
-
-  describe('sumByDrink', () => {
-    it('summiert korrekt', () => {
-      const from = '2000-01-01T00:00:00.000Z';
-      const to = '2099-12-31T23:59:59.999Z';
-
-      repo.create({ member_id: memberId, drink_id: drinkId, price_cents_snapshot: PRICE });
-      repo.create({ member_id: memberId, drink_id: drinkId, price_cents_snapshot: PRICE });
-
-      const sums = repo.sumByDrink(memberId, from, to);
-      expect(sums).toHaveLength(1);
-      expect(sums[0]!.count).toBe(2);
-      expect(sums[0]!.total_cents).toBe(PRICE * 2);
-    });
-
-    it('schließt stornierte Buchungen aus der Summe aus', () => {
-      const from = '2000-01-01T00:00:00.000Z';
-      const to = '2099-12-31T23:59:59.999Z';
-
-      const b = repo.create({
-        member_id: memberId,
-        drink_id: drinkId,
-        price_cents_snapshot: PRICE,
-      });
-      repo.void(b.id);
-
-      const sums = repo.sumByDrink(memberId, from, to);
-      expect(sums).toHaveLength(0);
-    });
-  });
 });

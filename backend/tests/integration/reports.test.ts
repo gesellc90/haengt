@@ -34,6 +34,7 @@ const testEnv = {
   JWT_SECRET: TEST_JWT_SECRET,
   JWT_EXPIRES_IN: '8h',
   AVATAR_DIR: '/tmp',
+  TRUST_PROXY: 0,
 };
 
 // ---------------------------------------------------------------------------
@@ -91,8 +92,16 @@ async function setupApp(): Promise<TestContext> {
   };
 }
 
-const CURRENT_YEAR = new Date().getFullYear();
-const CURRENT_MONTH = new Date().getMonth() + 1;
+// Jahr/Monat in der Report-Zeitzone (Europe/Berlin) ermitteln – konsistent zu
+// den Berliner Monatsgrenzen im ReportService. Sonst könnte am Monatsende ein
+// per NOW gebuchter Eintrag knapp in den Nachbarmonat fallen (Flaky-Test).
+const berlinNowParts = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'Europe/Berlin',
+  year: 'numeric',
+  month: 'numeric',
+}).formatToParts(new Date());
+const CURRENT_YEAR = Number(berlinNowParts.find((p) => p.type === 'year')!.value);
+const CURRENT_MONTH = Number(berlinNowParts.find((p) => p.type === 'month')!.value);
 
 // ---------------------------------------------------------------------------
 // Auth-Tests

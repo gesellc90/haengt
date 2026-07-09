@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express, { type Express } from 'express';
+import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import type { Logger } from 'pino';
 import type { Db } from './db/client.js';
@@ -43,6 +44,49 @@ export interface AppOptions {
  */
 export function createApp({ logger, db, env }: AppOptions): Express {
   const app = express();
+
+  // Guardrail: Das Rate-Limiting darf nur in Test-/E2E-Läufen deaktiviert werden.
+  // Ist das Flag in einer echten Produktionsumgebung gesetzt, laut warnen –
+  // dann fehlt der Login-Brute-Force-Schutz.
+  if (process.env['DISABLE_RATE_LIMIT'] === 'true' && env.NODE_ENV === 'production') {
+    logger.warn(
+      'DISABLE_RATE_LIMIT=true bei NODE_ENV=production – der Login-Brute-Force-Schutz ist deaktiviert. Nur für E2E-Tests vorgesehen!',
+    );
+  }
+
+  // Hinter einem Reverse-Proxy (Caddy/nginx) die echte Client-IP durchreichen,
+  // damit das Login-Rate-Limiting pro Nutzer statt pro Proxy greift. Default 0
+  // (kein Proxy) – siehe env.TRUST_PROXY.
+  if (env.TRUST_PROXY > 0) {
+    app.set('trust proxy', env.TRUST_PROXY);
+  }
+
+  // Security-Header inkl. Content-Security-Policy. Da der Token im localStorage
+  // liegt (bewusster Trade-off, siehe ARCHITECTURE.md), ist eine strikte CSP die
+  // günstigste Absicherung gegen den XSS-Fall: Skripte nur von 'self'.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          // React setzt Inline-Style-Attribute; das Webfont-Stylesheet lädt extern.
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+          imgSrc: ["'self'", 'data:'],
+          connectSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          baseUri: ["'self'"],
+          frameAncestors: ["'self'"],
+          // Bewusst deaktiviert: Der Pi wird im Vereins-WLAN oft nur über HTTP
+          // ausgeliefert (HTTPS ist laut ARCHITECTURE.md nur empfohlen). Mit
+          // dieser Direktive würde der Browser relative Asset-URLs auf https://
+          // hochstufen und alle Assets 404en.
+          upgradeInsecureRequests: null,
+        },
+      },
+    }),
+  );
 
   app.use(express.json({ limit: '100kb' }));
   app.use(pinoHttp({ logger }));

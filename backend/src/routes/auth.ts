@@ -49,6 +49,9 @@ export function createAuthRouter(
     skipSuccessfulRequests: false,
     // In E2E-Tests deaktivieren (alle Requests kämen von 127.0.0.1,
     // der gemeinsame Bucket würde nach 5 Logins die restlichen Tests blockieren).
+    // Bewusst als expliziter Opt-out: Der E2E-Harness läuft produktionsnah mit
+    // NODE_ENV=production und ist auf diese Hatch angewiesen. Als Guardrail warnt
+    // app.ts beim Start laut, falls das Flag in Produktion gesetzt ist.
     skip: () => process.env['DISABLE_RATE_LIMIT'] === 'true',
   });
 
@@ -106,7 +109,22 @@ export function createAuthRouter(
     try {
       const { auth: payload } = req as AuthenticatedRequest;
       const actorId = Number(payload.sub);
-      const member = await membersService.update(actorId, parsed.data, actorId);
+
+      const { current_password, ...changes } = parsed.data;
+
+      // Passwortänderung nur mit korrektem aktuellen Passwort zulassen.
+      if (changes.password !== undefined) {
+        const ok = await authService.verifyCurrentPassword(actorId, current_password ?? '');
+        if (!ok) {
+          res.status(403).json({
+            error: 'Aktuelles Passwort ist falsch',
+            code: 'INVALID_CURRENT_PASSWORD',
+          });
+          return;
+        }
+      }
+
+      const member = await membersService.update(actorId, changes, actorId);
       res.json(toPublicMember(member));
     } catch (err) {
       next(err);

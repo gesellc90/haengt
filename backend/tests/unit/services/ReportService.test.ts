@@ -5,7 +5,7 @@
  *  - calculateMonthly: Aggregation, Monatsgrenze, stornierte Buchungen ignoriert
  *  - calculateMonthly: AppError(404) bei unbekanntem Mitglied
  *  - calculateAllMembers: Alle aktiven Mitglieder werden einbezogen
- *  - monthBounds: Korrekte UTC-Grenzen inkl. Jahreswechsel
+ *  - monthBounds: Korrekte Europe/Berlin-Grenzen inkl. Jahreswechsel & DST
  */
 
 import { describe, it, expect } from 'vitest';
@@ -70,22 +70,23 @@ async function setup() {
 // ---------------------------------------------------------------------------
 
 describe('monthBounds', () => {
-  it('gibt korrekten UTC-Bereich für Mai 2026 zurück', () => {
+  // Grenzen sind lokale Mitternacht (Europe/Berlin), zurückgegeben als UTC.
+  it('gibt Sommerzeit-Grenzen (UTC+2) für Mai 2026 zurück', () => {
     const { from, to } = monthBounds(2026, 5);
-    expect(from).toBe('2026-05-01T00:00:00.000Z');
-    expect(to).toBe('2026-06-01T00:00:00.000Z');
+    expect(from).toBe('2026-04-30T22:00:00.000Z');
+    expect(to).toBe('2026-05-31T22:00:00.000Z');
   });
 
-  it('behandelt Jahreswechsel korrekt (Dezember)', () => {
+  it('behandelt Jahreswechsel korrekt (Dezember, Winterzeit UTC+1)', () => {
     const { from, to } = monthBounds(2026, 12);
-    expect(from).toBe('2026-12-01T00:00:00.000Z');
-    expect(to).toBe('2027-01-01T00:00:00.000Z');
+    expect(from).toBe('2026-11-30T23:00:00.000Z');
+    expect(to).toBe('2026-12-31T23:00:00.000Z');
   });
 
-  it('behandelt Januar korrekt', () => {
+  it('behandelt Januar korrekt (Winterzeit UTC+1)', () => {
     const { from, to } = monthBounds(2026, 1);
-    expect(from).toBe('2026-01-01T00:00:00.000Z');
-    expect(to).toBe('2026-02-01T00:00:00.000Z');
+    expect(from).toBe('2025-12-31T23:00:00.000Z');
+    expect(to).toBe('2026-01-31T23:00:00.000Z');
   });
 });
 
@@ -157,28 +158,25 @@ describe('ReportService.calculateMonthly', () => {
     expect(report.grand_total_cents).toBe(0);
   });
 
-  it('berücksichtigt nur Buchungen des angegebenen Monats', async () => {
+  it('berücksichtigt nur Buchungen des angegebenen Monats (Berliner Grenzen)', async () => {
     const { db, reportService, alice, cola } = await setup();
 
-    // Buchung direkt in DB einfügen mit expliziten Zeitstempeln (bessere Kontrolle)
-    db.prepare(
+    // Mai 2026 (Sommerzeit, UTC+2): Grenzen [2026-04-30T22:00Z, 2026-05-31T22:00Z).
+    const insert = db.prepare(
       `INSERT INTO bookings (member_id, drink_id, price_cents_snapshot, booked_at)
        VALUES (?, ?, ?, ?)`,
-    ).run(alice.id, cola.id, 120, '2026-04-30T23:59:59.999Z'); // April → soll nicht auftauchen
+    );
 
-    db.prepare(
-      `INSERT INTO bookings (member_id, drink_id, price_cents_snapshot, booked_at)
-       VALUES (?, ?, ?, ?)`,
-    ).run(alice.id, cola.id, 120, '2026-05-01T00:00:00.000Z'); // Mai → soll auftauchen
-
-    db.prepare(
-      `INSERT INTO bookings (member_id, drink_id, price_cents_snapshot, booked_at)
-       VALUES (?, ?, ?, ?)`,
-    ).run(alice.id, cola.id, 120, '2026-06-01T00:00:00.000Z'); // Juni → soll nicht auftauchen
+    // 21:59 UTC = 23:59 Berlin am 30.04. → noch April, darf NICHT auftauchen.
+    insert.run(alice.id, cola.id, 120, '2026-04-30T21:59:59.000Z');
+    // 22:00 UTC = 00:00 Berlin am 01.05. → erster Mai-Moment, MUSS auftauchen.
+    insert.run(alice.id, cola.id, 120, '2026-04-30T22:00:00.000Z');
+    // 22:00 UTC = 00:00 Berlin am 01.06. → Juni, darf NICHT auftauchen.
+    insert.run(alice.id, cola.id, 120, '2026-05-31T22:00:00.000Z');
 
     const report = reportService.calculateMonthly(alice.id, 2026, 5);
     expect(report.entries).toHaveLength(1);
-    expect(report.entries[0]?.booked_at).toBe('2026-05-01T00:00:00.000Z');
+    expect(report.entries[0]?.booked_at).toBe('2026-04-30T22:00:00.000Z');
   });
 
   it('bezieht nur Buchungen des angefragten Mitglieds ein', async () => {

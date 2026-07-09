@@ -24,7 +24,10 @@ export function authenticate(authService: AuthService) {
 
     const token = header.slice(7);
     try {
-      const payload = authService.verifyToken(token);
+      // Verifiziert das Token UND prüft, dass das Mitglied noch existiert und
+      // aktiv ist – so wirken Deaktivierung/Rollenentzug sofort, nicht erst
+      // nach Token-Ablauf.
+      const { payload } = authService.verifyActiveMember(token);
       (req as AuthenticatedRequest).auth = payload;
       next();
     } catch {

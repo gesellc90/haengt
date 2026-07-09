@@ -38,6 +38,7 @@ function makeTestEnv() {
     JWT_SECRET: TEST_JWT_SECRET,
     JWT_EXPIRES_IN: '8h',
     AVATAR_DIR: avatarDir,
+    TRUST_PROXY: 0,
   };
 }
 
@@ -145,17 +146,46 @@ describe('PATCH /api/v1/auth/me', () => {
     expect(res.status).toBe(200);
   });
 
-  it('ändert das eigene Passwort (Login danach möglich)', async () => {
+  it('ändert das eigene Passwort mit korrektem aktuellen Passwort (Login danach möglich)', async () => {
     const token = await getToken(app);
-    await request(app)
+    const res = await request(app)
       .patch('/api/v1/auth/me')
       .set('Authorization', `Bearer ${token}`)
-      .send({ password: 'neuesPasswort99' });
+      .send({ password: 'neuesPasswort99', current_password: 'geheim123' });
+
+    expect(res.status).toBe(200);
 
     const loginRes = await request(app)
       .post('/api/v1/auth/login')
       .send({ username: 'alice', password: 'neuesPasswort99' });
 
+    expect(loginRes.status).toBe(200);
+  });
+
+  it('lehnt Passwortänderung ohne aktuelles Passwort ab (400)', async () => {
+    const token = await getToken(app);
+    const res = await request(app)
+      .patch('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ password: 'neuesPasswort99' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('lehnt Passwortänderung mit falschem aktuellen Passwort ab (403)', async () => {
+    const token = await getToken(app);
+    const res = await request(app)
+      .patch('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ password: 'neuesPasswort99', current_password: 'falsch' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('INVALID_CURRENT_PASSWORD');
+
+    // Passwort darf NICHT geändert worden sein.
+    const loginRes = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ username: 'alice', password: 'geheim123' });
     expect(loginRes.status).toBe(200);
   });
 

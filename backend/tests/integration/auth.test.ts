@@ -33,6 +33,7 @@ const testEnv = {
   JWT_SECRET: TEST_JWT_SECRET,
   JWT_EXPIRES_IN: '8h',
   AVATAR_DIR: '/tmp',
+  TRUST_PROXY: 0,
 };
 
 // ---------------------------------------------------------------------------
@@ -191,6 +192,31 @@ describe('GET /api/v1/auth/me', () => {
       .set('Authorization', 'Bearer das.ist.kein.gueltiger.jwt');
 
     expect(res.status).toBe(401);
+  });
+
+  it('verweigert den Zugriff sofort, wenn das Konto nachträglich deaktiviert wird', async () => {
+    const { app: freshApp, db } = await setupApp();
+
+    const loginRes = await request(freshApp)
+      .post('/api/v1/auth/login')
+      .send({ username: 'alice', password: 'geheim123' });
+    const token = loginRes.body.token as string;
+
+    // Token funktioniert zunächst.
+    const before = await request(freshApp)
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${token}`);
+    expect(before.status).toBe(200);
+
+    // Admin deaktiviert alice → das (noch nicht abgelaufene) Token muss ungültig werden.
+    const membersRepo = new MembersRepo(db);
+    const alice = membersRepo.findByUsername('alice')!;
+    membersRepo.deactivate(alice.id);
+
+    const after = await request(freshApp)
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${token}`);
+    expect(after.status).toBe(401);
   });
 });
 

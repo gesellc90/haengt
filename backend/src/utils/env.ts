@@ -16,6 +16,13 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('8h'),
   /** Verzeichnis für Profilbilder. Wird beim Start angelegt wenn nicht vorhanden. */
   AVATAR_DIR: z.string().default('./data/avatars'),
+  /**
+   * Anzahl vertrauenswürdiger Reverse-Proxy-Hops vor der App (Express `trust proxy`).
+   * 0 = kein Proxy (Default, sicher). Hinter Caddy/nginx auf `1` setzen, damit das
+   * Rate-Limiting die echte Client-IP statt der Proxy-IP sieht. NICHT auf > 0
+   * setzen, wenn KEIN Proxy davor sitzt – sonst wird X-Forwarded-For spoofbar.
+   */
+  TRUST_PROXY: z.coerce.number().int().min(0).default(0),
 });
 
 export type Env = z.infer<typeof envSchema>;

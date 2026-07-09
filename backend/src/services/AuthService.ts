@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import type { MembersRepo } from '../db/repos/MembersRepo.js';
 import type { AuditLogRepo } from '../db/repos/AuditLogRepo.js';
 import type { TokenBlocklistRepo } from '../db/repos/TokenBlocklistRepo.js';
+import type { MemberRow } from '../db/types.js';
 import { toPublicMember, type PublicMember } from './publicMember.js';
 
 export const BCRYPT_COST = 10;
@@ -47,6 +48,18 @@ export class AuthService {
 
   async hashPassword(plain: string): Promise<string> {
     return bcrypt.hash(plain, BCRYPT_COST);
+  }
+
+  /**
+   * Prüft, ob `plain` das aktuelle Passwort des Mitglieds ist. Führt auch bei
+   * fehlendem Hash einen Dummy-Vergleich aus (timing-stabil).
+   */
+  async verifyCurrentPassword(memberId: number, plain: string): Promise<boolean> {
+    const member = this.members.findById(memberId);
+    const hashToCompare =
+      member?.password_hash ?? '$2a$10$invalidhashXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+    const valid = await bcrypt.compare(plain, hashToCompare);
+    return Boolean(member?.password_hash) && valid;
   }
 
   // ---------------------------------------------------------------------------
@@ -128,6 +141,32 @@ export class AuthService {
     }
 
     return decoded;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Token verifizieren UND das Mitglied frisch aus der DB laden
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Verifiziert das Token und stellt zusätzlich sicher, dass das Mitglied noch
+   * existiert und aktiv ist. Die Rolle wird frisch aus der DB übernommen, damit
+   * ein Rollenentzug oder eine Deaktivierung SOFORT greift statt erst nach
+   * Token-Ablauf (bis zu 8 h). better-sqlite3 ist synchron und schnell, der
+   * zusätzliche Lookup pro Request fällt nicht ins Gewicht.
+   *
+   * Wirft `jwt.JsonWebTokenError`, wenn das Mitglied fehlt oder deaktiviert ist,
+   * sodass die `authenticate`-Middleware wie bei einem ungültigen Token 401 liefert.
+   */
+  verifyActiveMember(token: string): { payload: JwtPayload; member: MemberRow } {
+    const payload = this.verifyToken(token);
+    const member = this.members.findById(Number(payload.sub));
+
+    if (!member || member.is_active === 0) {
+      throw new jwt.JsonWebTokenError('Konto existiert nicht mehr oder ist deaktiviert');
+    }
+
+    // Rolle immer aus der DB nehmen (Token könnte eine veraltete Rolle tragen).
+    return { payload: { ...payload, role: member.role }, member };
   }
 
   // ---------------------------------------------------------------------------

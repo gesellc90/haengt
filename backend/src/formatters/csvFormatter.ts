@@ -38,9 +38,19 @@ function fmtTime(iso: string): string {
   });
 }
 
-/** Zelleninhalt escapen: enthält der Wert SEP oder Anführungszeichen → in "" einwickeln */
+/**
+ * Zelleninhalt escapen.
+ *  1. CSV-Formel-Injektion verhindern: beginnt der Wert mit = + - @ (oder Tab/CR),
+ *     wird ein `'` vorangestellt, damit Excel/LibreOffice ihn als Text statt als
+ *     Formel interpretiert. Betrifft z. B. selbst gesetzte Anzeigenamen wie
+ *     `=HYPERLINK(...)`, die sonst im Admin-Export aktiv würden.
+ *  2. Enthält der Wert SEP, Anführungszeichen oder Zeilenumbruch → in "" einwickeln.
+ */
 function cell(value: string | number): string {
-  const s = String(value);
+  let s = String(value);
+  if (/^[=+\-@\t\r]/.test(s)) {
+    s = `'${s}`;
+  }
   if (s.includes(SEP) || s.includes('"') || s.includes('\n')) {
     return `"${s.replace(/"/g, '""')}"`;
   }

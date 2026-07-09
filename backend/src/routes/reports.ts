@@ -50,7 +50,10 @@ export function createReportsRouter(
       const report = reportService.calculateMonthly(memberId, year, month);
 
       const monthStr = String(month).padStart(2, '0');
-      const baseName = `abrechnung_${report.member_display_name.replace(/\s+/g, '_')}_${year}-${monthStr}`;
+      // Anzeigenamen ist frei setzbar – für den Content-Disposition-Header hart
+      // säubern (ein `"` würde den Header zerlegen → 500).
+      const safeName = report.member_display_name.replace(/[^a-z0-9äöüß]/gi, '_').toLowerCase();
+      const baseName = `abrechnung_${safeName}_${year}-${monthStr}`;
 
       if (format === 'csv') {
         const buffer = generateCsv(report);

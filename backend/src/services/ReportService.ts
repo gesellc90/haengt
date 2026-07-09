@@ -46,17 +46,71 @@ export interface MonthlyReport {
 // Hilfsfunktionen
 // ---------------------------------------------------------------------------
 
+/** Zeitzone, in der Abrechnungsmonate definiert sind (Vereinsstandort). */
+const REPORT_TZ = 'Europe/Berlin';
+
 /**
- * Berechnet den halboffenen Zeitraum [from, to) für einen Kalendermonat in UTC.
- * Beispiel: year=2026, month=5 → from='2026-05-01T00:00:00.000Z', to='2026-06-01T00:00:00.000Z'
+ * Offset (lokale Zeit − UTC) einer Zeitzone zum angegebenen Zeitpunkt, in ms.
+ * Nutzt Intl statt einer TZ-Bibliothek – für Monatsgrenzen völlig ausreichend.
+ */
+function tzOffsetMs(instant: Date, timeZone: string): number {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  const parts: Record<string, number> = {};
+  for (const p of dtf.formatToParts(instant)) {
+    if (p.type !== 'literal') parts[p.type] = Number(p.value);
+  }
+  // Intl liefert 24 statt 0 für Mitternacht – normalisieren.
+  const hour = parts['hour'] === 24 ? 0 : parts['hour']!;
+  const asUtc = Date.UTC(
+    parts['year']!,
+    parts['month']! - 1,
+    parts['day']!,
+    hour,
+    parts['minute']!,
+    parts['second']!,
+  );
+  return asUtc - instant.getTime();
+}
+
+/**
+ * Liefert den UTC-Zeitpunkt, der lokaler Mitternacht (00:00) am 1. des Monats
+ * in `REPORT_TZ` entspricht. Zwei Iterationen fangen den DST-Offset korrekt ab
+ * (an Monatsgrenzen finden ohnehin keine DST-Umstellungen statt).
+ */
+function monthStartUtc(year: number, month: number): string {
+  const naiveUtc = Date.UTC(year, month - 1, 1, 0, 0, 0);
+  const offset1 = tzOffsetMs(new Date(naiveUtc), REPORT_TZ);
+  let utc = naiveUtc - offset1;
+  const offset2 = tzOffsetMs(new Date(utc), REPORT_TZ);
+  if (offset2 !== offset1) utc = naiveUtc - offset2;
+  return new Date(utc).toISOString();
+}
+
+/**
+ * Berechnet den halboffenen Zeitraum [from, to) für einen Kalendermonat in der
+ * Vereinszeitzone (Europe/Berlin), zurückgegeben als UTC-ISO-Strings.
+ *
+ * Wichtig: Die Buchungszeitstempel liegen in UTC vor, die Abrechnung soll aber
+ * den lokalen Kalendermonat abbilden. Eine Buchung am 1. um 01:00 Berliner Zeit
+ * (Sommerzeit) hat den UTC-Stempel `…-04-30T23:00Z` und muss dennoch in den Mai
+ * fallen – genau das leistet die Zeitzonen-korrekte Grenze.
  */
 export function monthBounds(year: number, month: number): { from: string; to: string } {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const from = `${year}-${pad(month)}-01T00:00:00.000Z`;
   const nextMonth = month === 12 ? 1 : month + 1;
   const nextYear = month === 12 ? year + 1 : year;
-  const to = `${nextYear}-${pad(nextMonth)}-01T00:00:00.000Z`;
-  return { from, to };
+  return {
+    from: monthStartUtc(year, month),
+    to: monthStartUtc(nextYear, nextMonth),
+  };
 }
 
 function buildSummary(entries: BookingWithDrinkName[]): DrinkSummary[] {

@@ -1,0 +1,38 @@
+# Dependabot – automatische Abhängigkeits-Updates für Hängt!
+#
+# Ziel: Sicherheits- und Versions-Updates laufend surfen, statt manuell
+# `npm audit` zu fahren. Besonders wichtig, weil die App unbeaufsichtigt auf
+# einem Raspberry Pi läuft. Das npm-Ökosystem deckt über die Root-package-lock
+# alle Workspaces (backend, frontend, e2e) ab.
+
+version: 2
+updates:
+  # ---- npm (alle Workspaces über die Root-Lockfile) ----
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    # Kleinere Updates bündeln, damit nicht Dutzende Einzel-PRs entstehen.
+    groups:
+      dev-dependencies:
+        dependency-type: 'development'
+        update-types:
+          - 'minor'
+          - 'patch'
+      production-dependencies:
+        dependency-type: 'production'
+        update-types:
+          - 'minor'
+          - 'patch'
+    commit-message:
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
+
+  # ---- GitHub-Actions-Versionen (checkout, setup-node, cache …) ----
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'chore(ci)'

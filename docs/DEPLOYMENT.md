@@ -22,8 +22,9 @@ folgt in einem separaten Patch.
 /etc/getraenke/
 └── env                      # EnvironmentFile (Mode 0640, root:getraenke)
 
-/var/lib/getraenke/          # SQLite-DB (vom Service-User beschreibbar)
-└── getraenke.db
+/var/lib/getraenke/          # StateDirectory (vom Service-User beschreibbar)
+├── getraenke.db             # SQLite-DB
+└── avatars/                 # Profilbilder (256×256 WebP, ein <id>.webp je Mitglied)
 
 /var/backups/getraenke/      # Backups (vom Deploy-Skript beschrieben)
 └── v0.1.0-20260514T080000Z.sqlite
@@ -33,6 +34,14 @@ folgt in einem separaten Patch.
 veränderliche Daten, `/etc` für Konfiguration — FHS-konform. systemd legt
 `/var/lib/getraenke` automatisch via `StateDirectory=getraenke` an, sodass
 die Pi-Grundeinrichtung nur die anderen Verzeichnisse erstellen muss.
+
+**Profilbilder** liegen unterhalb desselben `StateDirectory` im Unterordner
+`avatars/` (ENV `AVATAR_DIR=/var/lib/getraenke/avatars`). Das Verzeichnis wird
+von der App beim ersten Upload automatisch angelegt und ist durch
+`StateDirectory=getraenke` bereits vom Service-User beschreibbar — es sind
+keine zusätzlichen `install`-Schritte nötig. Da die Bilder **nicht** in der
+SQLite-DB liegen (die DB hält nur den Dateinamen in `members.avatar_path`),
+deckt das reine DB-Backup sie nicht ab — siehe Backup-Hinweis unten.
 
 ## Service-Account
 
@@ -60,6 +69,10 @@ LOG_LEVEL=info
 # da systemd alles andere read-only macht (ProtectSystem=strict).
 DB_PATH=/var/lib/getraenke/getraenke.db
 
+# Verzeichnis für Profilbilder. Ebenfalls im StateDirectory, sonst
+# schlägt der Upload wegen ProtectSystem=strict fehl.
+AVATAR_DIR=/var/lib/getraenke/avatars
+
 # JWT-Secret: mindestens 32 Zeichen, kryptografisch zufällig.
 # Erzeugen z. B. mit:  openssl rand -hex 48
 JWT_SECRET=<HIER 32+ zufällige Zeichen einsetzen, NIE committen!>
@@ -75,6 +88,7 @@ NODE_ENV=production
 PORT=3001
 LOG_LEVEL=info
 DB_PATH=/var/lib/getraenke/getraenke.db
+AVATAR_DIR=/var/lib/getraenke/avatars
 JWT_SECRET=<bitte ersetzen>
 JWT_EXPIRES_IN=8h
 EOF
@@ -219,6 +233,20 @@ Jobs:
 3. _Aufbewahrung:_ ältere Releases als die letzten 5 werden gelöscht
    (das aktive Release wird nie gelöscht, auch wenn es theoretisch
    „raus" sortiert würde).
+
+> **Backup-Hinweis (Profilbilder):** Das Deploy-DB-Backup (Schritt 2) sichert
+> **nur** `getraenke.db`. Die Profilbilder unter `AVATAR_DIR`
+> (`/var/lib/getraenke/avatars`) liegen im Dateisystem und werden davon
+> **nicht** erfasst. Damit ein Restore vollständig ist, muss das Avatar-
+> Verzeichnis vom regelmäßigen Datei-Backup mit abgedeckt werden — die
+> Cron-Backup-Jobs aus [`RASPBERRY-PI-SETUP.md`](./RASPBERRY-PI-SETUP.md)
+> sichern täglich DB **und** Avatar-Verzeichnis, sodass beide zusammen im
+> Off-Site-`rsync` landen. Ein manuelles Avatar-Backup genügt z. B. mit:
+>
+> ```bash
+> sudo tar czf /var/backups/getraenke/avatars-$(date -u +%Y%m%dT%H%M%SZ).tar.gz \
+>     -C /var/lib/getraenke avatars
+> ```
 
 ## Manueller Rollback
 

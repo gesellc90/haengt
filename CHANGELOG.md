@@ -29,6 +29,11 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   - Frontend `ProfilePage`: Avatar-Kreis (Bild oder Initialen-Fallback), Upload/Löschen-Buttons, E-Mail-Anzeige in der Profil-Karte, Bearbeitungsformular für Anzeigename + E-Mail
   - `AuthContext.updateMember()` für lokale State-Aktualisierung nach Profil-Änderungen ohne Re-Login
   - Playwright-E2E-Spec `07-profil`: E-Mail setzen + in Karte sehen, Profilbild hochladen + Avatar erscheint, Konflikt-Toast bei doppelter E-Mail
+- **M10 — Nachgezogene Admin-/UI-Punkte**
+  - Admin-Avatar-Verwaltung: `POST /members/:id/avatar` und `DELETE /members/:id/avatar` (Admin-Pendant zu den Self-Service-Routen); gemeinsame Avatar-Verarbeitung in `utils/avatar.ts` (multer + `sharp`), von Self-Service und Admin genutzt
+  - Admin `MembersPage`: E-Mail-Spalte, Inline-E-Mail-Editor (leerer Wert entfernt die Adresse, Konflikt-Toast bei `EMAIL_TAKEN`) und E-Mail-Feld im Anlegen-Formular
+  - Echtes Profilbild im `WordmarkHeader`/`Layout` — Avatar-Kreis zeigt das hinterlegte Bild, Initialen nur noch als Fallback
+  - Doku: `AVATAR_DIR` im `StateDirectory` (`/var/lib/getraenke/avatars`) samt EnvironmentFile-Beispiel und Backup-Hinweis in `DEPLOYMENT.md`; separater Avatar-Backup-Cron-Job in `RASPBERRY-PI-SETUP.md`; Admin-Avatar-Endpunkte in `ARCHITECTURE.md`
 - **M9 (in Arbeit) — Allgemein-Konto & Mitglieder-Kategorien, PR 1: Datenschicht**
   - Migration 007: Spalten `member_status` (`aktiv`|`inaktiv`|`alter_herr`|`freund`) und `can_book_for_others` an `members`. `member_status` ist eine vom `is_active`-Login-/Soft-Delete-Flag unabhängige Kategorie – Mitglieder ohne Login (z. B. „Freunde der Verbindung") bleiben bebuchbar
   - `MembersRepo.findBookable()`: liefert aktive Mitglieder ohne Buchen-für-andere-Recht, sortiert nach Kategorie (Aktive → Inaktive → Alte Herren → Freunde)

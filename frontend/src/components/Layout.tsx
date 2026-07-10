@@ -82,7 +82,11 @@ export default function Layout() {
       {/* ------------------------------------------------------------------ */}
       {/* Header                                                              */}
       {/* ------------------------------------------------------------------ */}
-      <WordmarkHeader avatarInitials={initials} onAvatarClick={() => void navigate('/profil')} />
+      <WordmarkHeader
+        avatarInitials={initials}
+        avatarPath={member?.avatar_path ?? null}
+        onAvatarClick={() => void navigate('/profil')}
+      />
 
       {/* ------------------------------------------------------------------ */}
       {/* Desktop-Navigation                                                  */}

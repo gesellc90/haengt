@@ -111,14 +111,16 @@ Basis-URL: `/api/v1`. Alle geschützten Endpunkte erwarten `Authorization: Beare
 
 ### Mitglieder
 
-| Methode | Pfad                | Auth  | Beschreibung                                                 |
-| ------- | ------------------- | ----- | ------------------------------------------------------------ |
-| GET     | `/members`          | Admin | Alle Mitglieder                                              |
-| POST    | `/members`          | Admin | Neues Mitglied anlegen                                       |
-| GET     | `/members/bookable` | User  | Bebuchbare Mitglieder (nur Konten mit `can_book_for_others`) |
-| GET     | `/members/:id`      | Admin | Einzelnes Mitglied                                           |
-| PATCH   | `/members/:id`      | Admin | Mitglied aktualisieren                                       |
-| DELETE  | `/members/:id`      | Admin | Mitglied deaktivieren (soft)                                 |
+| Methode | Pfad                  | Auth  | Beschreibung                                                 |
+| ------- | --------------------- | ----- | ------------------------------------------------------------ |
+| GET     | `/members`            | Admin | Alle Mitglieder                                              |
+| POST    | `/members`            | Admin | Neues Mitglied anlegen                                       |
+| GET     | `/members/bookable`   | User  | Bebuchbare Mitglieder (nur Konten mit `can_book_for_others`) |
+| GET     | `/members/:id`        | Admin | Einzelnes Mitglied                                           |
+| PATCH   | `/members/:id`        | Admin | Mitglied aktualisieren (inkl. `email`)                       |
+| POST    | `/members/:id/avatar` | Admin | Profilbild eines Mitglieds setzen (max 5 MB → 256×256 WebP)  |
+| DELETE  | `/members/:id/avatar` | Admin | Profilbild eines Mitglieds entfernen                         |
+| DELETE  | `/members/:id`        | Admin | Mitglied deaktivieren (soft)                                 |
 
 ### Getränke
 

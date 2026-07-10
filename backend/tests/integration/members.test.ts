@@ -12,7 +12,10 @@
  * Jeder Block bekommt eine frische In-Memory-DB mit Migrationen + Stammdaten.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import pino from 'pino';
 import bcrypt from 'bcryptjs';
@@ -21,6 +24,12 @@ import { createApp } from '../../src/app.js';
 import { createTestDb } from '../unit/db/helpers.js';
 import { MembersRepo } from '../../src/db/repos/MembersRepo.js';
 import type { Db } from '../../src/db/client.js';
+
+// Minimales 1×1 transparentes PNG (base64) — valides Bild für sharp.
+const TINY_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64',
+);
 
 const silentLogger = pino({ level: 'silent' });
 const TEST_JWT_SECRET = 'test-secret-that-is-at-least-32-characters-long';
@@ -652,5 +661,132 @@ describe('PATCH /api/v1/members/:id — E-Mail (M10)', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.email).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// POST / DELETE /members/:id/avatar  (Admin-Pendant, M10)
+// ---------------------------------------------------------------------------
+
+describe('Admin-Avatar-Verwaltung /api/v1/members/:id/avatar', () => {
+  let app: Express;
+  let avatarDir: string;
+
+  // Eigene App mit temporärem Avatar-Verzeichnis, damit die geschriebenen
+  // WebP-Dateien nach dem Test wieder verschwinden.
+  async function setupWithAvatarDir(): Promise<Express> {
+    const db = createTestDb();
+    const membersRepo = new MembersRepo(db);
+    const passwordHash = await bcrypt.hash('geheim123', 10);
+    membersRepo.create({
+      username: 'admin',
+      display_name: 'Administrator',
+      password_hash: passwordHash,
+      role: 'admin',
+    });
+    membersRepo.create({
+      username: 'alice',
+      display_name: 'Alice Muster',
+      password_hash: passwordHash,
+      role: 'member',
+    });
+    return createApp({
+      logger: silentLogger,
+      db,
+      env: { ...testEnv, AVATAR_DIR: avatarDir },
+    });
+  }
+
+  beforeEach(async () => {
+    avatarDir = fs.mkdtempSync(path.join(os.tmpdir(), 'haengt-member-avatars-'));
+    app = await setupWithAvatarDir();
+  });
+
+  afterEach(() => {
+    fs.rmSync(avatarDir, { recursive: true, force: true });
+  });
+
+  it('lädt ein Profilbild für ein beliebiges Mitglied hoch (Admin)', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .post('/api/v1/members/2/avatar')
+      .set('Authorization', `Bearer ${token}`)
+      .attach('avatar', TINY_PNG, { filename: 'test.png', contentType: 'image/png' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.avatar_path).toBe('2.webp');
+    expect(fs.existsSync(path.join(avatarDir, '2.webp'))).toBe(true);
+  });
+
+  it('gibt 400 ohne Datei zurück', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .post('/api/v1/members/2/avatar')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it('gibt 404 für ein unbekanntes Mitglied zurück', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .post('/api/v1/members/9999/avatar')
+      .set('Authorization', `Bearer ${token}`)
+      .attach('avatar', TINY_PNG, { filename: 'test.png', contentType: 'image/png' });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('gibt 403 für ein normales Mitglied zurück', async () => {
+    const token = await getToken(app, 'alice');
+    const res = await request(app)
+      .post('/api/v1/members/2/avatar')
+      .set('Authorization', `Bearer ${token}`)
+      .attach('avatar', TINY_PNG, { filename: 'test.png', contentType: 'image/png' });
+
+    expect(res.status).toBe(403);
+  });
+
+  it('gibt 401 ohne Token zurück', async () => {
+    const res = await request(app)
+      .post('/api/v1/members/2/avatar')
+      .attach('avatar', TINY_PNG, { filename: 'test.png', contentType: 'image/png' });
+
+    expect(res.status).toBe(401);
+  });
+
+  it('entfernt das Profilbild eines Mitglieds und löscht die Datei (Admin)', async () => {
+    const token = await getToken(app, 'admin');
+    await request(app)
+      .post('/api/v1/members/2/avatar')
+      .set('Authorization', `Bearer ${token}`)
+      .attach('avatar', TINY_PNG, { filename: 'test.png', contentType: 'image/png' });
+
+    const del = await request(app)
+      .delete('/api/v1/members/2/avatar')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(del.status).toBe(200);
+    expect(del.body.avatar_path).toBeNull();
+    expect(fs.existsSync(path.join(avatarDir, '2.webp'))).toBe(false);
+  });
+
+  it('DELETE ist idempotent, wenn kein Bild vorhanden ist', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .delete('/api/v1/members/2/avatar')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.avatar_path).toBeNull();
+  });
+
+  it('DELETE gibt 403 für ein normales Mitglied zurück', async () => {
+    const token = await getToken(app, 'alice');
+    const res = await request(app)
+      .delete('/api/v1/members/2/avatar')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(403);
   });
 });

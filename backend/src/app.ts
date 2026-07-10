@@ -128,7 +128,7 @@ export function createApp({ logger, db, env }: AppOptions): Express {
   // -- Routen -----------------------------------------------------------------
   app.use('/api/v1', healthRouter);
   app.use('/api/v1/auth', createAuthRouter(authService, membersService, env.AVATAR_DIR));
-  app.use('/api/v1/members', createMembersRouter(authService, membersService));
+  app.use('/api/v1/members', createMembersRouter(authService, membersService, env.AVATAR_DIR));
   app.use('/api/v1/drinks', createDrinksRouter(authService, drinksService));
   app.use('/api/v1/bookings', createBookingsRouter(authService, bookingService));
   app.use('/api/v1/reports', createReportsRouter(authService, reportService));

@@ -247,11 +247,11 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 
 ### Datenbank & Backend
 
-- [ ] Migration 007: Spalte `member_status TEXT NOT NULL DEFAULT 'aktiv' CHECK (member_status IN ('aktiv','inaktiv','alter_herr','freund'))` an `members`
-- [ ] Migration 007: Spalte `can_book_for_others INTEGER NOT NULL DEFAULT 0 CHECK (can_book_for_others IN (0,1))` an `members`
-- [ ] Seed: „Allgemein"-Konto anlegen (`username='allgemein'`, `display_name='Allgemein'`, `role='member'`, `can_book_for_others=1`; Passwort wird von einem Admin gesetzt)
-- [ ] `MembersRepo`: neue Felder lesen/schreiben; `findBookable()` — alle bebuchbaren Mitglieder, gruppierbar nach `member_status` (Allgemein-Konto + Admins ausgenommen)
-- [ ] Zod-Schemas: `member_status` in Create-/Update-Member-Schema; `can_book_for_others` nur über Admin-Update setzbar
+- [x] Migration 007: Spalte `member_status TEXT NOT NULL DEFAULT 'aktiv' CHECK (member_status IN ('aktiv','inaktiv','alter_herr','freund'))` an `members`
+- [x] Migration 007: Spalte `can_book_for_others INTEGER NOT NULL DEFAULT 0 CHECK (can_book_for_others IN (0,1))` an `members`
+- [x] Seed: „Allgemein"-Konto anlegen (`username='allgemein'`, `display_name='Allgemein'`, `role='member'`, `can_book_for_others=1`; Passwort wird von einem Admin gesetzt)
+- [x] `MembersRepo`: neue Felder lesen/schreiben; `findBookable()` — alle bebuchbaren Mitglieder, gruppierbar nach `member_status` (Allgemein-Konto + Admins ausgenommen)
+- [x] Zod-Schemas: `member_status` in Create-/Update-Member-Schema; `can_book_for_others` nur über Admin-Update setzbar
 - [x] `POST /bookings` erweitern: optionales `member_id` im Body — wenn gesetzt, nur erlaubt wenn Requester `can_book_for_others=1` (sonst 403 `FORBIDDEN`); ohne `member_id` weiterhin Buchung für sich selbst
 - [x] Buchungen eines bestimmten Mitglieds für den Theken-Screen ladbar machen (`GET /bookings/member/:id`; Allgemein-Konto darf fremde Buchungen lesen, beschränkt auf `member_id`-Filter)
 - [x] `BookingService.void`: Konten mit `can_book_for_others` dürfen die von ihnen für andere angelegten Buchungen innerhalb des 5-Minuten-Fensters stornieren (über neue Spalte `booked_by_id`, Migration 008)
@@ -301,7 +301,7 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 - [x] Zod-Schemas: E-Mail-Format-Validierung (optional, trim, lowercase) im Create-/Update-Member-Schema **und** im neuen Self-Service-Schema
 - [x] **Self-Service-Endpunkt** `PATCH /auth/me`: eingeloggtes Mitglied ändert eigene `email` (Konflikt → 409 `EMAIL_TAKEN`); Audit-Log-Eintrag
 - [x] **Avatar-Upload** `POST /auth/me/avatar` (multipart, `multer`, 5 MB-Limit): Bild via `sharp` auf 256×256 WebP normalisieren, unter `AVATAR_DIR` speichern; `DELETE /auth/me/avatar` entfernt das Bild
-- [ ] Admin-Pendants: `PATCH /members/:id` akzeptiert zusätzlich `email`; Avatar-Verwaltung für beliebige Mitglieder (`POST/DELETE /members/:id/avatar`) _(verschoben auf späteren PR)_
+- [x] Admin-Pendants: `PATCH /members/:id` akzeptiert zusätzlich `email`; Avatar-Verwaltung für beliebige Mitglieder (`POST/DELETE /members/:id/avatar`)
 - [x] **Statische Auslieferung** der Avatare (`GET /avatars/:file` via `express.static`)
 - [x] Konfiguration: ENV-Variable `AVATAR_DIR` (Dev: `./data/avatars`, Prod: `/var/lib/getraenke/avatars`)
 - [x] **Tests:** Supertest — `PATCH /auth/me` (200, E-Mail-Konflikt 409, 400 leerer Body, 401), Avatar-Upload (200, 400 keine Datei, 401), Avatar-Delete (200, idempotent, 401); Vitest — Repo-Eindeutigkeit
@@ -310,15 +310,15 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 
 - [x] `PublicMember`-Typ + API-Client um `email` und `avatar_path` erweitert; `apiUpload()` für Multipart
 - [x] `ProfilePage`: E-Mail anzeigen und bearbeiten, Profilbild hochladen/entfernen, Avatar-Kreis mit Initialen-Fallback
-- [ ] Echtes Profilbild im `Layout`/`WordmarkHeader` _(verschoben auf späteren PR)_
-- [ ] Admin `MembersPage`: E-Mail-Spalte/Editor _(verschoben auf späteren PR)_
+- [x] Echtes Profilbild im `Layout`/`WordmarkHeader`
+- [x] Admin `MembersPage`: E-Mail-Spalte/Editor
 - [x] Konsistent mit Hängt!-Tokens — kein neuer visueller Stil
 
 ### E2E & Doku
 
 - [x] Playwright-E2E `07-profil`: E-Mail setzen + in Karte sehen, Profilbild hochladen + Avatar erscheint, Konflikt-Toast bei doppelter E-Mail
 - [x] `ARCHITECTURE.md`: neue Spalten (`email`, `avatar_path`), Self-Service-/Avatar-Endpunkte, Datei-Speicher-Entscheidung dokumentiert
-- [ ] `docs/DEPLOYMENT.md`: Avatar-Verzeichnis im `StateDirectory` + Backup-Hinweis _(verschoben auf M10 Follow-up)_
+- [x] `docs/DEPLOYMENT.md`: Avatar-Verzeichnis im `StateDirectory` + Backup-Hinweis
 - [x] `CHANGELOG.md`: nutzersichtbare Änderungen unter [Unreleased] gepflegt
 
 **Definition of Done:** Ein eingeloggtes Mitglied kann im Profil seine E-Mail-Adresse setzen/ändern und ein Profilbild hoch- und wieder abladen; das Bild erscheint im Header (Fallback: Initialen). Admins können dieselben Felder für beliebige Mitglieder pflegen. E-Mail-Adressen sind eindeutig. Bilddateien liegen im `StateDirectory` und überleben Deployments. Lint, Unit-, Integrations- und E2E-Tests grün.

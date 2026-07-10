@@ -20,11 +20,12 @@ export const membersApi = {
     password: string;
     role?: 'admin' | 'member';
     member_status?: MemberStatus;
+    email?: string;
   }): Promise<PublicMember> {
     return apiFetch<PublicMember>('/members', { method: 'POST', body: data });
   },
 
-  /** Admin: Mitglied aktualisieren (display_name, role, is_active, password, Kategorie, Theken-Flag) */
+  /** Admin: Mitglied aktualisieren (display_name, role, is_active, password, Kategorie, Theken-Flag, E-Mail) */
   update(
     id: number,
     data: {
@@ -34,6 +35,7 @@ export const membersApi = {
       password?: string;
       member_status?: MemberStatus;
       can_book_for_others?: boolean;
+      email?: string | null;
     },
   ): Promise<PublicMember> {
     return apiFetch<PublicMember>(`/members/${id}`, { method: 'PATCH', body: data });

@@ -53,8 +53,11 @@ test.describe('Profil-Seite', () => {
     // Toast bestätigt den Upload
     await expect(page.getByText('Profilbild gespeichert.')).toBeVisible({ timeout: 10_000 });
 
-    // Avatar-Bild ist nun sichtbar
-    await expect(page.locator('img[src^="/avatars/"]')).toBeVisible({ timeout: 5_000 });
+    // Avatar-Bild ist nun sichtbar — sowohl in der Profil-Karte als auch im
+    // WordmarkHeader (dort ersetzt es die Initialen). `.first()` vermeidet die
+    // Strict-Mode-Verletzung, da der Selektor jetzt beide Bilder trifft.
+    await expect(page.locator('img[src^="/avatars/"]').first()).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator('img[src^="/avatars/"]')).toHaveCount(2);
   });
 
   /**

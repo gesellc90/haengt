@@ -19,11 +19,13 @@ export default defineConfig({
       ],
       // Mindest-Abdeckung als Ratsche gegen stille Erosion. Werte mit Puffer
       // unter dem Ist-Stand, damit normale Änderungen nicht grundlos rot werden.
+      // Baseline an @vitest/coverage-v8 v4 angepasst (dessen AST-Remapping misst
+      // strenger als v1 → ~8 Punkte niedriger bei identischen Tests).
       thresholds: {
-        statements: 82,
-        lines: 82,
+        statements: 78,
+        lines: 78,
         functions: 85,
-        branches: 75,
+        branches: 70,
       },
     },
   },

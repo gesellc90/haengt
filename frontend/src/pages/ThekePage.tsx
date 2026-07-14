@@ -7,6 +7,7 @@ import { useToast } from '../contexts/ToastContext.js';
 import Spinner from '../components/Spinner.js';
 import SaldoCard from '../components/SaldoCard.js';
 import SortenButton, { formatCents } from '../components/SortenButton.js';
+import { groupDrinksByCategory } from '../utils/groupByCategory.js';
 import SectionTitle from '../components/SectionTitle.js';
 import StrichHistory from '../components/StrichHistory.js';
 import type {
@@ -287,19 +288,38 @@ function MemberBookingView({ member, onDone }: { member: PublicMember; onDone():
             Keine Getränke verfügbar.
           </p>
         ) : (
-          <div
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}
-            className="sm:grid-cols-3"
-          >
-            {drinks.map((drink) => (
-              <SortenButton
-                key={drink.id}
-                name={drink.name}
-                priceCents={drink.current_price_cents ?? 0}
-                onClick={() => void handleBook(drink)}
-                disabled={bookingDrinkId !== null}
-                isLoading={bookingDrinkId === drink.id}
-              />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {groupDrinksByCategory(drinks).map((group) => (
+              <div key={group.category_id}>
+                <h3
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: 'var(--tinte-3)',
+                    margin: '0 0 8px',
+                  }}
+                >
+                  {group.category_name}
+                </h3>
+                <div
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}
+                  className="sm:grid-cols-3"
+                >
+                  {group.drinks.map((drink) => (
+                    <SortenButton
+                      key={drink.id}
+                      name={drink.name}
+                      priceCents={drink.current_price_cents ?? 0}
+                      onClick={() => void handleBook(drink)}
+                      disabled={bookingDrinkId !== null}
+                      isLoading={bookingDrinkId === drink.id}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}

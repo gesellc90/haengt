@@ -15,6 +15,7 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 | M9  | Allgemein-Konto & Mitglieder-Kategorien       | 3–5 Tage          | M4, M5                      |
 | M10 | Erweitertes Mitglieder-Profil (Bild & E-Mail) | 3–4 Tage          | M3, M5, M7                  |
 | M11 | Zeiger (Couleurbesuch & Verbindungsveranst.)  | 4–6 Tage          | M4, M5, M9                  |
+| M12 | Getränke-Kategorien & Verbrauchs-Auswertung   | 3–4 Tage          | M4, M5, M6                  |
 
 ---
 
@@ -385,6 +386,61 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 - [x] `CHANGELOG.md`, `MILESTONES.md` aktualisiert
 
 **Definition of Done:** Jedes Mitglied kann einen Zeiger (Couleurbesuch oder Veranstaltung) öffnen, Mitglieder buchen auf offene Zeiger, der Ersteller oder ein Admin schließt den Zeiger. Zeiger-Buchungen tauchen nicht im Personen-Saldo auf. Admins pflegen die Verbindungsliste und exportieren Zeiger-Auswertungen als PDF/CSV. Lint, Unit-, Integrations- und E2E-Tests grün.
+
+---
+
+## M12 — Getränke-Kategorien & Verbrauchs-Auswertung
+
+**Ziel:** Getränke werden vom Admin einer Kategorie zugeordnet (Pflichtfeld) und in der Buchungsansicht nach Kategorie geclustert dargestellt. Der Admin bestimmt die Reihenfolge der Kategorien. Zusätzlich eine neue Admin-Auswertung: Getränkeverbrauch in einem frei wählbaren Zeitraum.
+
+**Abhängigkeit:** M4 (Getränke/Buchungen), M5 (Frontend), M6 (Report-Export).
+
+### Festgelegte Entscheidungen
+
+- **Bestandsdaten:** Migration legt die Standardkategorie „Sonstige" an und ordnet alle bestehenden Getränke ihr zu. Die Kategorie ist auf App-Ebene ein Pflichtfeld; die DB-Spalte bleibt technisch nullable (SQLite-`ALTER TABLE`-Restriktion), enthält durch Backfill + Service-Validierung aber nie NULL.
+- **Löschschutz:** Eine Kategorie lässt sich nur löschen, wenn ihr keine Getränke mehr zugeordnet sind (FK `ON DELETE RESTRICT` + Service-Prüfung → 409 `CATEGORY_NOT_EMPTY`).
+- **Reihenfolge:** Admin-pflegbar über `sort_order`; die Buchungs-/Theken-Ansicht clustert Getränke in genau dieser Reihenfolge.
+- **Verbrauchs-Auswertung:** Anzahl **und** Umsatz je Getränk, nach Kategorie gruppiert, mit Zwischen- und Gesamtsummen. Berücksichtigt **alle** nicht-stornierten Buchungen (Personen- und Zeiger-Buchungen) im gewählten Zeitraum. Export als PDF und CSV, integriert in den bestehenden `ReportService`.
+
+### PR 1 — Datenschicht
+
+- [x] Migration 011: Tabelle `drink_categories` (STRICT), Standardkategorie „Sonstige", `drinks.category_id` (FK `ON DELETE RESTRICT`), Bestand-Backfill, Index
+- [x] `DrinkCategoryRow`, `DrinkRow.category_id` in `db/types.ts`
+- [x] `DrinkCategoriesRepo`: `findAll`/`findById`/`findByName`/`create`/`update`/`delete`/`reorder`/`countDrinks`
+- [x] `DrinksRepo` um `category_id` erweitert (create/update, Listen mit Kategorie-Join)
+- [x] `BookingsRepo.findConsumption(from, to)` mit Kategorie-Join
+- [x] Seed: Demo-Kategorien + Zuordnung der Seed-Getränke
+- [x] Vitest: `DrinkCategoriesRepo`-Unit-Tests
+
+### PR 2 — Kategorie-Backend & Drinks-Anpassung
+
+- [x] `DrinkCategoriesService` mit Audit-Log + Löschschutz
+- [x] `DrinksService`: Pflicht-Kategorie beim Anlegen (validiert), Kategorie-Änderung
+- [x] Schemas + Routen `GET /drink-categories`, `POST/PATCH/DELETE /drink-categories/:id`, `PUT /drink-categories/order`; `drinks`-Schema um `category_id`
+- [x] `app.ts` verdrahtet Repo, Service und Router
+- [x] Supertest-Integrationstests (Kategorie-CRUD, Reorder, Löschschutz)
+
+### PR 3 — Verbrauchs-Auswertung
+
+- [x] `ReportService.calculateConsumption` (nach Kategorie gruppiert, Anzahl + Umsatz)
+- [x] CSV- und PDF-Formatter für die Verbrauchs-Auswertung
+- [x] Route `GET /reports/consumption?from&to&format` (Admin)
+- [x] Unit- und Integrationstests (Aggregation, Zeitraumgrenzen, CSV/PDF, 400/403)
+
+### PR 4 — Frontend
+
+- [x] Admin-Reiter „Kategorien" (`CategoriesPage`): Anlegen, Umbenennen, Löschen, Reihenfolge (Hoch/Runter)
+- [x] `DrinksPage`: Kategorie-Pflichtfeld beim Anlegen, Kategorie-Spalte zum Umhängen
+- [x] Buchungs- und Theken-Ansicht clustern Getränke nach Kategorie (Admin-Reihenfolge)
+- [x] `ReportPage`: Verbrauchs-Auswertung mit frei wählbarem Zeitraum (CSV/PDF)
+- [x] Route + Navigations-Tab, API-Module (`drinkCategories`, erweitertes `drinks`/`reports`)
+
+### PR 5 — Doku
+
+- [x] `CHANGELOG.md` (Unreleased) und `MILESTONES.md` aktualisiert
+- [x] README-Feature-Liste ergänzt
+
+**Definition of Done:** Ein Admin pflegt Kategorien inkl. Reihenfolge, jedes neue Getränk muss einer Kategorie zugeordnet werden, und die Buchungsansicht zeigt Getränke nach Kategorie geclustert in der Admin-Reihenfolge. Kategorien mit zugeordneten Getränken lassen sich nicht löschen. Der Admin exportiert den Getränkeverbrauch (Anzahl + Umsatz, nach Kategorie) für einen frei wählbaren Zeitraum als PDF/CSV. Lint, Unit- und Integrationstests grün.
 
 ---
 

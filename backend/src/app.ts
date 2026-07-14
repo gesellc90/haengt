@@ -9,6 +9,7 @@ import type { Env } from './utils/env.js';
 import {
   MembersRepo,
   DrinksRepo,
+  DrinkCategoriesRepo,
   BookingsRepo,
   AuditLogRepo,
   TokenBlocklistRepo,
@@ -18,6 +19,7 @@ import {
 import { AuthService } from './services/AuthService.js';
 import { MembersService } from './services/MembersService.js';
 import { DrinksService } from './services/DrinksService.js';
+import { DrinkCategoriesService } from './services/DrinkCategoriesService.js';
 import { BookingService } from './services/BookingService.js';
 import { ReportService } from './services/ReportService.js';
 import { ZeigerService } from './services/ZeigerService.js';
@@ -26,6 +28,7 @@ import { healthRouter } from './routes/health.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createMembersRouter } from './routes/members.js';
 import { createDrinksRouter } from './routes/drinks.js';
+import { createDrinkCategoriesRouter } from './routes/drinkCategories.js';
 import { createBookingsRouter } from './routes/bookings.js';
 import { createReportsRouter } from './routes/reports.js';
 import { createZeigerRouter } from './routes/zeiger.js';
@@ -97,6 +100,7 @@ export function createApp({ logger, db, env }: AppOptions): Express {
   const auditLogRepo = new AuditLogRepo(db);
   const tokenBlocklistRepo = new TokenBlocklistRepo(db);
   const drinksRepo = new DrinksRepo(db);
+  const drinkCategoriesRepo = new DrinkCategoriesRepo(db);
   const bookingsRepo = new BookingsRepo(db);
   const verbindungenRepo = new VerbindungenRepo(db);
   const zeigerRepo = new ZeigerRepo(db);
@@ -110,7 +114,8 @@ export function createApp({ logger, db, env }: AppOptions): Express {
   );
 
   const membersService = new MembersService(membersRepo, auditLogRepo);
-  const drinksService = new DrinksService(drinksRepo, auditLogRepo);
+  const drinksService = new DrinksService(drinksRepo, drinkCategoriesRepo, auditLogRepo);
+  const drinkCategoriesService = new DrinkCategoriesService(drinkCategoriesRepo, auditLogRepo);
   const bookingService = new BookingService(
     bookingsRepo,
     drinksRepo,
@@ -130,6 +135,10 @@ export function createApp({ logger, db, env }: AppOptions): Express {
   app.use('/api/v1/auth', createAuthRouter(authService, membersService, env.AVATAR_DIR));
   app.use('/api/v1/members', createMembersRouter(authService, membersService, env.AVATAR_DIR));
   app.use('/api/v1/drinks', createDrinksRouter(authService, drinksService));
+  app.use(
+    '/api/v1/drink-categories',
+    createDrinkCategoriesRouter(authService, drinkCategoriesService),
+  );
   app.use('/api/v1/bookings', createBookingsRouter(authService, bookingService));
   app.use('/api/v1/reports', createReportsRouter(authService, reportService));
   app.use('/api/v1/zeiger', createZeigerRouter(authService, zeigerService));

@@ -42,7 +42,7 @@ export class ApiError extends Error {
 // ---------------------------------------------------------------------------
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   /** Wenn true, wird kein Authorization-Header gesetzt */
   anonymous?: boolean;

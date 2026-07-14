@@ -15,6 +15,7 @@ import {
   downloadAllMembersReport,
   downloadZeigerReport,
   downloadAllZeigerReport,
+  downloadConsumptionReport,
   type ReportFormat,
 } from '../../api/reports.js';
 import { useToast } from '../../contexts/ToastContext.js';
@@ -296,6 +297,34 @@ export default function ReportPage() {
   const busyZeiger =
     loadingZeigerCsv || loadingZeigerPdf || loadingAllZeigerCsv || loadingAllZeigerPdf;
 
+  // Verbrauchs-Auswertung (frei wählbarer Zeitraum, Standard: aktueller Monat)
+  const [consumptionFrom, setConsumptionFrom] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-CA');
+  });
+  const [consumptionTo, setConsumptionTo] = useState(() => new Date().toLocaleDateString('en-CA'));
+  const [loadingConsumptionCsv, setLoadingConsumptionCsv] = useState(false);
+  const [loadingConsumptionPdf, setLoadingConsumptionPdf] = useState(false);
+  const busyConsumption = loadingConsumptionCsv || loadingConsumptionPdf;
+  const consumptionInvalid = !consumptionFrom || !consumptionTo || consumptionFrom > consumptionTo;
+
+  const handleConsumptionDownload = useCallback(
+    async (format: ReportFormat) => {
+      if (consumptionInvalid) return;
+      const setter = format === 'csv' ? setLoadingConsumptionCsv : setLoadingConsumptionPdf;
+      setter(true);
+      try {
+        await downloadConsumptionReport(consumptionFrom, consumptionTo, format);
+        showToast('Download gestartet.', 'success');
+      } catch {
+        showToast('Download fehlgeschlagen.', 'error');
+      } finally {
+        setter(false);
+      }
+    },
+    [consumptionFrom, consumptionTo, consumptionInvalid, showToast],
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Auswahl-Panel */}
@@ -427,6 +456,80 @@ export default function ReportPage() {
           disabled={busy}
           onClick={() => void handleDownloadAll()}
         />
+      </div>
+
+      {/* Verbrauchs-Auswertung (frei wählbarer Zeitraum) */}
+      <div style={cardStyle}>
+        <SectionTitle>Verbrauchs-Auswertung</SectionTitle>
+        <p
+          style={{
+            fontFamily: 'var(--font-serif)',
+            fontStyle: 'italic',
+            fontSize: 14,
+            color: 'var(--tinte-3)',
+            marginBottom: 20,
+            marginTop: -8,
+          }}
+        >
+          Anzahl und Umsatz je Getränk im gewählten Zeitraum, nach Kategorie gruppiert.
+          Berücksichtigt alle Buchungen (Personen- und Zeiger-Buchungen).
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2" style={{ marginBottom: 16 }}>
+          <div>
+            <label htmlFor="consumption-from" style={labelStyle}>
+              Von (Datum)
+            </label>
+            <input
+              id="consumption-from"
+              type="date"
+              value={consumptionFrom}
+              max={consumptionTo || undefined}
+              onChange={(e) => setConsumptionFrom(e.target.value)}
+              style={selectStyle}
+            />
+          </div>
+          <div>
+            <label htmlFor="consumption-to" style={labelStyle}>
+              Bis (Datum)
+            </label>
+            <input
+              id="consumption-to"
+              type="date"
+              value={consumptionTo}
+              min={consumptionFrom || undefined}
+              onChange={(e) => setConsumptionTo(e.target.value)}
+              style={selectStyle}
+            />
+          </div>
+        </div>
+        {consumptionInvalid && (
+          <p
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: 13,
+              color: 'var(--korps-rot)',
+              marginTop: -4,
+              marginBottom: 16,
+            }}
+          >
+            {'Bitte einen gültigen Zeitraum wählen („Von“ darf nicht nach „Bis“ liegen).'}
+          </p>
+        )}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+          <DownloadButton
+            label="Verbrauch (CSV)"
+            loading={loadingConsumptionCsv}
+            disabled={consumptionInvalid || busyConsumption}
+            onClick={() => void handleConsumptionDownload('csv')}
+            variant="secondary"
+          />
+          <DownloadButton
+            label="Verbrauch (PDF)"
+            loading={loadingConsumptionPdf}
+            disabled={consumptionInvalid || busyConsumption}
+            onClick={() => void handleConsumptionDownload('pdf')}
+          />
+        </div>
       </div>
 
       {/* Zeiger-Auswertung (Einzel) */}

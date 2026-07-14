@@ -8,7 +8,11 @@
  *  - Zeilenende: CRLF
  */
 
-import type { MonthlyReport, ZeigerSummaryReport } from '../services/ReportService.js';
+import type {
+  MonthlyReport,
+  ZeigerSummaryReport,
+  ConsumptionReport,
+} from '../services/ReportService.js';
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktionen
@@ -189,6 +193,42 @@ export function generateAllZeigerCsv(reports: ZeigerSummaryReport[]): Buffer {
     );
   }
   lines.push(row('', '', '', '', '', '', '', '', '', eur(totalCents)));
+
+  return Buffer.from('﻿' + lines.join(CRLF), 'utf-8');
+}
+
+// ---------------------------------------------------------------------------
+// Verbrauchs-Auswertung (Zeitraum, nach Kategorie gruppiert)
+// ---------------------------------------------------------------------------
+
+/** ISO-Datum (YYYY-MM-DD) → deutsches Datum (13.05.2026). */
+function fmtDateOnly(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+export function generateConsumptionCsv(report: ConsumptionReport): Buffer {
+  const lines: string[] = [];
+
+  lines.push(row(`Getränke-Verbrauch – ${fmtDateOnly(report.from)} bis ${fmtDateOnly(report.to)}`));
+  lines.push('');
+
+  lines.push(row('Kategorie', 'Getränk', 'Anzahl', 'Gesamt (€)'));
+  for (const group of report.groups) {
+    for (const drink of group.drinks) {
+      lines.push(row(group.category_name, drink.drink_name, drink.count, eur(drink.total_cents)));
+    }
+    // Zwischensumme je Kategorie
+    lines.push(row(`${group.category_name} – Summe`, '', group.count, eur(group.total_cents)));
+  }
+  if (report.groups.length === 0) {
+    lines.push(row('(keine Buchungen im Zeitraum)'));
+  }
+  lines.push('');
+
+  lines.push(row('Gesamt', '', report.total_count, eur(report.grand_total_cents)));
+  lines.push('');
+  lines.push(row(`Erstellt am: ${new Date().toLocaleDateString('de-DE')}`));
 
   return Buffer.from('﻿' + lines.join(CRLF), 'utf-8');
 }

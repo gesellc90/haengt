@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage.js';
 import AdminLayout from './pages/admin/AdminLayout.js';
 import MembersPage from './pages/admin/MembersPage.js';
 import DrinksPage from './pages/admin/DrinksPage.js';
+import CategoriesPage from './pages/admin/CategoriesPage.js';
 import AdminBookingsPage from './pages/admin/BookingsPage.js';
 import ReportPage from './pages/admin/ReportPage.js';
 import VerbindungenPage from './pages/admin/VerbindungenPage.js';
@@ -45,6 +46,7 @@ export default function App() {
                   <Route index element={<Navigate to="/admin/mitglieder" replace />} />
                   <Route path="mitglieder" element={<MembersPage />} />
                   <Route path="getraenke" element={<DrinksPage />} />
+                  <Route path="kategorien" element={<CategoriesPage />} />
                   <Route path="buchungen" element={<AdminBookingsPage />} />
                   <Route path="berichte" element={<ReportPage />} />
                   <Route path="verbindungen" element={<VerbindungenPage />} />

@@ -9,6 +9,15 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- **M12 — Getränke-Kategorien & Verbrauchs-Auswertung**
+  - Migration 011: Tabelle `drink_categories` (STRICT, eindeutiger Name `COLLATE NOCASE`, `sort_order` für die Anzeige-Reihenfolge); Standardkategorie „Sonstige" wird angelegt und alle bestehenden Getränke ihr zugeordnet; neue Spalte `drinks.category_id` (FK `ON DELETE RESTRICT`, Index)
+  - `DrinkCategoriesRepo` (findAll sortiert nach `sort_order`, create ans Ende, update, delete, `reorder`, `countDrinks`) und `DrinkCategoriesService` mit Audit-Log und Löschschutz (nur leere Kategorien löschbar → 409 `CATEGORY_NOT_EMPTY`)
+  - Routen `GET /drink-categories` (alle Auth), `POST/PATCH/DELETE /drink-categories/:id` und `PUT /drink-categories/order` (Admin); `DrinksRepo`/`DrinksService` um die Pflicht-Kategorie erweitert (`category_id` beim Anlegen validiert, Änderung möglich), Getränke-Listen mit Kategorie-Join sortiert
+  - Verbrauchs-Auswertung: `BookingsRepo.findConsumption(from, to)` (alle nicht-stornierten Buchungen inkl. Zeiger-Buchungen), `ReportService.calculateConsumption` (Anzahl + Umsatz je Getränk, nach Kategorie gruppiert, mit Zwischen- und Gesamtsummen), Route `GET /reports/consumption?from&to&format` als CSV und PDF
+  - Frontend: Admin-Reiter „Kategorien" (`/admin/kategorien`) mit Anlegen, Umbenennen, Löschen und Reihenfolge (Hoch/Runter); `DrinksPage` mit Kategorie-Pflichtfeld beim Anlegen und Kategorie-Spalte zum Umhängen; Buchungs- und Theken-Ansicht clustern die Getränke nach Kategorie (in Admin-Reihenfolge); `ReportPage` um die Verbrauchs-Auswertung mit frei wählbarem Zeitraum ergänzt
+  - Seed: Demo-Kategorien „Alkoholfrei" und „Bier"; Seed-Getränke entsprechend zugeordnet
+  - 31 zusätzliche Backend-Tests (DrinkCategoriesRepo, ReportService-Verbrauch, Kategorie- und Report-Integration)
+
 - **M11 — Zeiger (Couleurbesuch & Verbindungsveranstaltungen)**
   - Migration 010: Tabellen `verbindungen` und `zeiger` (STRICT); `bookings.zeiger_id` als nullable FK — Zeiger-Buchungen zählen nicht zum Personen-Saldo
   - `VerbindungenRepo`, `ZeigerRepo` mit vollständigem CRUD; `BookingsRepo.create` um `zeiger_id` erweitert

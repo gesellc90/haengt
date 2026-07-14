@@ -112,6 +112,17 @@ export async function downloadZeigerReport(zeigerId: number, format: ReportForma
   triggerDownload(blob, filename);
 }
 
+/** Verbrauchs-Auswertung über einen frei wählbaren Zeitraum (from/to Pflicht). */
+export async function downloadConsumptionReport(
+  from: string,
+  to: string,
+  format: ReportFormat,
+): Promise<void> {
+  const qs = new URLSearchParams({ from, to, format });
+  const { blob, filename } = await downloadBlob(`/api/v1/reports/consumption?${qs}`);
+  triggerDownload(blob, filename);
+}
+
 /** Zeiger-Übersicht (alle Zeiger, optionaler Zeitraum). */
 export async function downloadAllZeigerReport(
   format: ReportFormat,

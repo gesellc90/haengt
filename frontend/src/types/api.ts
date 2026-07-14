@@ -33,12 +33,25 @@ export interface PublicMember {
   updated_at: string;
 }
 
+// -- Drink-Kategorien -------------------------------------------------------
+
+export interface DrinkCategoryRow {
+  id: number;
+  name: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // -- Drinks -----------------------------------------------------------------
 
 export interface DrinkWithCurrentPrice {
   id: number;
   name: string;
   is_available: 0 | 1;
+  category_id: number;
+  category_name: string;
+  category_sort_order: number;
   current_price_cents: number | null;
   created_at: string;
   updated_at: string;
@@ -48,6 +61,10 @@ export interface DrinkRow {
   id: number;
   name: string;
   is_available: 0 | 1;
+  category_id: number;
+  /** Nur in der Admin-Liste enthalten (JOIN); bei Einzel-Responses ggf. undefined. */
+  category_name?: string;
+  category_sort_order?: number;
   created_at: string;
   updated_at: string;
 }

@@ -20,10 +20,21 @@ export interface MemberRow {
   updated_at: string;
 }
 
+export interface DrinkCategoryRow {
+  id: number;
+  name: string;
+  /** Anzeige-Reihenfolge (aufsteigend); bei Gleichstand entscheidet der Name. */
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DrinkRow {
   id: number;
   name: string;
   is_available: 0 | 1;
+  /** Pflichtzuordnung zur Kategorie (auf App-Ebene erzwungen, DB-Spalte nullable). */
+  category_id: number;
   created_at: string;
   updated_at: string;
 }

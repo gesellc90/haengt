@@ -61,7 +61,7 @@ async function setupApp(): Promise<TestContext> {
     role: 'member',
   });
 
-  const drink = drinksRepo.create({ name: 'Bier', initialPriceCents: 150 });
+  const drink = drinksRepo.create({ name: 'Bier', categoryId: 1, initialPriceCents: 150 });
 
   const app = createApp({ logger: silentLogger, db, env: testEnv });
 

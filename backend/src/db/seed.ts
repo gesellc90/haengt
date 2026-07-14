@@ -105,19 +105,50 @@ if (env.NODE_ENV === 'development') {
 }
 
 // ---------------------------------------------------------------------------
-// Getränke
+// Getränke-Kategorien
+//
+// Die Standardkategorie „Sonstige" legt bereits Migration 011 an. Hier kommen
+// nur die Demo-Kategorien hinzu (idempotent über den eindeutigen Namen).
 // ---------------------------------------------------------------------------
 
-const insertDrink = db.prepare(`
-  INSERT OR IGNORE INTO drinks (name)
-  VALUES (@name)
+const insertCategory = db.prepare(`
+  INSERT OR IGNORE INTO drink_categories (name, sort_order)
+  VALUES (@name, @sort_order)
 `);
 
 db.transaction(() => {
-  insertDrink.run({ name: 'Wasser' });
-  insertDrink.run({ name: 'Cola' });
-  insertDrink.run({ name: 'Bier' });
-  insertDrink.run({ name: 'Spezi' });
+  insertCategory.run({ name: 'Alkoholfrei', sort_order: 1 });
+  insertCategory.run({ name: 'Bier', sort_order: 2 });
+})();
+
+const getCategoryId = db.prepare<[string], { id: number }>(
+  'SELECT id FROM drink_categories WHERE name = ? COLLATE NOCASE',
+);
+
+console.log('[seed] Getränke-Kategorien angelegt.');
+
+// ---------------------------------------------------------------------------
+// Getränke (jeweils einer Kategorie zugeordnet – Pflichtfeld)
+// ---------------------------------------------------------------------------
+
+const insertDrink = db.prepare(`
+  INSERT OR IGNORE INTO drinks (name, category_id)
+  VALUES (@name, @category_id)
+`);
+
+const seedDrinks: Array<{ name: string; category: string }> = [
+  { name: 'Wasser', category: 'Alkoholfrei' },
+  { name: 'Cola', category: 'Alkoholfrei' },
+  { name: 'Spezi', category: 'Alkoholfrei' },
+  { name: 'Bier', category: 'Bier' },
+];
+
+db.transaction(() => {
+  for (const { name, category } of seedDrinks) {
+    const cat = getCategoryId.get(category);
+    if (!cat) continue;
+    insertDrink.run({ name, category_id: cat.id });
+  }
 })();
 
 console.log('[seed] Getränke angelegt.');

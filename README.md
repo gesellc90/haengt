@@ -5,9 +5,10 @@ Lokale Web-App zur Getränkeabrechnung einer Verbindung. Mitglieder buchen ihre 
 ## Features
 
 - 🔐 Login für Mitglieder (PIN oder Passwort)
-- 🍺 Schnelle Getränkebuchung mit Tap-Bedienung (mobilfreundlich)
-- 👤 Admin-Bereich für Mitglieder-, Getränke- und Preisverwaltung
+- 🍺 Schnelle Getränkebuchung mit Tap-Bedienung (mobilfreundlich), nach Kategorien geclustert
+- 👤 Admin-Bereich für Mitglieder-, Getränke-, Kategorie- und Preisverwaltung
 - 📊 Monatsabrechnung pro Mitglied als PDF und CSV
+- 📈 Verbrauchs-Auswertung (Anzahl & Umsatz je Getränk) für frei wählbare Zeiträume
 - 📜 Buchungshistorie & Stornierung innerhalb eines Zeitfensters
 - 📱 Responsive UI (Tablet, Smartphone, Desktop)
 

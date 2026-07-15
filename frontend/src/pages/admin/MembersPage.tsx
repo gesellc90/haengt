@@ -118,6 +118,7 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
     email: '',
     role: 'member' as 'admin' | 'member',
     member_status: 'aktiv' as MemberStatus,
+    is_wirtschaftskommission: false,
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -138,6 +139,7 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
         password: form.password,
         role: form.role,
         member_status: form.member_status,
+        is_wirtschaftskommission: form.is_wirtschaftskommission,
         // Leere E-Mail weglassen — der Server validiert das Format nur bei gesetztem Wert.
         ...(email ? { email } : {}),
       });
@@ -149,6 +151,7 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
         email: '',
         role: 'member',
         member_status: 'aktiv',
+        is_wirtschaftskommission: false,
       });
       setOpen(false);
       showToast(`${member.display_name} wurde angelegt.`, 'success');
@@ -255,6 +258,29 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
               </option>
             ))}
           </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <label
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              minHeight: 44,
+              fontFamily: 'var(--font-sans)',
+              fontSize: 13,
+              color: 'var(--tinte-2)',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={form.is_wirtschaftskommission}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, is_wirtschaftskommission: e.target.checked }))
+              }
+            />
+            Wirtschaftskommission
+          </label>
         </div>
       </div>
 
@@ -431,7 +457,11 @@ export default function MembersPage() {
 
   async function handleUpdate(
     id: number,
-    data: { member_status?: MemberStatus; can_book_for_others?: boolean },
+    data: {
+      member_status?: MemberStatus;
+      can_book_for_others?: boolean;
+      is_wirtschaftskommission?: boolean;
+    },
   ) {
     try {
       const updated = await membersApi.update(id, data);
@@ -508,6 +538,7 @@ export default function MembersPage() {
                   'Rolle',
                   'Kategorie',
                   'Theke',
+                  'WK',
                   'Status',
                   'Aktionen',
                 ].map((h) => (
@@ -624,6 +655,31 @@ export default function MembersPage() {
                       </label>
                     </td>
                     <td style={{ padding: '10px 16px' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          cursor: 'pointer',
+                          fontFamily: 'var(--font-sans)',
+                          fontSize: 12,
+                          color: 'var(--tinte-3)',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={m.is_wirtschaftskommission === 1}
+                          onChange={(e) =>
+                            void handleUpdate(m.id, {
+                              is_wirtschaftskommission: e.target.checked,
+                            })
+                          }
+                          aria-label={`Wirtschaftskommission für ${m.display_name}`}
+                        />
+                        {m.is_wirtschaftskommission === 1 ? 'Ja' : 'Nein'}
+                      </label>
+                    </td>
+                    <td style={{ padding: '10px 16px' }}>
                       <span
                         style={{
                           display: 'inline-block',
@@ -675,7 +731,7 @@ export default function MembersPage() {
                   {emailId === m.id && (
                     <tr key={`${m.id}-email`}>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         style={{ padding: '4px 16px 14px', borderTop: '1px solid var(--line)' }}
                       >
                         <EmailEditForm
@@ -694,7 +750,7 @@ export default function MembersPage() {
                   {resetId === m.id && (
                     <tr key={`${m.id}-reset`}>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         style={{ padding: '4px 16px 14px', borderTop: '1px solid var(--line)' }}
                       >
                         <ResetPasswordForm memberId={m.id} onClose={() => setResetId(null)} />

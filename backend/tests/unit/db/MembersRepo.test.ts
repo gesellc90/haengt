@@ -315,4 +315,50 @@ describe('MembersRepo', () => {
       expect(cleared?.avatar_path).toBeNull();
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Wirtschaftskommission & Streichen (M13)
+  // ---------------------------------------------------------------------------
+
+  describe('is_wirtschaftskommission', () => {
+    it('ist standardmäßig 0 und wird beim Anlegen übernommen', () => {
+      const normal = repo.create({ username: 'n', display_name: 'N' });
+      expect(normal.is_wirtschaftskommission).toBe(0);
+
+      const wk = repo.create({
+        username: 'wk',
+        display_name: 'WK',
+        is_wirtschaftskommission: 1,
+      });
+      expect(wk.is_wirtschaftskommission).toBe(1);
+    });
+
+    it('lässt sich per update umschalten', () => {
+      const m = repo.create({ username: 'toggle', display_name: 'Toggle' });
+      expect(repo.update(m.id, { is_wirtschaftskommission: 1 })?.is_wirtschaftskommission).toBe(1);
+      expect(repo.update(m.id, { is_wirtschaftskommission: 0 })?.is_wirtschaftskommission).toBe(0);
+    });
+  });
+
+  describe('setStruckUntil', () => {
+    it('setzt und löscht struck_until', () => {
+      const m = repo.create({ username: 'struck', display_name: 'Struck' });
+      expect(m.struck_until).toBeNull();
+
+      const until = new Date(Date.now() + 1000).toISOString();
+      expect(repo.setStruckUntil(m.id, until)).toBe(true);
+      expect(repo.findById(m.id)?.struck_until).toBe(until);
+
+      expect(repo.setStruckUntil(m.id, null)).toBe(true);
+      expect(repo.findById(m.id)?.struck_until).toBeNull();
+    });
+
+    it('bleibt bei einem update ohne struck_until erhalten', () => {
+      const m = repo.create({ username: 'keep', display_name: 'Keep' });
+      const until = new Date(Date.now() + 1000).toISOString();
+      repo.setStruckUntil(m.id, until);
+      repo.update(m.id, { display_name: 'Neu' });
+      expect(repo.findById(m.id)?.struck_until).toBe(until);
+    });
+  });
 });

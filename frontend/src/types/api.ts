@@ -27,10 +27,22 @@ export interface PublicMember {
   is_active: 0 | 1;
   member_status: MemberStatus;
   can_book_for_others: 0 | 1;
+  /** 1 = Konto der Wirtschaftskommission (darf Konten streichen/entstreichen). */
+  is_wirtschaftskommission: 0 | 1;
+  /**
+   * ISO-Zeitpunkt, bis zu dem das Konto gestrichen ist (keine Getränkebuchungen).
+   * NULL = nicht gestrichen; ein Zeitpunkt in der Vergangenheit gilt als abgelaufen.
+   */
+  struck_until: string | null;
   email: string | null;
   avatar_path: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/** True, wenn das Konto aktuell gestrichen ist (Frist noch nicht abgelaufen). */
+export function isMemberStruck(member: { struck_until: string | null }): boolean {
+  return member.struck_until !== null && new Date(member.struck_until).getTime() > Date.now();
 }
 
 // -- Drink-Kategorien -------------------------------------------------------

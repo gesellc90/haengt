@@ -14,6 +14,14 @@ export interface MemberRow {
   is_active: 0 | 1;
   member_status: MemberStatus;
   can_book_for_others: 0 | 1;
+  /** 1 = Konto der Wirtschaftskommission (darf Konten streichen/entstreichen). */
+  is_wirtschaftskommission: 0 | 1;
+  /**
+   * ISO-8601-UTC-Zeitpunkt, bis zu dem das Konto gestrichen ist (keine
+   * Personenbuchungen möglich). NULL = nicht gestrichen; ein Zeitpunkt in der
+   * Vergangenheit gilt als abgelaufen (wieder bebuchbar).
+   */
+  struck_until: string | null;
   email: string | null;
   avatar_path: string | null;
   created_at: string;

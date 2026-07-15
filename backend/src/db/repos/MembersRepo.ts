@@ -8,6 +8,7 @@ export interface CreateMemberInput {
   role?: 'admin' | 'member';
   member_status?: MemberStatus;
   can_book_for_others?: 0 | 1;
+  is_wirtschaftskommission?: 0 | 1;
   email?: string | null;
 }
 
@@ -18,6 +19,7 @@ export interface UpdateMemberInput {
   is_active?: 0 | 1;
   member_status?: MemberStatus;
   can_book_for_others?: 0 | 1;
+  is_wirtschaftskommission?: 0 | 1;
   email?: string | null;
   avatar_path?: string | null;
 }
@@ -52,9 +54,9 @@ export class MembersRepo {
     const result = this.db
       .prepare(
         `INSERT INTO members
-           (username, display_name, password_hash, role, member_status, can_book_for_others, email)
+           (username, display_name, password_hash, role, member_status, can_book_for_others, is_wirtschaftskommission, email)
          VALUES
-           (@username, @display_name, @password_hash, @role, @member_status, @can_book_for_others, @email)`,
+           (@username, @display_name, @password_hash, @role, @member_status, @can_book_for_others, @is_wirtschaftskommission, @email)`,
       )
       .run({
         username: input.username,
@@ -63,6 +65,7 @@ export class MembersRepo {
         role: input.role ?? 'member',
         member_status: input.member_status ?? 'aktiv',
         can_book_for_others: input.can_book_for_others ?? 0,
+        is_wirtschaftskommission: input.is_wirtschaftskommission ?? 0,
         email: input.email ?? null,
       });
 
@@ -76,14 +79,15 @@ export class MembersRepo {
     this.db
       .prepare(
         `UPDATE members
-         SET display_name        = @display_name,
-             password_hash       = @password_hash,
-             role                = @role,
-             is_active           = @is_active,
-             member_status       = @member_status,
-             can_book_for_others = @can_book_for_others,
-             email               = @email,
-             avatar_path         = @avatar_path
+         SET display_name             = @display_name,
+             password_hash            = @password_hash,
+             role                     = @role,
+             is_active                = @is_active,
+             member_status            = @member_status,
+             can_book_for_others      = @can_book_for_others,
+             is_wirtschaftskommission = @is_wirtschaftskommission,
+             email                    = @email,
+             avatar_path              = @avatar_path
          WHERE id = @id`,
       )
       .run({
@@ -95,6 +99,8 @@ export class MembersRepo {
         is_active: input.is_active ?? existing.is_active,
         member_status: input.member_status ?? existing.member_status,
         can_book_for_others: input.can_book_for_others ?? existing.can_book_for_others,
+        is_wirtschaftskommission:
+          input.is_wirtschaftskommission ?? existing.is_wirtschaftskommission,
         email: input.email !== undefined ? input.email : existing.email,
         avatar_path: input.avatar_path !== undefined ? input.avatar_path : existing.avatar_path,
       });
@@ -132,6 +138,18 @@ export class MembersRepo {
   /** Soft-Delete: setzt is_active = 0. */
   deactivate(id: number): boolean {
     const result = this.db.prepare('UPDATE members SET is_active = 0 WHERE id = ?').run(id);
+    return result.changes > 0;
+  }
+
+  /**
+   * Streicht ein Konto bis zum angegebenen ISO-Zeitpunkt (keine Personenbuchungen
+   * bis dahin). Setzt `struck_until`; ein bestehender Wert wird überschrieben
+   * (erneutes Streichen verlängert die Frist).
+   */
+  setStruckUntil(id: number, until: string | null): boolean {
+    const result = this.db
+      .prepare('UPDATE members SET struck_until = ? WHERE id = ?')
+      .run(until, id);
     return result.changes > 0;
   }
 }

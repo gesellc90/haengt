@@ -13,6 +13,12 @@ export interface JwtPayload {
   sub: string; // member id als String
   username: string;
   role: 'admin' | 'member';
+  /**
+   * true = Konto der Wirtschaftskommission (darf Konten streichen). Wird – wie
+   * `role` – bei jeder Anfrage frisch aus der DB übernommen (siehe
+   * verifyActiveMember), damit ein Entzug sofort greift.
+   */
+  is_wk: boolean;
   jti: string; // JWT ID – zum Widerrufen (Logout)
   exp: number; // Ablaufzeitpunkt (Sekunden seit Epoch, vom JWT gesetzt)
   iat: number; // Ausstellungszeitpunkt
@@ -107,6 +113,7 @@ export class AuthService {
       sub: String(member.id),
       username: member.username,
       role: member.role,
+      is_wk: member.is_wirtschaftskommission === 1,
       jti,
     };
 
@@ -165,8 +172,11 @@ export class AuthService {
       throw new jwt.JsonWebTokenError('Konto existiert nicht mehr oder ist deaktiviert');
     }
 
-    // Rolle immer aus der DB nehmen (Token könnte eine veraltete Rolle tragen).
-    return { payload: { ...payload, role: member.role }, member };
+    // Rolle und WK-Flag immer aus der DB nehmen (Token könnte veraltet sein).
+    return {
+      payload: { ...payload, role: member.role, is_wk: member.is_wirtschaftskommission === 1 },
+      member,
+    };
   }
 
   // ---------------------------------------------------------------------------

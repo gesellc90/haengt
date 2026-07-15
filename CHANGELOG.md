@@ -9,6 +9,16 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- **M13 — Wirtschaftskommission & Konten-Streichung**
+  - Migration 012: neue Spalten an `members` — `is_wirtschaftskommission` (Capability-Flag analog `can_book_for_others`) und `struck_until` (nullable ISO-Zeitstempel). Bewusst als Flag statt neuem `role`-Wert modelliert, da ein Rebuild der `members`-Tabelle wegen der `ON DELETE RESTRICT`-Fremdschlüssel nicht gefahrlos möglich ist.
+  - Neue Konto-Variante „Wirtschaftskommission" (WK): darf Personen-Konten streichen und entstreichen. Streichen und Entstreichen dürfen sowohl WK-Konten als auch Admins (`requireWkOrAdmin`-Middleware; JWT-Payload um `is_wk` erweitert, wird — wie die Rolle — bei jeder Anfrage frisch aus der DB übernommen).
+  - Streichung: `MembersService.strike` setzt `struck_until` auf jetzt + 2 Wochen, `unstrike` setzt zurück (→ 409 `NOT_STRUCK`, wenn nicht gestrichen); Theken-Konten sind nicht streichbar (→ 409 `NOT_STRIKEABLE`). Audit-Log-Events `member_struck` / `member_unstruck`.
+  - Buchsperre: `BookingService` blockiert Personenbuchungen auf gestrichene Konten (→ 409 `MEMBER_STRUCK`) — betrifft Selbst- und Theken-Buchungen. Zeiger-Buchungen laufen auf die Vereinskasse und bleiben erlaubt. Nach Ablauf der 2 Wochen ist das Konto automatisch wieder bebuchbar.
+  - Routen: `POST /members/:id/strike`, `POST /members/:id/unstrike` und `GET /members/strikeable` (alle WK oder Admin); `POST/PATCH /members` akzeptieren `is_wirtschaftskommission`.
+  - Frontend: neuer Bereich „Streichen" (`/wk`, Reiter für WK **und** Admin) mit nach Kategorie gruppierter Kontenliste, Streichen (mit Bestätigung) und vorzeitigem Entstreichen; gestrichene Konten in der Theken-Auswahl ausgeblichen, durchgestrichen und nicht anwählbar („gestrichen bis <Datum>"); Hinweisbanner samt gesperrten Getränke-Buttons in der eigenen Stube; WK-Spalte/Checkbox in der Admin-Mitgliederverwaltung.
+  - Seed: Demo-Konto `wiko` (Anzeigename „Wirtschaftskommission"), in Dev mit Passwort `wiko123`.
+  - 21 zusätzliche Tests (Backend: MembersRepo-Unit + WK-/Streich-Integration; Frontend: `StreichenPage` + gestrichenes Konto in `ThekePage`).
+
 - **M12 — Getränke-Kategorien & Verbrauchs-Auswertung**
   - Migration 011: Tabelle `drink_categories` (STRICT, eindeutiger Name `COLLATE NOCASE`, `sort_order` für die Anzeige-Reihenfolge); Standardkategorie „Sonstige" wird angelegt und alle bestehenden Getränke ihr zugeordnet; neue Spalte `drinks.category_id` (FK `ON DELETE RESTRICT`, Index)
   - `DrinkCategoriesRepo` (findAll sortiert nach `sort_order`, create ans Ende, update, delete, `reorder`, `countDrinks`) und `DrinkCategoriesService` mit Audit-Log und Löschschutz (nur leere Kategorien löschbar → 409 `CATEGORY_NOT_EMPTY`)

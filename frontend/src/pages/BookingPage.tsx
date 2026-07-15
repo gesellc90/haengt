@@ -3,12 +3,14 @@ import { bookingsApi } from '../api/bookings.js';
 import { drinksApi } from '../api/drinks.js';
 import { ApiError } from '../api/client.js';
 import { useToast } from '../contexts/ToastContext.js';
+import { useAuth } from '../contexts/AuthContext.js';
 import Spinner from '../components/Spinner.js';
 import SaldoCard from '../components/SaldoCard.js';
 import SortenButton, { formatCents } from '../components/SortenButton.js';
 import SectionTitle from '../components/SectionTitle.js';
 import StrichHistory from '../components/StrichHistory.js';
 import { groupDrinksByCategory } from '../utils/groupByCategory.js';
+import { isMemberStruck } from '../types/api.js';
 import type { BookingRow, DrinkWithCurrentPrice } from '../types/api.js';
 
 // ---------------------------------------------------------------------------
@@ -39,6 +41,13 @@ function CategoryHeading({ children }: { children: React.ReactNode }) {
 
 export default function BookingPage() {
   const { showToast } = useToast();
+  const { member } = useAuth();
+
+  const struck = member ? isMemberStruck(member) : false;
+  const struckUntil =
+    struck && member?.struck_until
+      ? new Date(member.struck_until).toLocaleDateString('de-DE')
+      : null;
 
   const [drinks, setDrinks] = useState<DrinkWithCurrentPrice[]>([]);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
@@ -73,7 +82,7 @@ export default function BookingPage() {
   // -- Strich setzen --------------------------------------------------------
 
   async function handleBook(drink: DrinkWithCurrentPrice) {
-    if (bookingDrinkId !== null) return;
+    if (bookingDrinkId !== null || struck) return;
 
     const optimisticId = -Date.now();
     const optimistic: BookingRow = {
@@ -138,6 +147,26 @@ export default function BookingPage() {
         <SaldoCard balanceCents={monthTotal} stricheMonat={monthBookings.length} />
       )}
 
+      {/* Streich-Hinweis */}
+      {struck && (
+        <div
+          role="alert"
+          style={{
+            padding: '12px 16px',
+            borderRadius: 'var(--r-3)',
+            border: '1px solid var(--korps-rot)',
+            background: 'var(--erfolg-bg, transparent)',
+            color: 'var(--korps-rot)',
+            fontFamily: 'var(--font-sans)',
+            fontSize: 14,
+            fontWeight: 600,
+          }}
+        >
+          Dein Konto ist gestrichen{struckUntil ? ` bis ${struckUntil}` : ''} – es können zurzeit
+          keine Getränke gebucht werden.
+        </div>
+      )}
+
       {/* Getränke-Kacheln */}
       <section aria-labelledby="sorten-heading">
         <SectionTitle>
@@ -180,7 +209,7 @@ export default function BookingPage() {
                       name={drink.name}
                       priceCents={drink.current_price_cents ?? 0}
                       onClick={() => void handleBook(drink)}
-                      disabled={bookingDrinkId !== null}
+                      disabled={bookingDrinkId !== null || struck}
                       isLoading={bookingDrinkId === drink.id}
                     />
                   ))}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Beer, BookOpen, Settings, Flag } from 'lucide-react';
+import { Beer, BookOpen, Settings, Flag, Ban } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.js';
 import { useToast } from '../contexts/ToastContext.js';
 import ToastContainer from './Toast.js';
@@ -13,6 +13,7 @@ const IconStube = () => <Beer size={20} aria-hidden />;
 const IconZeiger = () => <Flag size={20} aria-hidden />;
 const IconBuch = () => <BookOpen size={20} aria-hidden />;
 const IconVerwaltung = () => <Settings size={20} aria-hidden />;
+const IconStreichen = () => <Ban size={20} aria-hidden />;
 
 // ---------------------------------------------------------------------------
 // Desktop-Nav-Stil
@@ -48,7 +49,7 @@ function tabStyle(isActive: boolean): React.CSSProperties {
 // ---------------------------------------------------------------------------
 
 export default function Layout() {
-  const { member, isAdmin, logout } = useAuth();
+  const { member, isAdmin, canStrike, logout } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -176,6 +177,28 @@ export default function Layout() {
             >
               Profil
             </NavLink>
+            {canStrike && (
+              <NavLink
+                to="/wk"
+                className={navClass}
+                style={({ isActive }) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  minHeight: 44,
+                  borderRadius: 'var(--r-2)',
+                  padding: '8px 12px',
+                  fontSize: 14,
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  transition: 'background 150ms',
+                  background: isActive ? 'var(--korps-rot)' : 'transparent',
+                  color: isActive ? 'var(--kreide)' : 'var(--fg-2)',
+                })}
+              >
+                Streichen
+              </NavLink>
+            )}
             {isAdmin && (
               <NavLink
                 to="/admin"
@@ -287,6 +310,12 @@ export default function Layout() {
           <IconBuch />
           Mein Buch
         </NavLink>
+        {canStrike && (
+          <NavLink to="/wk" style={({ isActive }) => tabStyle(isActive)}>
+            <IconStreichen />
+            Streichen
+          </NavLink>
+        )}
         {isAdmin && (
           <NavLink to="/admin" style={({ isActive }) => tabStyle(isActive)}>
             <IconVerwaltung />

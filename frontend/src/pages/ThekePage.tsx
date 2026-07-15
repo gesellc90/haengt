@@ -10,6 +10,7 @@ import SortenButton, { formatCents } from '../components/SortenButton.js';
 import { groupDrinksByCategory } from '../utils/groupByCategory.js';
 import SectionTitle from '../components/SectionTitle.js';
 import StrichHistory from '../components/StrichHistory.js';
+import { isMemberStruck } from '../types/api.js';
 import type {
   BookingRow,
   DrinkWithCurrentPrice,
@@ -36,10 +37,19 @@ const CATEGORY_LABEL: Record<MemberStatus, string> = {
 
 function MemberTile({ member, onSelect }: { member: PublicMember; onSelect(): void }) {
   const [pressed, setPressed] = useState(false);
+  const struck = isMemberStruck(member);
+  const struckUntil =
+    struck && member.struck_until
+      ? new Date(member.struck_until).toLocaleDateString('de-DE')
+      : null;
+
   return (
     <button
-      onClick={onSelect}
-      onMouseDown={() => setPressed(true)}
+      onClick={struck ? undefined : onSelect}
+      disabled={struck}
+      aria-disabled={struck}
+      title={struckUntil ? `Gestrichen bis ${struckUntil}` : undefined}
+      onMouseDown={() => !struck && setPressed(true)}
       onMouseUp={() => setPressed(false)}
       onMouseLeave={() => setPressed(false)}
       style={{
@@ -50,17 +60,34 @@ function MemberTile({ member, onSelect }: { member: PublicMember; onSelect(): vo
         border: '1px solid var(--line)',
         background: 'var(--bg-card)',
         boxShadow: 'var(--sh-1)',
-        cursor: 'pointer',
+        cursor: struck ? 'not-allowed' : 'pointer',
         textAlign: 'left',
         fontFamily: 'var(--font-sans)',
         fontSize: 16,
         fontWeight: 700,
-        color: 'var(--tinte)',
+        color: struck ? 'var(--tinte-4)' : 'var(--tinte)',
+        opacity: struck ? 0.5 : 1,
         transition: 'transform 150ms var(--ease-stempel)',
         transform: pressed ? 'scale(.985)' : 'none',
       }}
     >
-      {member.display_name}
+      <span style={{ textDecoration: struck ? 'line-through' : 'none' }}>
+        {member.display_name}
+      </span>
+      {struckUntil && (
+        <span
+          style={{
+            display: 'block',
+            marginTop: 3,
+            fontSize: 11,
+            fontWeight: 600,
+            textDecoration: 'none',
+            color: 'var(--korps-rot)',
+          }}
+        >
+          gestrichen bis {struckUntil}
+        </span>
+      )}
     </button>
   );
 }

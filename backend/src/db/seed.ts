@@ -10,11 +10,11 @@
  * Duplikate angelegt (INSERT OR IGNORE auf username/name).
  *
  * DEV-Passwörter: In der Entwicklungsumgebung (NODE_ENV=development) setzt
- * dieses Skript automatisch ein Standard-Passwort für den Admin-Account,
- * sofern noch keines gesetzt ist:
+ * dieses Skript automatisch ein Standard-Passwort für den Admin- und das
+ * Wirtschaftskommissions-Konto, sofern noch keines gesetzt ist:
  *
- *   Benutzername: admin
- *   Passwort:     admin123
+ *   Benutzername: admin   Passwort: admin123
+ *   Benutzername: wiko    Passwort: wiko123
  *
  * Das Passwort wird NUR gesetzt wenn password_hash noch NULL ist –
  * manuell gesetzte Passwörter werden nicht überschrieben.
@@ -42,8 +42,10 @@ if (applied > 0) {
 // ---------------------------------------------------------------------------
 
 const insertMember = db.prepare(`
-  INSERT OR IGNORE INTO members (username, display_name, role, member_status, can_book_for_others)
-  VALUES (@username, @display_name, @role, @member_status, @can_book_for_others)
+  INSERT OR IGNORE INTO members
+    (username, display_name, role, member_status, can_book_for_others, is_wirtschaftskommission)
+  VALUES
+    (@username, @display_name, @role, @member_status, @can_book_for_others, @is_wirtschaftskommission)
 `);
 
 db.transaction(() => {
@@ -53,6 +55,7 @@ db.transaction(() => {
     role: 'admin',
     member_status: 'aktiv',
     can_book_for_others: 0,
+    is_wirtschaftskommission: 0,
   });
   insertMember.run({
     username: 'anna',
@@ -60,6 +63,7 @@ db.transaction(() => {
     role: 'member',
     member_status: 'aktiv',
     can_book_for_others: 0,
+    is_wirtschaftskommission: 0,
   });
   insertMember.run({
     username: 'bernd',
@@ -67,6 +71,7 @@ db.transaction(() => {
     role: 'member',
     member_status: 'alter_herr',
     can_book_for_others: 0,
+    is_wirtschaftskommission: 0,
   });
   // Allgemein-Konto: darf für beliebige Mitglieder buchen (Theken-Modus).
   // Passwort wird – wie beim Admin – von einem Admin gesetzt (bleibt zunächst NULL).
@@ -76,6 +81,17 @@ db.transaction(() => {
     role: 'member',
     member_status: 'aktiv',
     can_book_for_others: 1,
+    is_wirtschaftskommission: 0,
+  });
+  // Wirtschaftskommission: darf Konten streichen/entstreichen. Ansonsten ein
+  // normales (bebuchbares) Mitglied. Passwort wird in Dev unten gesetzt.
+  insertMember.run({
+    username: 'wiko',
+    display_name: 'Wirtschaftskommission',
+    role: 'member',
+    member_status: 'aktiv',
+    can_book_for_others: 0,
+    is_wirtschaftskommission: 1,
   });
 })();
 
@@ -86,22 +102,26 @@ console.log('[seed] Mitglieder angelegt.');
 // ---------------------------------------------------------------------------
 
 if (env.NODE_ENV === 'development') {
-  const DEV_ADMIN_PASSWORD = 'admin123';
+  // Setzt ein Dev-Passwort NUR, wenn noch keines gesetzt ist (überschreibt nichts).
+  const setDevPassword = async (username: string, password: string): Promise<void> => {
+    const row = db
+      .prepare<
+        [string],
+        { id: number; password_hash: string | null }
+      >('SELECT id, password_hash FROM members WHERE username = ?')
+      .get(username);
 
-  const adminRow = db
-    .prepare<
-      [],
-      { id: number; password_hash: string | null }
-    >(`SELECT id, password_hash FROM members WHERE username = 'admin'`)
-    .get();
+    if (row && row.password_hash === null) {
+      const hash = await bcrypt.hash(password, 10);
+      db.prepare('UPDATE members SET password_hash = ? WHERE id = ?').run(hash, row.id);
+      console.log(`[seed] Dev-Passwort gesetzt (Benutzername: ${username}, Passwort: ${password})`);
+    } else if (row) {
+      console.log(`[seed] ${username} hat bereits ein Passwort – wird nicht überschrieben.`);
+    }
+  };
 
-  if (adminRow && adminRow.password_hash === null) {
-    const hash = await bcrypt.hash(DEV_ADMIN_PASSWORD, 10);
-    db.prepare('UPDATE members SET password_hash = ? WHERE id = ?').run(hash, adminRow.id);
-    console.log('[seed] Dev-Passwort für Admin gesetzt (Benutzername: admin, Passwort: admin123)');
-  } else if (adminRow) {
-    console.log('[seed] Admin hat bereits ein Passwort – wird nicht überschrieben.');
-  }
+  await setDevPassword('admin', 'admin123');
+  await setDevPassword('wiko', 'wiko123');
 }
 
 // ---------------------------------------------------------------------------

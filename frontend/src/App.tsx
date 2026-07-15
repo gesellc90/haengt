@@ -16,6 +16,7 @@ import ReportPage from './pages/admin/ReportPage.js';
 import VerbindungenPage from './pages/admin/VerbindungenPage.js';
 import ZeigerPage from './pages/ZeigerPage.js';
 import ZeigerDetailPage from './pages/ZeigerDetailPage.js';
+import StreichenPage from './pages/StreichenPage.js';
 
 /** Theken-/Allgemein-Konten buchen für andere, alle übrigen für sich selbst. */
 function BuchenRoute() {
@@ -39,6 +40,11 @@ export default function App() {
               <Route path="/zeiger" element={<ZeigerPage />} />
               <Route path="/zeiger/:id" element={<ZeigerDetailPage />} />
               <Route path="/profil" element={<ProfilePage />} />
+
+              {/* Wirtschaftskommission — Konten streichen (WK oder Admin) */}
+              <Route element={<ProtectedRoute role="wk" />}>
+                <Route path="/wk" element={<StreichenPage />} />
+              </Route>
 
               {/* Admin-Bereich — nur für Admins */}
               <Route element={<ProtectedRoute role="admin" />}>

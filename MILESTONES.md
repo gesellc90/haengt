@@ -16,6 +16,7 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 | M10 | Erweitertes Mitglieder-Profil (Bild & E-Mail) | 3–4 Tage          | M3, M5, M7                  |
 | M11 | Zeiger (Couleurbesuch & Verbindungsveranst.)  | 4–6 Tage          | M4, M5, M9                  |
 | M12 | Getränke-Kategorien & Verbrauchs-Auswertung   | 3–4 Tage          | M4, M5, M6                  |
+| M13 | Wirtschaftskommission & Konten-Streichung     | 2–3 Tage          | M4, M5, M9                  |
 
 ---
 
@@ -441,6 +442,46 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 - [x] README-Feature-Liste ergänzt
 
 **Definition of Done:** Ein Admin pflegt Kategorien inkl. Reihenfolge, jedes neue Getränk muss einer Kategorie zugeordnet werden, und die Buchungsansicht zeigt Getränke nach Kategorie geclustert in der Admin-Reihenfolge. Kategorien mit zugeordneten Getränken lassen sich nicht löschen. Der Admin exportiert den Getränkeverbrauch (Anzahl + Umsatz, nach Kategorie) für einen frei wählbaren Zeitraum als PDF/CSV. Lint, Unit- und Integrationstests grün.
+
+---
+
+## M13 — Wirtschaftskommission & Konten-Streichung
+
+**Ziel:** Eine neue Konto-Variante „Wirtschaftskommission" (WK) kann Mitglieder-Konten streichen. Ein gestrichenes Konto kann für 2 Wochen keine Getränke gebucht bekommen; alle übrigen Funktionen bleiben verfügbar. Gestrichene Konten erscheinen ausgeblichen in der Auswahl. Die WK kann Konten auch vorzeitig entstreichen.
+
+**Abhängigkeit:** M4 (Mitglieder/Buchungen), M5 (Frontend), M9 (Kategorien/Theken-Konto).
+
+### Festgelegte Entscheidungen
+
+- **WK als Capability-Flag statt neuer Rolle:** `is_wirtschaftskommission` an `members` (analog `can_book_for_others`). Ein Rebuild der `members`-Tabelle zum Erweitern der `role`-CHECK-Constraint wäre wegen der `ON DELETE RESTRICT`-Fremdschlüssel (`bookings.member_id`, `zeiger.created_by`) im Migrations-Runner nicht gefahrlos möglich. Der WK-Bereich ist bewusst schlank: kein Zugriff auf die übrige Admin-Verwaltung.
+- **Wer darf streichen:** WK **und** Admin (Admin bleibt Superset). Umgesetzt über die Middleware `requireWkOrAdmin`; das JWT-Payload trägt `is_wk` (frisch aus der DB, wie die Rolle).
+- **Streich-Modell:** `struck_until` (nullable ISO-Zeitstempel). Streichen setzt jetzt + 14 Tage; ein Zeitpunkt in der Vergangenheit gilt als abgelaufen (automatisch wieder bebuchbar) — kein Cron nötig. Entstreichen setzt `struck_until` zurück.
+- **Buchsperre:** Nur Personenbuchungen auf gestrichene Konten werden blockiert (→ 409 `MEMBER_STRUCK`), betrifft Selbst- und Theken-Buchungen. Zeiger-Buchungen laufen auf die Vereinskasse und bleiben erlaubt.
+- **Darstellung:** Gestrichene Konten stehen ausgeblichen/durchgestrichen und nicht anwählbar in der Theken-Auswahl („gestrichen bis <Datum>"); in der eigenen Stube werden die Getränke-Buttons gesperrt und ein Hinweis eingeblendet.
+
+### PR 1 — Datenschicht & Backend
+
+- [x] Migration 012: `members.is_wirtschaftskommission` (Flag) und `members.struck_until` (nullable)
+- [x] `MemberRow`-Typ, `MembersRepo` (create/update um WK-Flag, `setStruckUntil`)
+- [x] `MembersService.strike`/`unstrike`/`findStrikeable` + Audit-Log; `BookingService` blockiert Buchungen auf gestrichene Konten
+- [x] `AuthService`: `is_wk` im JWT-Payload (frisch aus der DB); Middleware `requireWkOrAdmin`
+- [x] Routen `POST /members/:id/strike`, `POST /members/:id/unstrike`, `GET /members/strikeable`; Schemas um `is_wirtschaftskommission`
+- [x] Seed: Demo-WK-Konto `wiko` (Dev-Passwort `wiko123`)
+- [x] Unit- (MembersRepo) und Integrationstests (Streichen/Entstreichen, Rechte, Buchsperre, Zeiger-Ausnahme)
+
+### PR 2 — Frontend
+
+- [x] Neue Seite „Streichen" (`/wk`) für WK und Admin: Kontenliste nach Kategorie, Streichen (Bestätigung) und Entstreichen
+- [x] `AuthContext` (`isWk`/`canStrike`), `ProtectedRoute` (`role="wk"`), Navigations-Eintrag „Streichen"
+- [x] Theken-Auswahl: gestrichene Konten ausgeblichen + nicht anwählbar; `BookingPage`: Hinweisbanner + gesperrte Buttons
+- [x] Admin-Mitgliederverwaltung: WK-Spalte/Checkbox + WK-Feld im Anlegen-Formular; `members`-API-Modul erweitert
+- [x] Vitest-Komponententests (`StreichenPage`, gestrichenes Konto in `ThekePage`)
+
+### PR 3 — Doku
+
+- [x] `CHANGELOG.md`, `MILESTONES.md`, `ARCHITECTURE.md`, `README.md` aktualisiert
+
+**Definition of Done:** Ein WK-Konto (und Admins) kann Mitglieder-Konten streichen und vorzeitig entstreichen. Auf ein gestrichenes Konto können 2 Wochen lang keine Getränke gebucht werden (Selbst- und Theken-Buchung), Zeiger-Buchungen bleiben möglich; nach Ablauf ist das Konto automatisch wieder bebuchbar. Gestrichene Konten erscheinen ausgeblichen in der Theken-Auswahl. Lint, Unit-, Integrations- und Komponententests grün.
 
 ---
 

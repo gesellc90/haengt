@@ -9,6 +9,11 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- **M14 (PR 1) — Pi-Release-Logik extrahiert & Release-Asset**
+  - `scripts/pi-release.sh`: kapselt die komplette Release-Installation auf dem Pi (Snapshot, DB-Backup, Entpacken, `npm ci --omit=dev`, Migrationen, atomarer Symlink-Swap, Service-Restart, Smoke-Test, automatischer Rollback bei Fehler nach dem Swap, Aufräumen alter Releases). Konfigurierbar über `RELEASES_DIR`, `CURRENT_LINK`, `DB_PATH`, `BACKUP_DIR`, `HEALTH_URL`, `KEEP_RELEASES`. Ersetzt die bisher inline in `deploy.yml` verteilten Steps 1:1 im Verhalten — ist als gemeinsame Grundlage für den Tag-Deploy **und** den künftigen Auto-Update-Helper (M14, weitere PRs) gedacht.
+  - `deploy.yml`: Pi-Job ruft nur noch `pi-release.sh` auf; Build-Job hängt den Release-Tarball zusätzlich als GitHub-Release-Asset ans Tag an (dauerhaft abrufbar, unabhängig von der 30-Tage-Actions-Artefakt-Retention).
+  - `ci.yml`: neuer `shellcheck`-Schritt für `scripts/pi-release.sh`.
+
 - **M13 — Wirtschaftskommission & Konten-Streichung**
   - Migration 012: neue Spalten an `members` — `is_wirtschaftskommission` (Capability-Flag analog `can_book_for_others`) und `struck_until` (nullable ISO-Zeitstempel). Bewusst als Flag statt neuem `role`-Wert modelliert, da ein Rebuild der `members`-Tabelle wegen der `ON DELETE RESTRICT`-Fremdschlüssel nicht gefahrlos möglich ist.
   - Neue Konto-Variante „Wirtschaftskommission" (WK): darf Personen-Konten streichen und entstreichen. Streichen und Entstreichen dürfen sowohl WK-Konten als auch Admins (`requireWkOrAdmin`-Middleware; JWT-Payload um `is_wk` erweitert, wird — wie die Rolle — bei jeder Anfrage frisch aus der DB übernommen).

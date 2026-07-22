@@ -91,6 +91,11 @@ jobs:
             bash -n "$f"
           done
 
+      - name: ShellCheck (pi-release.sh)
+        # Tiefere Prüfung nur für das Release-/Rollback-Skript (M14-Vorbereitung,
+        # siehe MILESTONES.md) — shellcheck ist auf ubuntu-latest vorinstalliert.
+        run: shellcheck scripts/pi-release.sh
+
   # ---------------------------------------------------------------------------
   # 2a) TypeCheck Backend – parallel zu typecheck-frontend.
   # ---------------------------------------------------------------------------

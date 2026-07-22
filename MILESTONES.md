@@ -505,10 +505,10 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 
 ### PR 1 — Pi-Release-Logik extrahieren & Release-Asset
 
-- [ ] `scripts/pi-release.sh` anlegen: nimmt `<tarball> <tag>`, führt Backup → Entpacken → `npm ci --omit=dev` → `deploy-migrate.sh` → atomarer Symlink-Swap → `systemctl restart` → Smoke-Test (`/api/v1/health`) → Rollback bei Fehler → Aufräumen (letzte 5 Releases) aus. Idempotent, `set -euo pipefail`, aussagekräftige Logs.
-- [ ] `deploy.yml` refactoren: der Pi-`deploy`-Job ruft `pi-release.sh` statt der inline-Steps auf (Verhalten unverändert, nur zentralisiert). Tarball-Inhalt um `scripts/pi-release.sh` erweitern.
-- [ ] `deploy.yml`: Schritt „GitHub-Release anlegen/aktualisieren + Tarball als Asset anhängen" (für das gepushte Tag).
-- [ ] **Tests:** `shellcheck` über die neuen/geänderten Skripte (in `ci.yml` einhängen); Dry-Run-Test der Versions-/Vergleichslogik.
+- [x] `scripts/pi-release.sh` anlegen: nimmt `<tarball> <tag>`, führt Backup → Entpacken → `npm ci --omit=dev` → `deploy-migrate.sh` → atomarer Symlink-Swap → `systemctl restart` → Smoke-Test (`/api/v1/health`) → Rollback bei Fehler → Aufräumen (letzte 5 Releases) aus. Idempotent, `set -euo pipefail`, aussagekräftige Logs.
+- [x] `deploy.yml` refactoren: der Pi-`deploy`-Job ruft `pi-release.sh` statt der inline-Steps auf (Verhalten unverändert, nur zentralisiert). Tarball-Inhalt um `scripts/pi-release.sh` erweitert.
+- [x] `deploy.yml`: Schritt „GitHub-Release anlegen/aktualisieren + Tarball als Asset anhängen" (`softprops/action-gh-release`, für das gepushte Tag).
+- [x] **Tests:** `shellcheck` über `scripts/pi-release.sh` (in `ci.yml` eingehängt, `bash -n` deckte es über die bestehende Glob-Schleife bereits ab). Versions-/Vergleichslogik folgt in PR 2 (dort erst eingeführt).
 
 ### PR 2 — Update-Helper, Timer & Path-Unit (Pi-seitig)
 

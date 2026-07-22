@@ -13,6 +13,16 @@ export interface BookingWithDrinkName {
   price_cents: number;
 }
 
+/** Einzelbuchung für die Verbrauchs-Auswertung (inkl. Kategorie). */
+export interface ConsumptionEntry {
+  drink_id: number;
+  drink_name: string;
+  category_id: number;
+  category_name: string;
+  category_sort_order: number;
+  price_cents: number;
+}
+
 export interface CreateBookingInput {
   member_id: number;
   drink_id: number;
@@ -170,6 +180,31 @@ export class BookingsRepo {
    * Zeitraum [fromDate, toDate) zurück, angereichert mit dem Getränkenamen.
    * Wird ausschließlich vom ReportService verwendet.
    */
+  /**
+   * Alle nicht-stornierten Buchungen im halboffenen Zeitraum [fromDate, toDate),
+   * angereichert mit Getränke- und Kategorie-Info. Für die Verbrauchs-Auswertung:
+   * enthält BEWUSST sowohl Personen- als auch Zeiger-Buchungen (Gesamtverbrauch).
+   */
+  findConsumption(fromDate: string, toDate: string): ConsumptionEntry[] {
+    return this.db
+      .prepare<[string, string], ConsumptionEntry>(
+        `SELECT b.drink_id,
+                d.name                 AS drink_name,
+                c.id                   AS category_id,
+                c.name                 AS category_name,
+                c.sort_order           AS category_sort_order,
+                b.price_cents_snapshot AS price_cents
+         FROM bookings b
+         JOIN drinks d           ON d.id = b.drink_id
+         JOIN drink_categories c ON c.id = d.category_id
+         WHERE b.booked_at >= ?
+           AND b.booked_at <  ?
+           AND b.voided_at IS NULL
+         ORDER BY c.sort_order, c.name COLLATE NOCASE, d.name COLLATE NOCASE`,
+      )
+      .all(fromDate, toDate);
+  }
+
   findWithDrinkName(memberId: number, fromDate: string, toDate: string): BookingWithDrinkName[] {
     return this.db
       .prepare<[number, string, string], BookingWithDrinkName>(

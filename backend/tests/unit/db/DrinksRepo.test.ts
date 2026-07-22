@@ -22,7 +22,7 @@ describe('DrinksRepo', () => {
 
   describe('create', () => {
     it('legt ein Getränk mit initialem Preis an', () => {
-      const drink = repo.create({ name: 'Cola', initialPriceCents: 100 });
+      const drink = repo.create({ name: 'Cola', categoryId: 1, initialPriceCents: 100 });
 
       expect(drink.id).toBeGreaterThan(0);
       expect(drink.name).toBe('Cola');
@@ -33,8 +33,8 @@ describe('DrinksRepo', () => {
     });
 
     it('schlägt bei doppeltem Namen fehl', () => {
-      repo.create({ name: 'Wasser', initialPriceCents: 50 });
-      expect(() => repo.create({ name: 'Wasser', initialPriceCents: 60 })).toThrow();
+      repo.create({ name: 'Wasser', categoryId: 1, initialPriceCents: 50 });
+      expect(() => repo.create({ name: 'Wasser', categoryId: 1, initialPriceCents: 60 })).toThrow();
     });
   });
 
@@ -50,17 +50,17 @@ describe('DrinksRepo', () => {
 
   describe('findAll', () => {
     it('gibt alle Getränke zurück (inkl. deaktivierte)', () => {
-      const _d1 = repo.create({ name: 'A', initialPriceCents: 10 });
-      const d2 = repo.create({ name: 'B', initialPriceCents: 20 });
+      const _d1 = repo.create({ name: 'A', categoryId: 1, initialPriceCents: 10 });
+      const d2 = repo.create({ name: 'B', categoryId: 1, initialPriceCents: 20 });
       repo.deactivate(d2.id);
 
       expect(repo.findAll(false)).toHaveLength(2);
     });
 
     it('filtert deaktivierte Getränke wenn onlyAvailable=true', () => {
-      const d = repo.create({ name: 'Weg', initialPriceCents: 0 });
+      const d = repo.create({ name: 'Weg', categoryId: 1, initialPriceCents: 0 });
       repo.deactivate(d.id);
-      repo.create({ name: 'Da', initialPriceCents: 100 });
+      repo.create({ name: 'Da', categoryId: 1, initialPriceCents: 100 });
 
       const available = repo.findAll(true);
       expect(available.every((x) => x.is_available === 1)).toBe(true);
@@ -74,7 +74,7 @@ describe('DrinksRepo', () => {
 
   describe('findAvailableWithCurrentPrice', () => {
     it('gibt current_price_cents zurück', () => {
-      repo.create({ name: 'Bier', initialPriceCents: 150 });
+      repo.create({ name: 'Bier', categoryId: 1, initialPriceCents: 150 });
       const result = repo.findAvailableWithCurrentPrice();
 
       expect(result).toHaveLength(1);
@@ -82,7 +82,7 @@ describe('DrinksRepo', () => {
     });
 
     it('zeigt deaktivierte Getränke nicht', () => {
-      const d = repo.create({ name: 'Alt', initialPriceCents: 80 });
+      const d = repo.create({ name: 'Alt', categoryId: 1, initialPriceCents: 80 });
       repo.deactivate(d.id);
 
       expect(repo.findAvailableWithCurrentPrice()).toHaveLength(0);
@@ -95,7 +95,7 @@ describe('DrinksRepo', () => {
 
   describe('deactivate', () => {
     it('setzt is_available = 0', () => {
-      const d = repo.create({ name: 'X', initialPriceCents: 10 });
+      const d = repo.create({ name: 'X', categoryId: 1, initialPriceCents: 10 });
       expect(repo.deactivate(d.id)).toBe(true);
       expect(repo.findById(d.id)?.is_available).toBe(0);
     });
@@ -118,7 +118,7 @@ describe('DrinksRepo', () => {
     });
 
     it('addPrice überschreibt den aktuellen Preis nicht, sondern ergänzt die Historie', () => {
-      const d = repo.create({ name: 'Spezi', initialPriceCents: 120 });
+      const d = repo.create({ name: 'Spezi', categoryId: 1, initialPriceCents: 120 });
       repo.addPrice(d.id, 130);
 
       const history = repo.getPriceHistory(d.id);
@@ -129,7 +129,7 @@ describe('DrinksRepo', () => {
     });
 
     it('getPriceHistory ist neueste-zuerst sortiert', () => {
-      const d = repo.create({ name: 'Sort', initialPriceCents: 100 });
+      const d = repo.create({ name: 'Sort', categoryId: 1, initialPriceCents: 100 });
       // Explizit älteres valid_from setzen
       repo.addPrice(d.id, 200, '2099-01-01T00:00:00.000Z');
 

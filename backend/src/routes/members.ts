@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { authenticate, type AuthenticatedRequest } from '../middleware/authenticate.js';
-import { requireRole } from '../middleware/requireRole.js';
+import { requireRole, requireWkOrAdmin } from '../middleware/requireRole.js';
 import { createMemberSchema, updateMemberSchema } from '../schemas/members.js';
 import { toPublicMember } from '../services/MembersService.js';
+import { avatarUpload, saveAvatar, removeAvatarFile } from '../utils/avatar.js';
 import type { AuthService } from '../services/AuthService.js';
 import type { MembersService } from '../services/MembersService.js';
 
@@ -22,10 +23,12 @@ function parseId(raw: string): number | null {
 export function createMembersRouter(
   authService: AuthService,
   membersService: MembersService,
+  avatarDir: string,
 ): Router {
   const router = Router();
   const auth = authenticate(authService);
   const admin = requireRole('admin');
+  const wkOrAdmin = requireWkOrAdmin();
 
   // -------------------------------------------------------------------------
   // GET /members?includeInactive=true
@@ -79,6 +82,18 @@ export function createMembersRouter(
   });
 
   // -------------------------------------------------------------------------
+  // GET /members/strikeable  (Wirtschaftskommission oder Admin)
+  // Streichbare Personen-Konten inkl. bereits gestrichener. MUSS vor /:id stehen.
+  // -------------------------------------------------------------------------
+  router.get('/strikeable', auth, wkOrAdmin, (_req, res, next) => {
+    try {
+      res.json(membersService.findStrikeable().map(toPublicMember));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // -------------------------------------------------------------------------
   // GET /members/:id
   // -------------------------------------------------------------------------
   router.get('/:id', auth, admin, (req, res, next) => {
@@ -122,6 +137,56 @@ export function createMembersRouter(
   });
 
   // -------------------------------------------------------------------------
+  // POST /members/:id/avatar — Profilbild eines Mitglieds setzen (Admin)
+  // (max 5 MB → 256×256 WebP; Admin-Pendant zu POST /auth/me/avatar)
+  // -------------------------------------------------------------------------
+  router.post('/:id/avatar', auth, admin, avatarUpload.single('avatar'), async (req, res, next) => {
+    const id = parseId(req.params['id'] ?? '');
+    if (id === null) {
+      res.status(400).json({ error: 'Ungültige ID' });
+      return;
+    }
+    if (!req.file) {
+      res.status(400).json({ error: 'Keine Datei übermittelt' });
+      return;
+    }
+
+    try {
+      // Existenz sicherstellen, bevor eine Datei geschrieben wird (404 statt Leiche).
+      membersService.findById(id);
+      const actorId = Number((req as AuthenticatedRequest).auth.sub);
+
+      const filename = await saveAvatar(avatarDir, id, req.file.buffer);
+      const member = await membersService.update(id, { avatar_path: filename }, actorId);
+      res.json(toPublicMember(member));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // DELETE /members/:id/avatar — Profilbild eines Mitglieds entfernen (Admin)
+  // -------------------------------------------------------------------------
+  router.delete('/:id/avatar', auth, admin, async (req, res, next) => {
+    const id = parseId(req.params['id'] ?? '');
+    if (id === null) {
+      res.status(400).json({ error: 'Ungültige ID' });
+      return;
+    }
+
+    try {
+      const existing = membersService.findById(id);
+      const actorId = Number((req as AuthenticatedRequest).auth.sub);
+
+      removeAvatarFile(avatarDir, existing.avatar_path);
+      const member = await membersService.update(id, { avatar_path: null }, actorId);
+      res.json(toPublicMember(member));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // -------------------------------------------------------------------------
   // DELETE /members/:id  (Soft-Delete)
   // -------------------------------------------------------------------------
   router.delete('/:id', auth, admin, (req, res, next) => {
@@ -135,6 +200,46 @@ export function createMembersRouter(
       const actorId = Number((req as AuthenticatedRequest).auth.sub);
       membersService.deactivate(id, actorId);
       res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // POST /members/:id/strike  (Wirtschaftskommission oder Admin)
+  // Streicht ein Konto für 2 Wochen — keine Getränkebuchungen bis dahin.
+  // -------------------------------------------------------------------------
+  router.post('/:id/strike', auth, wkOrAdmin, (req, res, next) => {
+    const id = parseId(req.params['id'] ?? '');
+    if (id === null) {
+      res.status(400).json({ error: 'Ungültige ID' });
+      return;
+    }
+
+    try {
+      const actorId = Number((req as AuthenticatedRequest).auth.sub);
+      const member = membersService.strike(id, actorId);
+      res.json(toPublicMember(member));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // POST /members/:id/unstrike  (Wirtschaftskommission oder Admin)
+  // Entstreicht ein Konto vorzeitig.
+  // -------------------------------------------------------------------------
+  router.post('/:id/unstrike', auth, wkOrAdmin, (req, res, next) => {
+    const id = parseId(req.params['id'] ?? '');
+    if (id === null) {
+      res.status(400).json({ error: 'Ungültige ID' });
+      return;
+    }
+
+    try {
+      const actorId = Number((req as AuthenticatedRequest).auth.sub);
+      const member = membersService.unstrike(id, actorId);
+      res.json(toPublicMember(member));
     } catch (err) {
       next(err);
     }

@@ -6,6 +6,11 @@ import { z } from 'zod';
 
 export const createDrinkSchema = z.object({
   name: z.string().min(1, 'Darf nicht leer sein').max(100, 'Maximal 100 Zeichen').trim(),
+  /** Pflicht-Kategorie (ID einer bestehenden Kategorie). */
+  category_id: z
+    .number()
+    .int('Muss eine ganze Zahl sein')
+    .positive('Kategorie ist ein Pflichtfeld'),
   /** Initialpreis in Cent (≥ 0, z. B. 150 = 1,50 €) */
   price_cents: z
     .number()
@@ -29,6 +34,11 @@ export const updateDrinkSchema = z
       .trim()
       .optional(),
     is_available: z.literal(0).or(z.literal(1)).optional(),
+    category_id: z
+      .number()
+      .int('Muss eine ganze Zahl sein')
+      .positive('Ungültige Kategorie')
+      .optional(),
   })
   .strict()
   .refine((data) => Object.keys(data).length > 0, {

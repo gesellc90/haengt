@@ -198,10 +198,18 @@ sudo -u getraenke-runner crontab -e
 ```cron
 # Täglich um 03:30 lokale Zeit: DB-Backup nach /var/backups/getraenke/
 30 3 * * *   /opt/getraenke/current/scripts/backup-db.sh /var/lib/getraenke/getraenke.db /var/backups/getraenke
+# Täglich um 03:35: Profilbilder sichern (liegen im Dateisystem, nicht in der DB)
+35 3 * * *   tar czf /var/backups/getraenke/avatars-$(date -u +\%Y\%m\%dT\%H\%M\%SZ).tar.gz -C /var/lib/getraenke avatars
 ```
 
 Das `scripts/backup-db.sh`-Skript aus M2 rotiert Backups älter als 7 Tage
 automatisch — Env-Variable `KEEP_DAYS` anpassbar.
+
+Die Profilbilder unter `/var/lib/getraenke/avatars` liegen **nicht** in der
+SQLite-DB (die DB hält nur den Dateinamen in `members.avatar_path`), daher der
+separate `tar`-Job. So sind DB **und** Avatare Teil des täglichen Backups und
+werden vom Off-Site-`rsync` unten gemeinsam mitgenommen. (`%`-Zeichen sind im
+Crontab mit `\%` maskiert.)
 
 **Off-Site-Backup** (manuell oder via Cron auf einem anderen Host):
 

@@ -10,11 +10,13 @@ import ProfilePage from './pages/ProfilePage.js';
 import AdminLayout from './pages/admin/AdminLayout.js';
 import MembersPage from './pages/admin/MembersPage.js';
 import DrinksPage from './pages/admin/DrinksPage.js';
+import CategoriesPage from './pages/admin/CategoriesPage.js';
 import AdminBookingsPage from './pages/admin/BookingsPage.js';
 import ReportPage from './pages/admin/ReportPage.js';
 import VerbindungenPage from './pages/admin/VerbindungenPage.js';
 import ZeigerPage from './pages/ZeigerPage.js';
 import ZeigerDetailPage from './pages/ZeigerDetailPage.js';
+import StreichenPage from './pages/StreichenPage.js';
 
 /** Theken-/Allgemein-Konten buchen für andere, alle übrigen für sich selbst. */
 function BuchenRoute() {
@@ -39,12 +41,18 @@ export default function App() {
               <Route path="/zeiger/:id" element={<ZeigerDetailPage />} />
               <Route path="/profil" element={<ProfilePage />} />
 
+              {/* Wirtschaftskommission — Konten streichen (WK oder Admin) */}
+              <Route element={<ProtectedRoute role="wk" />}>
+                <Route path="/wk" element={<StreichenPage />} />
+              </Route>
+
               {/* Admin-Bereich — nur für Admins */}
               <Route element={<ProtectedRoute role="admin" />}>
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<Navigate to="/admin/mitglieder" replace />} />
                   <Route path="mitglieder" element={<MembersPage />} />
                   <Route path="getraenke" element={<DrinksPage />} />
+                  <Route path="kategorien" element={<CategoriesPage />} />
                   <Route path="buchungen" element={<AdminBookingsPage />} />
                   <Route path="berichte" element={<ReportPage />} />
                   <Route path="verbindungen" element={<VerbindungenPage />} />

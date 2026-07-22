@@ -54,6 +54,8 @@ const makeMember = (
   is_active: 1,
   member_status,
   can_book_for_others: 0,
+  is_wirtschaftskommission: 0,
+  struck_until: null,
   email: null,
   avatar_path: null,
   created_at: '',
@@ -64,6 +66,9 @@ const drinkPils: DrinkWithCurrentPrice = {
   id: 1,
   name: 'Pils',
   is_available: 1,
+  category_id: 1,
+  category_name: 'Alkoholfrei',
+  category_sort_order: 0,
   current_price_cents: 200,
   created_at: '',
   updated_at: '',
@@ -114,6 +119,18 @@ describe('ThekePage', () => {
     expect(screen.getByText('Freunde der Verbindung')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Alice Aktiv' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Bob Freund' })).toBeInTheDocument();
+  });
+
+  it('zeigt ein gestrichenes Konto ausgeblichen und nicht anwählbar', async () => {
+    const struckUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    mockGetBookable.mockResolvedValue([
+      { ...makeMember(1, 'Alice Aktiv', 'aktiv'), struck_until: struckUntil },
+    ]);
+    renderTheke();
+
+    const tile = await screen.findByRole('button', { name: /Alice Aktiv/ });
+    expect(tile).toBeDisabled();
+    expect(screen.getByText(/gestrichen bis/i)).toBeInTheDocument();
   });
 
   it('filtert Mitglieder über das Suchfeld', async () => {

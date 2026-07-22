@@ -537,11 +537,12 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 
 ### PR 5 — E2E & Doku
 
-- [ ] Playwright-E2E: Login als Admin → Update-Bereich zeigt aktuelle Version → „Jetzt aktualisieren" schreibt Marker (im Test-Setup keine echte Installation; Status-Datei wird gemockt/vorgelegt) → UI spiegelt Ergebnis; Nicht-Admin sieht den Bereich nicht (403/keine Route).
-- [ ] `docs/AUTO-UPDATE.md` (neu): Architektur (Timer → Path-Unit → Helper → `pi-release.sh`), Installation der Units, Token-Setup, Sicherheitsüberlegungen (warum kein sudo in der App, Marker als reines Signal), manuelles Prüfen/Anstoßen, Störungssuche (`journalctl -u getraenke-update`).
-- [ ] `docs/DEPLOYMENT.md`: Verweis auf das gemeinsame `pi-release.sh` und den Auto-Update-Weg; `docs/RASPBERRY-PI-SETUP.md`: Units + `update.env` als Setup-Schritt.
-- [ ] `ARCHITECTURE.md`: Privilege-Separation (App schreibt Marker, Path-Unit startet privilegierten Helper) + Status-Datei-Rückkanal dokumentiert.
-- [ ] `CHANGELOG.md` (Unreleased) und `README.md`-Feature-Liste ergänzt („Automatische Updates alle zwei Wochen, manuell durch Admins anstoßbar").
+- [x] Playwright-E2E (`e2e/tests/09-admin-update.spec.ts`): Login als Admin → Update-Bereich zeigt aktuelle Version → „Jetzt aktualisieren" schreibt die Marker-Datei (Status-Datei wird direkt in `UPDATE_STATE_DIR` vorgelegt, keine echte Installation im Test-Setup) → UI spiegelt Ergebnis; Abbruch über den Bestätigungsdialog schreibt keinen Marker; Nicht-Admin wird von `/admin/system` weg auf `/buchen` umgeleitet. `global-setup.ts`/`global-teardown.ts` um ein isoliertes `UPDATE_STATE_DIR` erweitert (fester Pfad, unabhängig von Spec-Worker-Prozessen berechenbar — analog zu `E2E_BACKEND_PORT`).
+- [x] `docs/AUTO-UPDATE.md` (bereits in PR 2 angelegt): Architektur (Timer → Path-Unit → Helper → `pi-release.sh`), Installation der Units, Token-Setup, Sicherheitsüberlegungen, manuelles Prüfen/Anstoßen, Störungssuche.
+- [x] `docs/DEPLOYMENT.md` (PR 1/2) und `docs/RASPBERRY-PI-SETUP.md` (PR 2) bereits verlinkt bzw. um Schritt 10 (Units + `update.env`) ergänzt.
+- [x] `ARCHITECTURE.md`: neuer Abschnitt „Auto-Update & Privilege-Separation (M14)" (App schreibt nur die Marker-Datei, root-betriebene Path-Unit/Service übernehmen den Rest, Status-Datei-Rückkanal, `UPDATE_STATE_DIR`, Token-Scope) sowie die drei `/update`-Routen in der API-Übersicht.
+- [x] `CHANGELOG.md` (Unreleased, PR 1–4) und `README.md`-Feature-Liste (PR 4) bereits ergänzt.
+- [x] **Nebenbei behoben:** Beim Schreiben des E2E-Tests fiel auf, dass die Seite auf schmalen Viewports (Sticky-Header oben, `position: fixed`-TabBar unten) beim automatischen Scrollen Ziel-Elemente teils unter den fixierten Leisten verschwinden lässt (`scrollIntoView` kennt `position: sticky`/`fixed`-Overlays nicht). `frontend/src/index.css` um `scroll-padding-top`/`scroll-padding-bottom` ergänzt — ein generischer, vorher latenter Bug, den die neue (weiter unten liegende) System-Seite als Erste sichtbar gemacht hat.
 
 ### Sicherheits- & Betriebs-Hinweise (bei der Umsetzung beachten)
 

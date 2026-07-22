@@ -9,6 +9,11 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- **M14 (PR 5) — E2E-Test & Doku-Abschluss**
+  - Playwright-E2E (`09-admin-update.spec.ts`): Update-Status inkl. Versionen anzeigen, „Jetzt aktualisieren" schreibt die Marker-Datei, Dialog-Abbruch schreibt keinen Marker, Nicht-Admin wird umgeleitet. `global-setup.ts` legt dafür ein isoliertes `UPDATE_STATE_DIR` für den E2E-Backend-Prozess an.
+  - `ARCHITECTURE.md`: neuer Abschnitt „Auto-Update & Privilege-Separation" sowie die `/update`-Routen in der API-Übersicht.
+  - **Fix (durch den E2E-Test entdeckt):** `scroll-padding-top`/`scroll-padding-bottom` in `frontend/src/index.css` ergänzt, damit `scrollIntoView` Ziele nicht mehr unter dem sticky Header bzw. der fixierten mobilen TabBar verschwinden lässt — betraf potenziell jede Seite mit Inhalt unterhalb der ersten Bildschirmhöhe auf schmalen Viewports.
+
 - **M14 (PR 4) — Frontend: Admin-Bereich „System / Update"**
   - Neuer Admin-Reiter „System" (`/admin/system`): zeigt den Update-Status (Badge, laufende/verfügbare Version, Zeitpunkt der letzten Prüfung inkl. Auslöser) und die Buttons „Jetzt prüfen"/„Jetzt aktualisieren".
   - „Jetzt aktualisieren" fragt vorher eine Bestätigung ab (Hinweis auf den kurzen Neustart der App). Solange ein Update läuft, pollt die Seite den Status und zeigt bei Abschluss automatisch einen Erfolgs-/Fehler-Toast; ein bereits laufendes Update (409) wird als klare Meldung statt Rohfehler angezeigt.

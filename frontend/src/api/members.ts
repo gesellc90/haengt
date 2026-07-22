@@ -13,6 +13,11 @@ export const membersApi = {
     return apiFetch<PublicMember[]>('/members/bookable');
   },
 
+  /** WK/Admin: streichbare Personen-Konten (inkl. bereits gestrichener), nach Kategorie sortiert */
+  getStrikeable(): Promise<PublicMember[]> {
+    return apiFetch<PublicMember[]>('/members/strikeable');
+  },
+
   /** Admin: Mitglied anlegen */
   create(data: {
     username: string;
@@ -20,11 +25,13 @@ export const membersApi = {
     password: string;
     role?: 'admin' | 'member';
     member_status?: MemberStatus;
+    is_wirtschaftskommission?: boolean;
+    email?: string;
   }): Promise<PublicMember> {
     return apiFetch<PublicMember>('/members', { method: 'POST', body: data });
   },
 
-  /** Admin: Mitglied aktualisieren (display_name, role, is_active, password, Kategorie, Theken-Flag) */
+  /** Admin: Mitglied aktualisieren (display_name, role, is_active, password, Kategorie, Theken-Flag, WK-Flag, E-Mail) */
   update(
     id: number,
     data: {
@@ -34,9 +41,21 @@ export const membersApi = {
       password?: string;
       member_status?: MemberStatus;
       can_book_for_others?: boolean;
+      is_wirtschaftskommission?: boolean;
+      email?: string | null;
     },
   ): Promise<PublicMember> {
     return apiFetch<PublicMember>(`/members/${id}`, { method: 'PATCH', body: data });
+  },
+
+  /** WK/Admin: Konto für 2 Wochen streichen */
+  strike(id: number): Promise<PublicMember> {
+    return apiFetch<PublicMember>(`/members/${id}/strike`, { method: 'POST' });
+  },
+
+  /** WK/Admin: Konto vorzeitig entstreichen */
+  unstrike(id: number): Promise<PublicMember> {
+    return apiFetch<PublicMember>(`/members/${id}/unstrike`, { method: 'POST' });
   },
 
   /** Admin: Mitglied deaktivieren (Soft-Delete) */

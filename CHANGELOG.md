@@ -9,6 +9,25 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- **M13 — Wirtschaftskommission & Konten-Streichung**
+  - Migration 012: neue Spalten an `members` — `is_wirtschaftskommission` (Capability-Flag analog `can_book_for_others`) und `struck_until` (nullable ISO-Zeitstempel). Bewusst als Flag statt neuem `role`-Wert modelliert, da ein Rebuild der `members`-Tabelle wegen der `ON DELETE RESTRICT`-Fremdschlüssel nicht gefahrlos möglich ist.
+  - Neue Konto-Variante „Wirtschaftskommission" (WK): darf Personen-Konten streichen und entstreichen. Streichen und Entstreichen dürfen sowohl WK-Konten als auch Admins (`requireWkOrAdmin`-Middleware; JWT-Payload um `is_wk` erweitert, wird — wie die Rolle — bei jeder Anfrage frisch aus der DB übernommen).
+  - Streichung: `MembersService.strike` setzt `struck_until` auf jetzt + 2 Wochen, `unstrike` setzt zurück (→ 409 `NOT_STRUCK`, wenn nicht gestrichen); Theken-Konten sind nicht streichbar (→ 409 `NOT_STRIKEABLE`). Audit-Log-Events `member_struck` / `member_unstruck`.
+  - Buchsperre: `BookingService` blockiert Personenbuchungen auf gestrichene Konten (→ 409 `MEMBER_STRUCK`) — betrifft Selbst- und Theken-Buchungen. Zeiger-Buchungen laufen auf die Vereinskasse und bleiben erlaubt. Nach Ablauf der 2 Wochen ist das Konto automatisch wieder bebuchbar.
+  - Routen: `POST /members/:id/strike`, `POST /members/:id/unstrike` und `GET /members/strikeable` (alle WK oder Admin); `POST/PATCH /members` akzeptieren `is_wirtschaftskommission`.
+  - Frontend: neuer Bereich „Streichen" (`/wk`, Reiter für WK **und** Admin) mit nach Kategorie gruppierter Kontenliste, Streichen (mit Bestätigung) und vorzeitigem Entstreichen; gestrichene Konten in der Theken-Auswahl ausgeblichen, durchgestrichen und nicht anwählbar („gestrichen bis <Datum>"); Hinweisbanner samt gesperrten Getränke-Buttons in der eigenen Stube; WK-Spalte/Checkbox in der Admin-Mitgliederverwaltung.
+  - Seed: Demo-Konto `wiko` (Anzeigename „Wirtschaftskommission"), in Dev mit Passwort `wiko123`.
+  - 21 zusätzliche Tests (Backend: MembersRepo-Unit + WK-/Streich-Integration; Frontend: `StreichenPage` + gestrichenes Konto in `ThekePage`).
+
+- **M12 — Getränke-Kategorien & Verbrauchs-Auswertung**
+  - Migration 011: Tabelle `drink_categories` (STRICT, eindeutiger Name `COLLATE NOCASE`, `sort_order` für die Anzeige-Reihenfolge); Standardkategorie „Sonstige" wird angelegt und alle bestehenden Getränke ihr zugeordnet; neue Spalte `drinks.category_id` (FK `ON DELETE RESTRICT`, Index)
+  - `DrinkCategoriesRepo` (findAll sortiert nach `sort_order`, create ans Ende, update, delete, `reorder`, `countDrinks`) und `DrinkCategoriesService` mit Audit-Log und Löschschutz (nur leere Kategorien löschbar → 409 `CATEGORY_NOT_EMPTY`)
+  - Routen `GET /drink-categories` (alle Auth), `POST/PATCH/DELETE /drink-categories/:id` und `PUT /drink-categories/order` (Admin); `DrinksRepo`/`DrinksService` um die Pflicht-Kategorie erweitert (`category_id` beim Anlegen validiert, Änderung möglich), Getränke-Listen mit Kategorie-Join sortiert
+  - Verbrauchs-Auswertung: `BookingsRepo.findConsumption(from, to)` (alle nicht-stornierten Buchungen inkl. Zeiger-Buchungen), `ReportService.calculateConsumption` (Anzahl + Umsatz je Getränk, nach Kategorie gruppiert, mit Zwischen- und Gesamtsummen), Route `GET /reports/consumption?from&to&format` als CSV und PDF
+  - Frontend: Admin-Reiter „Kategorien" (`/admin/kategorien`) mit Anlegen, Umbenennen, Löschen und Reihenfolge (Hoch/Runter); `DrinksPage` mit Kategorie-Pflichtfeld beim Anlegen und Kategorie-Spalte zum Umhängen; Buchungs- und Theken-Ansicht clustern die Getränke nach Kategorie (in Admin-Reihenfolge); `ReportPage` um die Verbrauchs-Auswertung mit frei wählbarem Zeitraum ergänzt
+  - Seed: Demo-Kategorien „Alkoholfrei" und „Bier"; Seed-Getränke entsprechend zugeordnet
+  - 31 zusätzliche Backend-Tests (DrinkCategoriesRepo, ReportService-Verbrauch, Kategorie- und Report-Integration)
+
 - **M11 — Zeiger (Couleurbesuch & Verbindungsveranstaltungen)**
   - Migration 010: Tabellen `verbindungen` und `zeiger` (STRICT); `bookings.zeiger_id` als nullable FK — Zeiger-Buchungen zählen nicht zum Personen-Saldo
   - `VerbindungenRepo`, `ZeigerRepo` mit vollständigem CRUD; `BookingsRepo.create` um `zeiger_id` erweitert
@@ -29,6 +48,11 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   - Frontend `ProfilePage`: Avatar-Kreis (Bild oder Initialen-Fallback), Upload/Löschen-Buttons, E-Mail-Anzeige in der Profil-Karte, Bearbeitungsformular für Anzeigename + E-Mail
   - `AuthContext.updateMember()` für lokale State-Aktualisierung nach Profil-Änderungen ohne Re-Login
   - Playwright-E2E-Spec `07-profil`: E-Mail setzen + in Karte sehen, Profilbild hochladen + Avatar erscheint, Konflikt-Toast bei doppelter E-Mail
+- **M10 — Nachgezogene Admin-/UI-Punkte**
+  - Admin-Avatar-Verwaltung: `POST /members/:id/avatar` und `DELETE /members/:id/avatar` (Admin-Pendant zu den Self-Service-Routen); gemeinsame Avatar-Verarbeitung in `utils/avatar.ts` (multer + `sharp`), von Self-Service und Admin genutzt
+  - Admin `MembersPage`: E-Mail-Spalte, Inline-E-Mail-Editor (leerer Wert entfernt die Adresse, Konflikt-Toast bei `EMAIL_TAKEN`) und E-Mail-Feld im Anlegen-Formular
+  - Echtes Profilbild im `WordmarkHeader`/`Layout` — Avatar-Kreis zeigt das hinterlegte Bild, Initialen nur noch als Fallback
+  - Doku: `AVATAR_DIR` im `StateDirectory` (`/var/lib/getraenke/avatars`) samt EnvironmentFile-Beispiel und Backup-Hinweis in `DEPLOYMENT.md`; separater Avatar-Backup-Cron-Job in `RASPBERRY-PI-SETUP.md`; Admin-Avatar-Endpunkte in `ARCHITECTURE.md`
 - **M9 (in Arbeit) — Allgemein-Konto & Mitglieder-Kategorien, PR 1: Datenschicht**
   - Migration 007: Spalten `member_status` (`aktiv`|`inaktiv`|`alter_herr`|`freund`) und `can_book_for_others` an `members`. `member_status` ist eine vom `is_active`-Login-/Soft-Delete-Flag unabhängige Kategorie – Mitglieder ohne Login (z. B. „Freunde der Verbindung") bleiben bebuchbar
   - `MembersRepo.findBookable()`: liefert aktive Mitglieder ohne Buchen-für-andere-Recht, sortiert nach Kategorie (Aktive → Inaktive → Alte Herren → Freunde)

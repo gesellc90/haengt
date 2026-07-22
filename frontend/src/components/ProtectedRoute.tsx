@@ -3,8 +3,12 @@ import { useAuth } from '../contexts/AuthContext.js';
 import Spinner from './Spinner.js';
 
 interface ProtectedRouteProps {
-  /** Wenn angegeben, muss der User diese Rolle haben */
-  role?: 'admin' | 'member';
+  /**
+   * Wenn angegeben, muss der User diese Rolle/Berechtigung haben.
+   * - 'admin' | 'member' → exakte Rolle
+   * - 'wk' → Wirtschaftskommission ODER Admin (Streich-Bereich)
+   */
+  role?: 'admin' | 'member' | 'wk';
 }
 
 /**
@@ -13,7 +17,7 @@ interface ProtectedRouteProps {
  * - Falsche Rolle → / (oder eine 403-Seite)
  */
 export default function ProtectedRoute({ role }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, member } = useAuth();
+  const { isAuthenticated, isLoading, member, canStrike } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -28,7 +32,9 @@ export default function ProtectedRoute({ role }: ProtectedRouteProps) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (role && member?.role !== role) {
+  if (role === 'wk') {
+    if (!canStrike) return <Navigate to="/" replace />;
+  } else if (role && member?.role !== role) {
     return <Navigate to="/" replace />;
   }
 

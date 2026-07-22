@@ -67,7 +67,7 @@ async function setupApp(): Promise<TestContext> {
     display_name: 'Alice',
     password_hash: hash,
   });
-  const cola = drinksRepo.create({ name: 'Cola', initialPriceCents: 120 });
+  const cola = drinksRepo.create({ name: 'Cola', categoryId: 1, initialPriceCents: 120 });
 
   // 2 Buchungen für alice im aktuellen Monat (Timestamp wird von SQLite auf NOW gesetzt)
   bookingsRepo.create({ member_id: alice.id, drink_id: cola.id, price_cents_snapshot: 120 });

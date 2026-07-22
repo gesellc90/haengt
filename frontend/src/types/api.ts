@@ -27,8 +27,30 @@ export interface PublicMember {
   is_active: 0 | 1;
   member_status: MemberStatus;
   can_book_for_others: 0 | 1;
+  /** 1 = Konto der Wirtschaftskommission (darf Konten streichen/entstreichen). */
+  is_wirtschaftskommission: 0 | 1;
+  /**
+   * ISO-Zeitpunkt, bis zu dem das Konto gestrichen ist (keine Getränkebuchungen).
+   * NULL = nicht gestrichen; ein Zeitpunkt in der Vergangenheit gilt als abgelaufen.
+   */
+  struck_until: string | null;
   email: string | null;
   avatar_path: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** True, wenn das Konto aktuell gestrichen ist (Frist noch nicht abgelaufen). */
+export function isMemberStruck(member: { struck_until: string | null }): boolean {
+  return member.struck_until !== null && new Date(member.struck_until).getTime() > Date.now();
+}
+
+// -- Drink-Kategorien -------------------------------------------------------
+
+export interface DrinkCategoryRow {
+  id: number;
+  name: string;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +61,9 @@ export interface DrinkWithCurrentPrice {
   id: number;
   name: string;
   is_available: 0 | 1;
+  category_id: number;
+  category_name: string;
+  category_sort_order: number;
   current_price_cents: number | null;
   created_at: string;
   updated_at: string;
@@ -48,6 +73,10 @@ export interface DrinkRow {
   id: number;
   name: string;
   is_available: 0 | 1;
+  category_id: number;
+  /** Nur in der Admin-Liste enthalten (JOIN); bei Einzel-Responses ggf. undefined. */
+  category_name?: string;
+  category_sort_order?: number;
   created_at: string;
   updated_at: string;
 }

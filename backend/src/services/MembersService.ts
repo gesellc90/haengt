@@ -8,6 +8,14 @@ import { AppError } from '../middleware/errorHandler.js';
 // Re-Export für Bestandsimporte (Routen importieren toPublicMember von hier).
 export { toPublicMember, type PublicMember } from './publicMember.js';
 
+/** Reguläre Streich-Dauer: 2 Wochen (14 Tage). */
+export const STRIKE_DURATION_MS = 14 * 24 * 60 * 60 * 1000;
+
+/** True, wenn das Konto aktuell (zum Zeitpunkt `now`) gestrichen ist. */
+export function isStruck(member: MemberRow, now: number = Date.now()): boolean {
+  return member.struck_until !== null && new Date(member.struck_until).getTime() > now;
+}
+
 // ---------------------------------------------------------------------------
 // MembersService — Business-Logik für Mitgliederverwaltung
 // ---------------------------------------------------------------------------
@@ -31,6 +39,15 @@ export class MembersService {
     return this.members.findBookable();
   }
 
+  /**
+   * Streichbare Konten für die Wirtschaftskommission — dieselbe Population wie
+   * die bebuchbaren Personen-Konten (aktive Mitglieder, kein Theken-Konto),
+   * inklusive bereits gestrichener (damit sie entstrichen werden können).
+   */
+  findStrikeable(): MemberRow[] {
+    return this.members.findBookable();
+  }
+
   findById(id: number): MemberRow {
     const member = this.members.findById(id);
     if (!member) {
@@ -50,6 +67,7 @@ export class MembersService {
       password: string;
       role?: 'admin' | 'member';
       member_status?: MemberStatus;
+      is_wirtschaftskommission?: boolean;
       email?: string;
     },
     actorId: number,
@@ -74,6 +92,7 @@ export class MembersService {
       password_hash,
       role: input.role ?? 'member',
       member_status: input.member_status ?? 'aktiv',
+      is_wirtschaftskommission: input.is_wirtschaftskommission ? 1 : 0,
       email: input.email ?? null,
     });
 
@@ -86,6 +105,7 @@ export class MembersService {
         username: input.username,
         role: input.role ?? 'member',
         member_status: input.member_status ?? 'aktiv',
+        is_wirtschaftskommission: input.is_wirtschaftskommission ?? false,
       },
     });
 
@@ -104,6 +124,7 @@ export class MembersService {
       role?: 'admin' | 'member';
       member_status?: MemberStatus;
       can_book_for_others?: boolean;
+      is_wirtschaftskommission?: boolean;
       email?: string | null;
       avatar_path?: string | null;
     },
@@ -133,6 +154,12 @@ export class MembersService {
       member_status: input.member_status,
       can_book_for_others:
         input.can_book_for_others === undefined ? undefined : input.can_book_for_others ? 1 : 0,
+      is_wirtschaftskommission:
+        input.is_wirtschaftskommission === undefined
+          ? undefined
+          : input.is_wirtschaftskommission
+            ? 1
+            : 0,
       email: input.email,
       avatar_path: input.avatar_path,
     });
@@ -149,6 +176,7 @@ export class MembersService {
           ...(input.role !== undefined ? ['role'] : []),
           ...(input.member_status !== undefined ? ['member_status'] : []),
           ...(input.can_book_for_others !== undefined ? ['can_book_for_others'] : []),
+          ...(input.is_wirtschaftskommission !== undefined ? ['is_wirtschaftskommission'] : []),
           ...(input.email !== undefined ? ['email'] : []),
           ...(input.avatar_path !== undefined ? ['avatar_path'] : []),
         ],
@@ -185,5 +213,67 @@ export class MembersService {
       target_id: id,
       meta: { username: member.username },
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Streichen / Entstreichen (Wirtschaftskommission bzw. Admin)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Streicht ein Konto für die reguläre Dauer (2 Wochen ab jetzt). Solange die
+   * Streichung gilt, können keine Getränke auf das Konto gebucht werden.
+   * Erneutes Streichen setzt die Frist neu.
+   */
+  strike(id: number, actorId: number): MemberRow {
+    const member = this.members.findById(id);
+    if (!member) {
+      throw new AppError('Mitglied nicht gefunden', 404, 'NOT_FOUND');
+    }
+    if (member.can_book_for_others === 1) {
+      throw new AppError(
+        'Theken-/Allgemein-Konten können nicht gestrichen werden',
+        409,
+        'NOT_STRIKEABLE',
+      );
+    }
+
+    const until = new Date(Date.now() + STRIKE_DURATION_MS).toISOString();
+    this.members.setStruckUntil(id, until);
+
+    this.auditLog.create({
+      event_type: 'member_struck',
+      actor_id: actorId,
+      target_type: 'member',
+      target_id: id,
+      meta: { username: member.username, struck_until: until },
+    });
+
+    return this.members.findById(id)!;
+  }
+
+  /**
+   * Entstreicht ein Konto vorzeitig (setzt `struck_until` zurück). Ist das Konto
+   * gar nicht (mehr) gestrichen, wird 409 `NOT_STRUCK` geworfen.
+   */
+  unstrike(id: number, actorId: number): MemberRow {
+    const member = this.members.findById(id);
+    if (!member) {
+      throw new AppError('Mitglied nicht gefunden', 404, 'NOT_FOUND');
+    }
+    if (!isStruck(member)) {
+      throw new AppError('Konto ist nicht gestrichen', 409, 'NOT_STRUCK');
+    }
+
+    this.members.setStruckUntil(id, null);
+
+    this.auditLog.create({
+      event_type: 'member_unstruck',
+      actor_id: actorId,
+      target_type: 'member',
+      target_id: id,
+      meta: { username: member.username },
+    });
+
+    return this.members.findById(id)!;
   }
 }

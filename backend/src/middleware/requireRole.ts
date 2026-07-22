@@ -26,3 +26,26 @@ export function requireRole(role: 'admin' | 'member') {
     next();
   };
 }
+
+/**
+ * Erlaubt den Zugriff nur der Wirtschaftskommission (WK) oder Admins.
+ * Muss **nach** `authenticate` eingebunden werden. Gedacht für die
+ * Streich-Endpunkte: streichen dürfen sowohl WK-Konten als auch Admins.
+ */
+export function requireWkOrAdmin() {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const auth = (req as AuthenticatedRequest).auth;
+
+    if (!auth) {
+      res.status(401).json({ error: 'Nicht authentifiziert' });
+      return;
+    }
+
+    if (auth.role !== 'admin' && auth.is_wk !== true) {
+      res.status(403).json({ error: 'Unzureichende Berechtigung' });
+      return;
+    }
+
+    next();
+  };
+}

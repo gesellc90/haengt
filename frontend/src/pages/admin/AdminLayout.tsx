@@ -67,6 +67,9 @@ export default function AdminLayout() {
         <NavLink to="/admin/getraenke" style={({ isActive }) => tabStyle(isActive)}>
           Getränke
         </NavLink>
+        <NavLink to="/admin/kategorien" style={({ isActive }) => tabStyle(isActive)}>
+          Kategorien
+        </NavLink>
         <NavLink to="/admin/buchungen" style={({ isActive }) => tabStyle(isActive)}>
           Buchungen
         </NavLink>

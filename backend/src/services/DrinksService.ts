@@ -1,8 +1,9 @@
 import type { DrinksRepo } from '../db/repos/DrinksRepo.js';
+import type { DrinkCategoriesRepo } from '../db/repos/DrinkCategoriesRepo.js';
 import type { AuditLogRepo } from '../db/repos/AuditLogRepo.js';
 import type { DrinkRow, DrinkPriceRow } from '../db/types.js';
 import { AppError } from '../middleware/errorHandler.js';
-import type { DrinkWithCurrentPrice } from '../db/repos/DrinksRepo.js';
+import type { DrinkWithCurrentPrice, DrinkWithCategory } from '../db/repos/DrinksRepo.js';
 
 // ---------------------------------------------------------------------------
 // DrinksService — Business-Logik für Getränke- und Preisverwaltung
@@ -11,8 +12,16 @@ import type { DrinkWithCurrentPrice } from '../db/repos/DrinksRepo.js';
 export class DrinksService {
   constructor(
     private readonly drinks: DrinksRepo,
+    private readonly categories: DrinkCategoriesRepo,
     private readonly auditLog: AuditLogRepo,
   ) {}
+
+  /** Stellt sicher, dass die Kategorie existiert (sonst 400). */
+  private assertCategoryExists(categoryId: number): void {
+    if (!this.categories.findById(categoryId)) {
+      throw new AppError('Kategorie nicht gefunden', 400, 'CATEGORY_NOT_FOUND');
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Lesen
@@ -23,9 +32,9 @@ export class DrinksService {
     return this.drinks.findAvailableWithCurrentPrice();
   }
 
-  /** Admin-Liste: alle Getränke (inkl. deaktivierter). */
-  findAll(): DrinkRow[] {
-    return this.drinks.findAll(false);
+  /** Admin-Liste: alle Getränke (inkl. deaktivierter) mit Kategorie-Info. */
+  findAll(): DrinkWithCategory[] {
+    return this.drinks.findAllWithCategory();
   }
 
   findById(id: number): DrinkRow {
@@ -43,9 +52,15 @@ export class DrinksService {
   // Anlegen
   // ---------------------------------------------------------------------------
 
-  create(input: { name: string; price_cents: number }, actorId: number): DrinkRow {
+  create(
+    input: { name: string; price_cents: number; category_id: number },
+    actorId: number,
+  ): DrinkRow {
+    this.assertCategoryExists(input.category_id);
+
     const drink = this.drinks.create({
       name: input.name,
+      categoryId: input.category_id,
       initialPriceCents: input.price_cents,
     });
 
@@ -54,7 +69,11 @@ export class DrinksService {
       actor_id: actorId,
       target_type: 'drink',
       target_id: drink.id,
-      meta: { name: input.name, initial_price_cents: input.price_cents },
+      meta: {
+        name: input.name,
+        category_id: input.category_id,
+        initial_price_cents: input.price_cents,
+      },
     });
 
     return drink;
@@ -64,13 +83,18 @@ export class DrinksService {
   // Aktualisieren
   // ---------------------------------------------------------------------------
 
-  update(id: number, input: { name?: string; is_available?: 0 | 1 }, actorId: number): DrinkRow {
+  update(
+    id: number,
+    input: { name?: string; is_available?: 0 | 1; category_id?: number },
+    actorId: number,
+  ): DrinkRow {
     const existing = this.drinks.findById(id);
     if (!existing) throw new AppError('Getränk nicht gefunden', 404, 'NOT_FOUND');
 
-    // Direktes UPDATE im Repo (DrinksRepo hat noch kein update() → inline mit DB)
-    // Da DrinksRepo kein generisches update() hat, delegieren wir nur an deactivate()
-    // oder führen das Update über den Repo durch – wir erweitern DrinksRepo minimal.
+    if (input.category_id !== undefined) {
+      this.assertCategoryExists(input.category_id);
+    }
+
     const updated = this.drinks.update(id, input);
 
     this.auditLog.create({

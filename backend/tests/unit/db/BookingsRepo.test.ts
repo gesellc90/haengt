@@ -25,7 +25,7 @@ describe('BookingsRepo', () => {
     const member = membersRepo.create({ username: 'tester', display_name: 'Tester' });
     memberId = member.id;
 
-    const drink = drinksRepo.create({ name: 'Bier', initialPriceCents: PRICE });
+    const drink = drinksRepo.create({ name: 'Bier', categoryId: 1, initialPriceCents: PRICE });
     drinkId = drink.id;
   });
 

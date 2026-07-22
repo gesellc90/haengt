@@ -115,8 +115,10 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
     username: '',
     display_name: '',
     password: '',
+    email: '',
     role: 'member' as 'admin' | 'member',
     member_status: 'aktiv' as MemberStatus,
+    is_wirtschaftskommission: false,
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -130,14 +132,26 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
     setError(null);
     setIsPending(true);
     try {
-      const member = await membersApi.create(form);
+      const email = form.email.trim();
+      const member = await membersApi.create({
+        username: form.username,
+        display_name: form.display_name,
+        password: form.password,
+        role: form.role,
+        member_status: form.member_status,
+        is_wirtschaftskommission: form.is_wirtschaftskommission,
+        // Leere E-Mail weglassen — der Server validiert das Format nur bei gesetztem Wert.
+        ...(email ? { email } : {}),
+      });
       onCreated(member);
       setForm({
         username: '',
         display_name: '',
         password: '',
+        email: '',
         role: 'member',
         member_status: 'aktiv',
+        is_wirtschaftskommission: false,
       });
       setOpen(false);
       showToast(`${member.display_name} wurde angelegt.`, 'success');
@@ -213,6 +227,17 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
           </div>
         ))}
         <div>
+          <label style={labelStyle}>E-Mail (optional)</label>
+          <input
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            placeholder="Keine Angabe"
+            style={inputStyle}
+          />
+        </div>
+        <div>
           <label style={labelStyle}>Rolle</label>
           <select name="role" value={form.role} onChange={handleChange} style={inputStyle}>
             <option value="member">Mitglied</option>
@@ -233,6 +258,29 @@ function CreateMemberForm({ onCreated }: CreateMemberFormProps) {
               </option>
             ))}
           </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <label
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              minHeight: 44,
+              fontFamily: 'var(--font-sans)',
+              fontSize: 13,
+              color: 'var(--tinte-2)',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={form.is_wirtschaftskommission}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, is_wirtschaftskommission: e.target.checked }))
+              }
+            />
+            Wirtschaftskommission
+          </label>
         </div>
       </div>
 
@@ -310,6 +358,76 @@ function ResetPasswordForm({ memberId, onClose }: ResetPasswordFormProps) {
 }
 
 // ---------------------------------------------------------------------------
+// E-Mail-Editor (inline)
+// ---------------------------------------------------------------------------
+
+interface EmailEditFormProps {
+  memberId: number;
+  currentEmail: string | null;
+  onSaved(member: PublicMember): void;
+  onClose(): void;
+}
+
+function EmailEditForm({ memberId, currentEmail, onSaved, onClose }: EmailEditFormProps) {
+  const { showToast } = useToast();
+  const [email, setEmail] = useState(currentEmail ?? '');
+  const [isPending, setIsPending] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const trimmed = email.trim();
+    // Leerer Wert => E-Mail entfernen (null); sonst neuen Wert setzen.
+    const next = trimmed === '' ? null : trimmed;
+    if (next === (currentEmail ?? null)) {
+      onClose();
+      return;
+    }
+    setIsPending(true);
+    try {
+      const updated = await membersApi.update(memberId, { email: next });
+      onSaved(updated);
+      showToast('E-Mail-Adresse gespeichert.', 'success');
+      onClose();
+    } catch (err) {
+      const msg =
+        err instanceof ApiError && err.code === 'EMAIL_TAKEN'
+          ? 'Diese E-Mail-Adresse wird bereits verwendet.'
+          : err instanceof ApiError
+            ? err.message
+            : 'Fehler beim Speichern.';
+      showToast(msg, 'error');
+    } finally {
+      setIsPending(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={(e) => void handleSubmit(e)}
+      style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}
+    >
+      <input
+        type="email"
+        placeholder="E-Mail (leer = entfernen)"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        style={{ ...inputStyle, flex: 1 }}
+      />
+      <button
+        type="submit"
+        disabled={isPending}
+        style={{ ...btnPrimary, opacity: isPending ? 0.5 : 1 }}
+      >
+        {isPending ? <Spinner size="h-3 w-3" /> : 'Speichern'}
+      </button>
+      <button type="button" onClick={onClose} style={btnSecondary}>
+        ✕
+      </button>
+    </form>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Haupt-Komponente
 // ---------------------------------------------------------------------------
 
@@ -319,6 +437,7 @@ export default function MembersPage() {
   const [includeInactive, setIncludeInactive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [resetId, setResetId] = useState<number | null>(null);
+  const [emailId, setEmailId] = useState<number | null>(null);
 
   const load = async (inactive: boolean) => {
     try {
@@ -338,7 +457,11 @@ export default function MembersPage() {
 
   async function handleUpdate(
     id: number,
-    data: { member_status?: MemberStatus; can_book_for_others?: boolean },
+    data: {
+      member_status?: MemberStatus;
+      can_book_for_others?: boolean;
+      is_wirtschaftskommission?: boolean;
+    },
   ) {
     try {
       const updated = await membersApi.update(id, data);
@@ -408,26 +531,34 @@ export default function MembersPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
-                {['Name', 'Kürzel', 'Rolle', 'Kategorie', 'Theke', 'Status', 'Aktionen'].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      style={{
-                        padding: '10px 16px',
-                        textAlign: 'left',
-                        fontFamily: 'var(--font-sans)',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: 'var(--tinte-3)',
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        borderBottom: '1px solid var(--line)',
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
+                {[
+                  'Name',
+                  'Kürzel',
+                  'E-Mail',
+                  'Rolle',
+                  'Kategorie',
+                  'Theke',
+                  'WK',
+                  'Status',
+                  'Aktionen',
+                ].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      padding: '10px 16px',
+                      textAlign: 'left',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: 'var(--tinte-3)',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      borderBottom: '1px solid var(--line)',
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -458,6 +589,20 @@ export default function MembersPage() {
                       }}
                     >
                       {m.username}
+                    </td>
+                    <td
+                      style={{
+                        padding: '10px 16px',
+                        color: m.email ? 'var(--tinte-2)' : 'var(--tinte-4)',
+                        fontFamily: 'var(--font-sans)',
+                        maxWidth: 220,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title={m.email ?? undefined}
+                    >
+                      {m.email ?? '–'}
                     </td>
                     <td
                       style={{
@@ -510,6 +655,31 @@ export default function MembersPage() {
                       </label>
                     </td>
                     <td style={{ padding: '10px 16px' }}>
+                      <label
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          cursor: 'pointer',
+                          fontFamily: 'var(--font-sans)',
+                          fontSize: 12,
+                          color: 'var(--tinte-3)',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={m.is_wirtschaftskommission === 1}
+                          onChange={(e) =>
+                            void handleUpdate(m.id, {
+                              is_wirtschaftskommission: e.target.checked,
+                            })
+                          }
+                          aria-label={`Wirtschaftskommission für ${m.display_name}`}
+                        />
+                        {m.is_wirtschaftskommission === 1 ? 'Ja' : 'Nein'}
+                      </label>
+                    </td>
+                    <td style={{ padding: '10px 16px' }}>
                       <span
                         style={{
                           display: 'inline-block',
@@ -530,7 +700,19 @@ export default function MembersPage() {
                     <td style={{ padding: '10px 16px' }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                         <button
-                          onClick={() => setResetId(resetId === m.id ? null : m.id)}
+                          onClick={() => {
+                            setEmailId(emailId === m.id ? null : m.id);
+                            setResetId(null);
+                          }}
+                          style={btnGhost}
+                        >
+                          E-Mail
+                        </button>
+                        <button
+                          onClick={() => {
+                            setResetId(resetId === m.id ? null : m.id);
+                            setEmailId(null);
+                          }}
                           style={btnGhost}
                         >
                           Losungswort
@@ -546,10 +728,29 @@ export default function MembersPage() {
                       </div>
                     </td>
                   </tr>
+                  {emailId === m.id && (
+                    <tr key={`${m.id}-email`}>
+                      <td
+                        colSpan={9}
+                        style={{ padding: '4px 16px 14px', borderTop: '1px solid var(--line)' }}
+                      >
+                        <EmailEditForm
+                          memberId={m.id}
+                          currentEmail={m.email}
+                          onSaved={(updated) =>
+                            setMembers((prev) =>
+                              prev.map((x) => (x.id === updated.id ? updated : x)),
+                            )
+                          }
+                          onClose={() => setEmailId(null)}
+                        />
+                      </td>
+                    </tr>
+                  )}
                   {resetId === m.id && (
                     <tr key={`${m.id}-reset`}>
                       <td
-                        colSpan={7}
+                        colSpan={9}
                         style={{ padding: '4px 16px 14px', borderTop: '1px solid var(--line)' }}
                       >
                         <ResetPasswordForm memberId={m.id} onClose={() => setResetId(null)} />

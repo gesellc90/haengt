@@ -6,6 +6,7 @@ import {
   allMembersReportQuerySchema,
   zeigerReportQuerySchema,
   allZeigerReportQuerySchema,
+  consumptionReportQuerySchema,
 } from '../schemas/reports.js';
 import type { AuthService } from '../services/AuthService.js';
 import type { ReportService } from '../services/ReportService.js';
@@ -13,12 +14,14 @@ import {
   generateCsv,
   generateZeigerCsv,
   generateAllZeigerCsv,
+  generateConsumptionCsv,
 } from '../formatters/csvFormatter.js';
 import {
   generatePdf,
   generateAllMembersPdf,
   generateZeigerPdf,
   generateAllZeigerPdf,
+  generateConsumptionPdf,
 } from '../formatters/pdfFormatter.js';
 
 // ---------------------------------------------------------------------------
@@ -132,6 +135,46 @@ export function createReportsRouter(
         return;
       }
       const buffer = await generateAllZeigerPdf(reports);
+      res
+        .status(200)
+        .setHeader('Content-Type', 'application/pdf')
+        .setHeader('Content-Disposition', `attachment; filename="${baseName}.pdf"`)
+        .send(buffer);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // GET /reports/consumption?from=&to=&format=csv|pdf
+  //
+  // Verbrauchs-Auswertung (Anzahl + Umsatz je Getränk, nach Kategorie
+  // gruppiert) über einen frei wählbaren Zeitraum. Berücksichtigt alle
+  // Buchungen (Personen- und Zeiger-Buchungen).
+  // -------------------------------------------------------------------------
+  router.get('/consumption', auth, admin, async (req, res, next) => {
+    const parsed = consumptionReportQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Ungültige Parameter', details: parsed.error.flatten() });
+      return;
+    }
+
+    try {
+      const { from, to, format } = parsed.data;
+      const report = reportService.calculateConsumption(from, to);
+      const baseName = `verbrauch_${from}_bis_${to}`;
+
+      if (format === 'csv') {
+        const buffer = generateConsumptionCsv(report);
+        res
+          .status(200)
+          .setHeader('Content-Type', 'text/csv; charset=utf-8')
+          .setHeader('Content-Disposition', `attachment; filename="${baseName}.csv"`)
+          .send(buffer);
+        return;
+      }
+
+      const buffer = await generateConsumptionPdf(report);
       res
         .status(200)
         .setHeader('Content-Type', 'application/pdf')

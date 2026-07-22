@@ -529,11 +529,11 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 
 ### PR 4 — Frontend: Admin-Bereich „System / Update“
 
-- [ ] Neuer Admin-Abschnitt/Reiter „System" (oder „Update"): zeigt **laufende Version**, **verfügbare Version** (mit „aktuell"/„Update verfügbar"-Badge), Zeitpunkt der letzten Prüfung und Ergebnis des letzten Updates.
-- [ ] Buttons **„Jetzt prüfen"** und **„Jetzt aktualisieren"** (mit Bestätigungsdialog + Hinweis, dass die App kurz neu startet); Polling der Status-Route, Fortschritts-/`in_progress`-Anzeige, Erfolgs-/Fehler-Toast.
-- [ ] `adminApi.getUpdateStatus()` / `requestUpdate()` / `checkUpdate()`; Zustände sauber behandeln (unknown/offline/failed).
-- [ ] Konsistent mit Hängt!-Tokens (Pergament, Eiche-Header, Eyebrow-Section-Title mit Korps-Rot-Linie) — kein neuer visueller Stil.
-- [ ] **Tests:** Vitest + RTL — Rendering „Update verfügbar" vs. „aktuell", Klick auf „Jetzt aktualisieren" ruft API + zeigt `in_progress`, Fehlerfall zeigt Hinweis.
+- [x] Neuer Admin-Reiter **„System"** (`/admin/system`, `SystemPage.tsx`): zeigt Badge mit dem aktuellen Ergebnis (u. a. „Aktuell"/„Update verfügbar"/„Noch kein Update-Lauf"), **laufende Version**, **verfügbare Version**, Zeitpunkt der letzten Prüfung inkl. Auslöser (automatisch/manuell).
+- [x] Buttons **„Jetzt prüfen"** und **„Jetzt aktualisieren"** (Bestätigungsdialog mit Hinweis auf den kurzen Neustart); solange `in_progress` true ist, pollt die Seite `GET /update/status` alle 4 s und zeigt bei Abschluss automatisch einen Erfolgs-/Fehler-Toast. Beide Buttons sind deaktiviert, während ein Lauf aktiv ist oder eine Anfrage unterwegs ist.
+- [x] `updateApi.getStatus()` / `requestUpdate()` / `requestCheck()` (`frontend/src/api/update.ts`); 409 `UPDATE_IN_PROGRESS` wird als verständliche Meldung angezeigt statt als Rohfehler.
+- [x] Konsistent mit Hängt!-Tokens (Pergament-Karte mit Korps-Rot-Topstreifen, Eyebrow-Section-Title, bestehende Button-/Badge-Farbpalette) — kein neuer visueller Stil, manuell im Browser gegen den laufenden Dev-Server geprüft (Screenshots: Status „unbekannt", „Update verfügbar", 409-Fehlertoast, Bestätigungsdialog).
+- [x] **Tests:** Vitest + RTL (`tests/SystemPage.test.tsx`, 7 Tests) — Rendering „Noch kein Update-Lauf" vs. Versionen/„Update verfügbar", „Jetzt prüfen" ruft die API, „Jetzt aktualisieren" fragt erst per `confirm()` und bricht bei Ablehnung ab, 409-Fehlerfall zeigt die verständliche Meldung, beide Buttons deaktiviert bei `in_progress`. Gesamte Frontend-Suite (102 Tests) grün.
 
 ### PR 5 — E2E & Doku
 

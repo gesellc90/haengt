@@ -9,6 +9,12 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- **M14 (PR 4) — Frontend: Admin-Bereich „System / Update"**
+  - Neuer Admin-Reiter „System" (`/admin/system`): zeigt den Update-Status (Badge, laufende/verfügbare Version, Zeitpunkt der letzten Prüfung inkl. Auslöser) und die Buttons „Jetzt prüfen"/„Jetzt aktualisieren".
+  - „Jetzt aktualisieren" fragt vorher eine Bestätigung ab (Hinweis auf den kurzen Neustart der App). Solange ein Update läuft, pollt die Seite den Status und zeigt bei Abschluss automatisch einen Erfolgs-/Fehler-Toast; ein bereits laufendes Update (409) wird als klare Meldung statt Rohfehler angezeigt.
+  - Neues API-Modul `updateApi` (`getStatus`/`requestUpdate`/`requestCheck`) und Typ `UpdateStatus` in `types/api.ts`.
+  - 7 neue Vitest/RTL-Tests (`SystemPage.test.tsx`); manuell im Browser gegen den laufenden Dev-Server verifiziert.
+
 - **M14 (PR 3) — Backend: Update-Status lesen & Update anstoßen**
   - `UpdateService`: liest `update-status.json` robust (fehlende/kaputte Datei oder unbekanntes `last_result` → `"unknown"`, wirft nie), schreibt die Marker-Datei `update-requested` atomar (Inhalt nur `"update"`/`"check"`) und wirft 409 `UPDATE_IN_PROGRESS`, wenn bereits ein Update läuft oder ein Marker offen ist.
   - Neue Routen `GET /api/v1/update/status`, `POST /api/v1/update` und `POST /api/v1/update/check` (alle Admin-only via `requireRole('admin')`). Kein Endpunkt löst selbst ein Update aus — sie schreiben nur die Marker-Datei, die der Pi-lokale `getraenke-update.path` beobachtet.

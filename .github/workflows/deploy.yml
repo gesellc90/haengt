@@ -83,7 +83,8 @@ jobs:
             package.json \
             package-lock.json \
             scripts/deploy-migrate.sh \
-            scripts/pi-release.sh
+            scripts/pi-release.sh \
+            scripts/pi-self-update.sh
           ls -lh "$NAME"
           echo "artifact-name=$NAME" >> "$GITHUB_OUTPUT"
 

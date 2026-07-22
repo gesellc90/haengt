@@ -332,4 +332,5 @@ Aufwand Variante A: ~50–80 Zeilen + Tests, eigener `feat(server)`-PR.
 
 - [`RASPBERRY-PI-SETUP.md`](./RASPBERRY-PI-SETUP.md) — Pi-Grundeinrichtung (OS-Flash, Hardening, Node 20, User/Verzeichnis-Layout, Cron-Backup).
 - [`RUNNER-SETUP.md`](./RUNNER-SETUP.md) — Registrierung des GitHub-Actions-Self-Hosted-Runners auf dem Pi.
+- [`AUTO-UPDATE.md`](./AUTO-UPDATE.md) — Automatisches App-Update alle zwei Wochen + manueller Admin-Anstoß (M14): Architektur, Privilege-Separation, Störungssuche.
 - [`TESTING.md`](./TESTING.md) — Test-Schichten, Playwright-E2E lokal ausführen, Trace-Viewer.

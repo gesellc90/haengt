@@ -9,8 +9,15 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- **M14 (PR 2) — Auto-Update-Helper, Timer & Path-Unit**
+  - `scripts/pi-self-update.sh`: fragt das neueste stabile GitHub-Release ab, vergleicht mit der aktiven Version, lädt bei Bedarf das (private, tokenauthentifizierte) Release-Asset und installiert es über `pi-release.sh`. Schreibt nach jedem Lauf `/var/lib/getraenke/update-status.json` (Version, Zeitstempel, Ergebnis, Auslöser). Modus („nur prüfen" vs. „aktualisieren") wird über den Inhalt einer Marker-Datei gesteuert, die konsumiert (gelöscht) wird; ohne Marker (Timer-Trigger) läuft ein voller Update-Lauf. `flock` verhindert parallele Läufe.
+  - `scripts/getraenke-update.service` (root, oneshot), `scripts/getraenke-update.timer` (grob zweiwöchentlich, `Persistent=true` für nachgeholte Läufe) und `scripts/getraenke-update.path` (beobachtet die Marker-Datei) — bilden zusammen die Privilege-Separation: der App-Prozess selbst bleibt unprivilegiert und schreibt nur die harmlose Marker-Datei; die eigentliche Installation läuft über eine separate, root-betriebene systemd-Infrastruktur.
+  - `scripts/update.env.example`: Konfigurationsvorlage für das Fine-Grained-GitHub-Token (`Contents: Read-only`, nur dieses Repo), `/etc/getraenke/update.env`, Mode 0600, nur für den root-Helper lesbar — nie im App-Prozess.
+  - `docs/AUTO-UPDATE.md` (neu): Architektur, Privilege-Separation, Status-Rückkanal, Störungssuche. `RASPBERRY-PI-SETUP.md` um Installationsschritt 10 ergänzt; `DEPLOYMENT.md` verlinkt.
+  - `deploy.yml`: `pi-self-update.sh` ist jetzt Teil des Release-Tarballs. `ci.yml`: `systemd-analyze verify` und `shellcheck` decken die neuen Units/Skripte ab.
+
 - **M14 (PR 1) — Pi-Release-Logik extrahiert & Release-Asset**
-  - `scripts/pi-release.sh`: kapselt die komplette Release-Installation auf dem Pi (Snapshot, DB-Backup, Entpacken, `npm ci --omit=dev`, Migrationen, atomarer Symlink-Swap, Service-Restart, Smoke-Test, automatischer Rollback bei Fehler nach dem Swap, Aufräumen alter Releases). Konfigurierbar über `RELEASES_DIR`, `CURRENT_LINK`, `DB_PATH`, `BACKUP_DIR`, `HEALTH_URL`, `KEEP_RELEASES`. Ersetzt die bisher inline in `deploy.yml` verteilten Steps 1:1 im Verhalten — ist als gemeinsame Grundlage für den Tag-Deploy **und** den künftigen Auto-Update-Helper (M14, weitere PRs) gedacht.
+  - `scripts/pi-release.sh`: kapselt die komplette Release-Installation auf dem Pi (Snapshot, DB-Backup, Entpacken, `npm ci --omit=dev`, Migrationen, atomarer Symlink-Swap, Service-Restart, Smoke-Test, automatischer Rollback bei Fehler nach dem Swap, Aufräumen alter Releases). Konfigurierbar über `RELEASES_DIR`, `CURRENT_LINK`, `DB_PATH`, `BACKUP_DIR`, `HEALTH_URL`, `KEEP_RELEASES`. Ersetzt die bisher inline in `deploy.yml` verteilten Steps 1:1 im Verhalten — ist als gemeinsame Grundlage für den Tag-Deploy **und** den Auto-Update-Helper gedacht.
   - `deploy.yml`: Pi-Job ruft nur noch `pi-release.sh` auf; Build-Job hängt den Release-Tarball zusätzlich als GitHub-Release-Asset ans Tag an (dauerhaft abrufbar, unabhängig von der 30-Tage-Actions-Artefakt-Retention).
   - `ci.yml`: neuer `shellcheck`-Schritt für `scripts/pi-release.sh`.
 

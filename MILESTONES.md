@@ -512,11 +512,11 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 
 ### PR 2 — Update-Helper, Timer & Path-Unit (Pi-seitig)
 
-- [ ] `scripts/pi-self-update.sh`: liest `/etc/getraenke/update.env`, fragt das neueste stabile Release-Tag über die GitHub-API ab, vergleicht mit der aktiven Version (Symlink-Ziel), lädt bei Bedarf das Release-Asset, ruft `pi-release.sh`, schreibt in **jedem** Fall `update-status.json` (Ergebnis: `up-to-date` | `success` | `failed`, Zeitstempel, Versionen). Unterstützt Modi `--check` (nur prüfen, keine Installation) und Voll-Update.
-- [ ] `scripts/getraenke-update.service` (oneshot), `scripts/getraenke-update.timer` (`OnCalendar` 2-wöchentlich, `Persistent=true`) und `scripts/getraenke-update.path` (beobachtet `/var/lib/getraenke/update-requested`, `Unit=getraenke-update.service`).
-- [ ] Marker-Handshake: Helper konsumiert (löscht) `update-requested` beim Start, setzt `in_progress` in der Status-Datei, räumt am Ende auf. Debounce gegen Doppel-Trigger.
-- [ ] `scripts/update.env.example` + Fine-Grained-Token-Anleitung (`contents:read`, nur dieses Repo).
-- [ ] **Tests:** `systemd-analyze verify` für Service/Timer/Path; Helper-Skript mit gemocktem `curl`/API gegen einen Fixture-Release-Response (neuer Tag → „würde updaten", gleicher Tag → `up-to-date`).
+- [x] `scripts/pi-self-update.sh`: liest `/etc/getraenke/update.env`, fragt das neueste stabile Release-Tag über die GitHub-API ab (`GET /repos/<owner>/<repo>/releases/latest`), vergleicht mit der aktiven Version (Symlink-Ziel), lädt bei Bedarf das private Release-Asset (authentifiziert über die API-`assets[].url`, nicht `browser_download_url`), ruft `pi-release.sh`, schreibt in **jedem** Fall `update-status.json` (Ergebnis: `up_to_date` | `update_available` | `in_progress` | `success` | `failed`, Zeitstempel, Versionen, Auslöser). Modus (nur prüfen vs. voll aktualisieren) wird über den Marker-Dateiinhalt gesteuert, nicht über einen CLI-Flag (siehe Marker-Handshake).
+- [x] `scripts/getraenke-update.service` (oneshot, läuft als root), `scripts/getraenke-update.timer` (`OnCalendar` grob 2-wöchentlich, `Persistent=true`) und `scripts/getraenke-update.path` (beobachtet `/var/lib/getraenke/update-requested`, `Unit=getraenke-update.service`).
+- [x] Marker-Handshake: Helper liest den Marker-Inhalt (`update`/`check`), konsumiert (löscht) ihn sofort, setzt `in_progress` in der Status-Datei vor dem Download, räumt danach auf. `flock` auf einer Lock-Datei verhindert parallele Läufe (Timer- und Admin-Trigger können sich sonst überschneiden).
+- [x] `scripts/update.env.example` + Fine-Grained-Token-Anleitung (`contents:read`, nur dieses Repo).
+- [x] **Tests:** `systemd-analyze verify` für Service/Timer/Path (lokal + `ci.yml`); Helper-Skript mit gestubbtem `curl` gegen Fixture-Responses manuell durchgetestet — Szenarien „bereits aktuell" (`up_to_date`), „Check-Marker mit neuerem Tag" (`update_available`, Marker korrekt konsumiert), „voller Update-Lauf inkl. Download + `pi-release.sh`" (inkl. eines erzwungenen Restart-Fehlers, der den automatischen Rollback in `pi-release.sh` korrekt auslöste und als `failed` protokolliert wurde) und „fehlende `update.env`" (Exit 1 mit klarer Fehlermeldung).
 
 ### PR 3 — Backend: Status lesen & Update anstoßen
 

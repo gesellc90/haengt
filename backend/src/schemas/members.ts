@@ -24,6 +24,7 @@ export const createMemberSchema = z.object({
   password: z.string().min(8, 'Mindestens 8 Zeichen').max(72, 'Maximal 72 Zeichen (bcrypt-Limit)'),
   role: z.enum(['admin', 'member']).default('member'),
   member_status: memberStatusSchema.default('aktiv'),
+  is_wirtschaftskommission: z.boolean().optional(),
   email: emailSchema.optional(),
 });
 
@@ -49,6 +50,7 @@ export const updateMemberSchema = z
     role: z.enum(['admin', 'member']).optional(),
     member_status: memberStatusSchema.optional(),
     can_book_for_others: z.boolean().optional(),
+    is_wirtschaftskommission: z.boolean().optional(),
     email: emailSchema.nullable().optional(),
   })
   .strict()

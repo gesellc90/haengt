@@ -12,13 +12,16 @@ export const drinksApi = {
     return apiFetch<DrinkRow[]>('/drinks');
   },
 
-  /** Admin: Getränk anlegen */
-  create(data: { name: string; price_cents: number }): Promise<DrinkRow> {
+  /** Admin: Getränk anlegen (Kategorie ist Pflicht) */
+  create(data: { name: string; category_id: number; price_cents: number }): Promise<DrinkRow> {
     return apiFetch<DrinkRow>('/drinks', { method: 'POST', body: data });
   },
 
   /** Admin: Getränk aktualisieren */
-  update(id: number, data: { name?: string; is_available?: 0 | 1 }): Promise<DrinkRow> {
+  update(
+    id: number,
+    data: { name?: string; is_available?: 0 | 1; category_id?: number },
+  ): Promise<DrinkRow> {
     return apiFetch<DrinkRow>(`/drinks/${id}`, { method: 'PATCH', body: data });
   },
 

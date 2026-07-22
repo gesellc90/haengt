@@ -76,3 +76,20 @@ export const allZeigerReportQuerySchema = z.object({
 });
 
 export type AllZeigerReportQuery = z.infer<typeof allZeigerReportQuerySchema>;
+
+// ---------------------------------------------------------------------------
+// GET /reports/consumption?from=&to=&format=
+//
+// Verbrauchs-Auswertung über einen frei wählbaren Zeitraum. `from`/`to` sind
+// Pflicht (der Report ist als Zeitraum-Auswertung definiert).
+// ---------------------------------------------------------------------------
+
+const requiredIsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Muss im Format YYYY-MM-DD sein');
+
+export const consumptionReportQuerySchema = z.object({
+  from: requiredIsoDate,
+  to: requiredIsoDate,
+  format: z.enum(['csv', 'pdf']),
+});
+
+export type ConsumptionReportQuery = z.infer<typeof consumptionReportQuerySchema>;

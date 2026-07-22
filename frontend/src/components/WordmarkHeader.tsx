@@ -1,11 +1,17 @@
 interface WordmarkHeaderProps {
-  /** 1–3 Buchstaben für den Avatar-Kreis, z. B. „CK" */
+  /** 1–3 Buchstaben für den Avatar-Kreis, z. B. „CK" (Fallback ohne Bild) */
   avatarInitials?: string;
+  /** Relativer Dateiname des Profilbilds (unter /avatars/…); überschreibt die Initialen */
+  avatarPath?: string | null;
   /** Callback für Avatar-Klick (z. B. Profil öffnen) */
   onAvatarClick?: () => void;
 }
 
-export default function WordmarkHeader({ avatarInitials, onAvatarClick }: WordmarkHeaderProps) {
+export default function WordmarkHeader({
+  avatarInitials,
+  avatarPath,
+  onAvatarClick,
+}: WordmarkHeaderProps) {
   return (
     <header
       style={{
@@ -41,7 +47,7 @@ export default function WordmarkHeader({ avatarInitials, onAvatarClick }: Wordma
       </span>
 
       {/* Avatar-Kreis — 44×44px Touch-Target, visuell 32px */}
-      {avatarInitials && (
+      {(avatarInitials || avatarPath) && (
         <button
           onClick={onAvatarClick}
           aria-label="Profil öffnen"
@@ -60,28 +66,48 @@ export default function WordmarkHeader({ avatarInitials, onAvatarClick }: Wordma
             /* Kein outline: none — globales :focus-visible greift */
           }}
         >
-          {/* Visueller Kreis (32px) innerhalb des größeren Hit-Bereichs */}
-          <span
-            aria-hidden="true"
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: 'var(--korps-rot)',
-              color: 'var(--kreide)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 700,
-              fontSize: 12,
-              border: '1px solid var(--messing)',
-              pointerEvents: 'none',
-              userSelect: 'none',
-            }}
-          >
-            {avatarInitials}
-          </span>
+          {/* Visueller Kreis (32px) innerhalb des größeren Hit-Bereichs:
+              echtes Profilbild, sonst Initialen-Fallback. */}
+          {avatarPath ? (
+            <img
+              aria-hidden="true"
+              src={`/avatars/${avatarPath}`}
+              alt=""
+              width={32}
+              height={32}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '1px solid var(--messing)',
+                pointerEvents: 'none',
+                userSelect: 'none',
+              }}
+            />
+          ) : (
+            <span
+              aria-hidden="true"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: 'var(--korps-rot)',
+                color: 'var(--kreide)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'var(--font-display)',
+                fontWeight: 700,
+                fontSize: 12,
+                border: '1px solid var(--messing)',
+                pointerEvents: 'none',
+                userSelect: 'none',
+              }}
+            >
+              {avatarInitials}
+            </span>
+          )}
         </button>
       )}
     </header>

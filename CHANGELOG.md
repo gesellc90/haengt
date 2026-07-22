@@ -9,6 +9,13 @@ und das Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- **M14 (PR 3) — Backend: Update-Status lesen & Update anstoßen**
+  - `UpdateService`: liest `update-status.json` robust (fehlende/kaputte Datei oder unbekanntes `last_result` → `"unknown"`, wirft nie), schreibt die Marker-Datei `update-requested` atomar (Inhalt nur `"update"`/`"check"`) und wirft 409 `UPDATE_IN_PROGRESS`, wenn bereits ein Update läuft oder ein Marker offen ist.
+  - Neue Routen `GET /api/v1/update/status`, `POST /api/v1/update` und `POST /api/v1/update/check` (alle Admin-only via `requireRole('admin')`). Kein Endpunkt löst selbst ein Update aus — sie schreiben nur die Marker-Datei, die der Pi-lokale `getraenke-update.path` beobachtet.
+  - Neue ENV-Variable `UPDATE_STATE_DIR` (Dev: `./data`, Prod: `/var/lib/getraenke`), muss mit dem StateDirectory des Auto-Update-Helpers übereinstimmen.
+  - Audit-Log-Event `update_requested` (`actor_id`, `meta.mode`).
+  - 9 neue Unit-Tests (`UpdateService`) + 11 neue Integrationstests (`update`-Router); gesamte Backend-Suite (345 Tests) grün.
+
 - **M14 (PR 2) — Auto-Update-Helper, Timer & Path-Unit**
   - `scripts/pi-self-update.sh`: fragt das neueste stabile GitHub-Release ab, vergleicht mit der aktiven Version, lädt bei Bedarf das (private, tokenauthentifizierte) Release-Asset und installiert es über `pi-release.sh`. Schreibt nach jedem Lauf `/var/lib/getraenke/update-status.json` (Version, Zeitstempel, Ergebnis, Auslöser). Modus („nur prüfen" vs. „aktualisieren") wird über den Inhalt einer Marker-Datei gesteuert, die konsumiert (gelöscht) wird; ohne Marker (Timer-Trigger) läuft ein voller Update-Lauf. `flock` verhindert parallele Läufe.
   - `scripts/getraenke-update.service` (root, oneshot), `scripts/getraenke-update.timer` (grob zweiwöchentlich, `Persistent=true` für nachgeholte Läufe) und `scripts/getraenke-update.path` (beobachtet die Marker-Datei) — bilden zusammen die Privilege-Separation: der App-Prozess selbst bleibt unprivilegiert und schreibt nur die harmlose Marker-Datei; die eigentliche Installation läuft über eine separate, root-betriebene systemd-Infrastruktur.

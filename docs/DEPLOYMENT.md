@@ -73,6 +73,11 @@ DB_PATH=/var/lib/getraenke/getraenke.db
 # schlägt der Upload wegen ProtectSystem=strict fehl.
 AVATAR_DIR=/var/lib/getraenke/avatars
 
+# Rückkanal zum Auto-Update-Helper (M14): Statusdatei lesen, Marker-Datei
+# schreiben. MUSS mit dem StateDirectory des Helpers übereinstimmen, sonst
+# sieht die App nie einen Status und der Helper nie einen Marker.
+UPDATE_STATE_DIR=/var/lib/getraenke
+
 # JWT-Secret: mindestens 32 Zeichen, kryptografisch zufällig.
 # Erzeugen z. B. mit:  openssl rand -hex 48
 JWT_SECRET=<HIER 32+ zufällige Zeichen einsetzen, NIE committen!>
@@ -89,6 +94,7 @@ PORT=3001
 LOG_LEVEL=info
 DB_PATH=/var/lib/getraenke/getraenke.db
 AVATAR_DIR=/var/lib/getraenke/avatars
+UPDATE_STATE_DIR=/var/lib/getraenke
 JWT_SECRET=<bitte ersetzen>
 JWT_EXPIRES_IN=8h
 EOF

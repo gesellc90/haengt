@@ -2,22 +2,22 @@
 
 Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Jeder Meilenstein liefert einen demonstrierbaren Mehrwert und kann in 3–7 Tagen abgeschlossen werden.
 
-| #   | Titel                                         | Dauer (geschätzt) | Abhängigkeiten              |
-| --- | --------------------------------------------- | ----------------- | --------------------------- |
-| M1  | Projekt-Setup & Tooling                       | 2–3 Tage          | —                           |
-| M2  | Datenbankschicht & Migrationen                | 2–3 Tage          | M1                          |
-| M3  | Authentifizierung & Sicherheit                | 3–4 Tage          | M2                          |
-| M4  | API / Backend-Logik                           | 5–7 Tage          | M3                          |
-| M5  | Frontend (React)                              | 5–7 Tage          | M4 (parallel ab M3 möglich) |
-| M6  | Reporting & Export (PDF/CSV)                  | 3–4 Tage          | M4                          |
-| M7  | CI/CD, Deployment & E2E-Tests                 | 3–4 Tage          | M5, M6                      |
-| M8  | Design System — Hängt!-Marke                  | 3–5 Tage          | M5                          |
-| M9  | Allgemein-Konto & Mitglieder-Kategorien       | 3–5 Tage          | M4, M5                      |
-| M10 | Erweitertes Mitglieder-Profil (Bild & E-Mail) | 3–4 Tage          | M3, M5, M7                  |
-| M11 | Zeiger (Couleurbesuch & Verbindungsveranst.)  | 4–6 Tage          | M4, M5, M9                  |
-| M12 | Getränke-Kategorien & Verbrauchs-Auswertung   | 3–4 Tage          | M4, M5, M6                  |
-| M13 | Wirtschaftskommission & Konten-Streichung     | 2–3 Tage          | M4, M5, M9                  |
-| M14 | Automatisches App-Update (2-Wochen-Timer + Admin-Button) | 4–6 Tage | M3, M5, M7                  |
+| #   | Titel                                                    | Dauer (geschätzt) | Abhängigkeiten              |
+| --- | -------------------------------------------------------- | ----------------- | --------------------------- |
+| M1  | Projekt-Setup & Tooling                                  | 2–3 Tage          | —                           |
+| M2  | Datenbankschicht & Migrationen                           | 2–3 Tage          | M1                          |
+| M3  | Authentifizierung & Sicherheit                           | 3–4 Tage          | M2                          |
+| M4  | API / Backend-Logik                                      | 5–7 Tage          | M3                          |
+| M5  | Frontend (React)                                         | 5–7 Tage          | M4 (parallel ab M3 möglich) |
+| M6  | Reporting & Export (PDF/CSV)                             | 3–4 Tage          | M4                          |
+| M7  | CI/CD, Deployment & E2E-Tests                            | 3–4 Tage          | M5, M6                      |
+| M8  | Design System — Hängt!-Marke                             | 3–5 Tage          | M5                          |
+| M9  | Allgemein-Konto & Mitglieder-Kategorien                  | 3–5 Tage          | M4, M5                      |
+| M10 | Erweitertes Mitglieder-Profil (Bild & E-Mail)            | 3–4 Tage          | M3, M5, M7                  |
+| M11 | Zeiger (Couleurbesuch & Verbindungsveranst.)             | 4–6 Tage          | M4, M5, M9                  |
+| M12 | Getränke-Kategorien & Verbrauchs-Auswertung              | 3–4 Tage          | M4, M5, M6                  |
+| M13 | Wirtschaftskommission & Konten-Streichung                | 2–3 Tage          | M4, M5, M9                  |
+| M14 | Automatisches App-Update (2-Wochen-Timer + Admin-Button) | 4–6 Tage          | M3, M5, M7                  |
 
 ---
 
@@ -520,12 +520,12 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 
 ### PR 3 — Backend: Status lesen & Update anstoßen
 
-- [ ] `UpdateService`: liest `update-status.json` (robust bei fehlender/kaputter Datei → `unknown`), schreibt Marker `update-requested` (atomar, kein Payload/keine Zielversion), Debounce wenn `in_progress`.
-- [ ] Routen (Admin-only, `requireRole('admin')`): `GET /admin/update/status` (aktuelle Version, verfügbare Version, letzte Prüfung, letztes Ergebnis, `in_progress`) und `POST /admin/update` (setzt Marker → 202 `ACCEPTED`; 409 wenn bereits `in_progress`). Optional `POST /admin/update/check` (nur `--check`-Marker).
-- [ ] Konfiguration: ENV `UPDATE_STATE_DIR` (Dev: `./data`, Prod: `/var/lib/getraenke`), Pfade für Marker/Status daraus abgeleitet.
-- [ ] Audit-Log: `update_requested` mit `actor_id` (welcher Admin, wann).
-- [ ] `/api/v1/health` optional um `version` (aus Symlink/`package.json`) ergänzen.
-- [ ] **Tests:** Supertest — `GET /admin/update/status` (200 als Admin, 403 als Member/WK, Verhalten bei fehlender Status-Datei), `POST /admin/update` (202, 409 bei laufendem Update, 403 ohne Admin, Marker wird geschrieben), Audit-Eintrag; Vitest — `UpdateService` (Status-Parsing, Marker-Schreiben, Debounce) mit gemocktem FS.
+- [x] `UpdateService`: liest `update-status.json` (robust bei fehlender/kaputter Datei/unbekanntem `last_result` → `unknown`), schreibt Marker `update-requested` (atomar via tmp+rename, Inhalt nur `"update"`/`"check"` — kein Payload, keine Zielversion), 409 (`UPDATE_IN_PROGRESS`) wenn `in_progress` oder bereits ein Marker offen ist.
+- [x] Routen (Admin-only, `requireRole('admin')`, gemountet unter `/api/v1/update` statt `/api/v1/admin/update` — folgt der bestehenden flachen Ressourcen-Konvention des Repos, z. B. `/api/v1/reports`): `GET /update/status` (aktuelle Version, verfügbare Version, letzte Prüfung, letztes Ergebnis, `in_progress`) und `POST /update` (setzt Marker → 202; 409 wenn bereits offen/`in_progress`). `POST /update/check` (Marker-Inhalt `"check"`) umgesetzt statt eines optionalen CLI-Flags — passt zum Marker-Design aus PR 2.
+- [x] Konfiguration: ENV `UPDATE_STATE_DIR` (Dev: `./data`, Prod: `/var/lib/getraenke`, muss mit dem StateDirectory des Pi-Helpers übereinstimmen), Pfade für Marker/Status daraus abgeleitet.
+- [x] Audit-Log: `update_requested` mit `actor_id` und `meta.mode` (`update`/`check`).
+- [ ] `/api/v1/health` optional um `version` ergänzen — zurückgestellt (optional laut Plan, kein Bedarf für den Admin-Bereich, der `GET /update/status.current_version` ohnehin liefert).
+- [x] **Tests:** Supertest (`tests/integration/update.test.ts`) — `GET /update/status` (200 Admin inkl. „unknown" ohne Datei, 403 Member, 401 ohne Token), `POST /update`/`POST /update/check` (202, Marker-Inhalt geprüft, 409 bei offenem Marker, 409 bei `in_progress`-Status, 403 Member); Vitest (`tests/unit/services/UpdateService.test.ts`, 9 Tests) — Status-Parsing (fehlende/kaputte/unbekannte Datei), Marker-Schreiben, Debounce, Audit-Log-Eintrag, Auto-Anlage des State-Verzeichnisses. Gesamte Backend-Suite (345 Tests) grün, Coverage-Ratchet weiterhin erfüllt.
 
 ### PR 4 — Frontend: Admin-Bereich „System / Update“
 

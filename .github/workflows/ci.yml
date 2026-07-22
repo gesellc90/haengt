@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Node ${{ env.NODE_VERSION }} einrichten
         uses: actions/setup-node@v6
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: systemd-analyze verify (Service-Unit)
         # Filtert die Warnungen über andere System-Units der ubuntu-Runner-Umgebung
@@ -100,7 +100,7 @@ jobs:
     needs: lint
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Node ${{ env.NODE_VERSION }} einrichten
         uses: actions/setup-node@v6
@@ -124,7 +124,7 @@ jobs:
     needs: lint
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Node ${{ env.NODE_VERSION }} einrichten
         uses: actions/setup-node@v6
@@ -159,7 +159,7 @@ jobs:
       JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-dummy-secret-not-for-production' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Node ${{ env.NODE_VERSION }} einrichten
         uses: actions/setup-node@v6
@@ -185,7 +185,7 @@ jobs:
       NODE_ENV: test
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Node ${{ env.NODE_VERSION }} einrichten
         uses: actions/setup-node@v6
@@ -211,7 +211,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Node ${{ env.NODE_VERSION }} einrichten
         uses: actions/setup-node@v6

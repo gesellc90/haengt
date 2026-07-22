@@ -7,8 +7,10 @@ import { useToast } from '../contexts/ToastContext.js';
 import Spinner from '../components/Spinner.js';
 import SaldoCard from '../components/SaldoCard.js';
 import SortenButton, { formatCents } from '../components/SortenButton.js';
+import { groupDrinksByCategory } from '../utils/groupByCategory.js';
 import SectionTitle from '../components/SectionTitle.js';
 import StrichHistory from '../components/StrichHistory.js';
+import { isMemberStruck } from '../types/api.js';
 import type {
   BookingRow,
   DrinkWithCurrentPrice,
@@ -35,10 +37,19 @@ const CATEGORY_LABEL: Record<MemberStatus, string> = {
 
 function MemberTile({ member, onSelect }: { member: PublicMember; onSelect(): void }) {
   const [pressed, setPressed] = useState(false);
+  const struck = isMemberStruck(member);
+  const struckUntil =
+    struck && member.struck_until
+      ? new Date(member.struck_until).toLocaleDateString('de-DE')
+      : null;
+
   return (
     <button
-      onClick={onSelect}
-      onMouseDown={() => setPressed(true)}
+      onClick={struck ? undefined : onSelect}
+      disabled={struck}
+      aria-disabled={struck}
+      title={struckUntil ? `Gestrichen bis ${struckUntil}` : undefined}
+      onMouseDown={() => !struck && setPressed(true)}
       onMouseUp={() => setPressed(false)}
       onMouseLeave={() => setPressed(false)}
       style={{
@@ -49,17 +60,34 @@ function MemberTile({ member, onSelect }: { member: PublicMember; onSelect(): vo
         border: '1px solid var(--line)',
         background: 'var(--bg-card)',
         boxShadow: 'var(--sh-1)',
-        cursor: 'pointer',
+        cursor: struck ? 'not-allowed' : 'pointer',
         textAlign: 'left',
         fontFamily: 'var(--font-sans)',
         fontSize: 16,
         fontWeight: 700,
-        color: 'var(--tinte)',
+        color: struck ? 'var(--tinte-4)' : 'var(--tinte)',
+        opacity: struck ? 0.5 : 1,
         transition: 'transform 150ms var(--ease-stempel)',
         transform: pressed ? 'scale(.985)' : 'none',
       }}
     >
-      {member.display_name}
+      <span style={{ textDecoration: struck ? 'line-through' : 'none' }}>
+        {member.display_name}
+      </span>
+      {struckUntil && (
+        <span
+          style={{
+            display: 'block',
+            marginTop: 3,
+            fontSize: 11,
+            fontWeight: 600,
+            textDecoration: 'none',
+            color: 'var(--korps-rot)',
+          }}
+        >
+          gestrichen bis {struckUntil}
+        </span>
+      )}
     </button>
   );
 }
@@ -287,19 +315,38 @@ function MemberBookingView({ member, onDone }: { member: PublicMember; onDone():
             Keine Getränke verfügbar.
           </p>
         ) : (
-          <div
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}
-            className="sm:grid-cols-3"
-          >
-            {drinks.map((drink) => (
-              <SortenButton
-                key={drink.id}
-                name={drink.name}
-                priceCents={drink.current_price_cents ?? 0}
-                onClick={() => void handleBook(drink)}
-                disabled={bookingDrinkId !== null}
-                isLoading={bookingDrinkId === drink.id}
-              />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {groupDrinksByCategory(drinks).map((group) => (
+              <div key={group.category_id}>
+                <h3
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: 'var(--tinte-3)',
+                    margin: '0 0 8px',
+                  }}
+                >
+                  {group.category_name}
+                </h3>
+                <div
+                  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}
+                  className="sm:grid-cols-3"
+                >
+                  {group.drinks.map((drink) => (
+                    <SortenButton
+                      key={drink.id}
+                      name={drink.name}
+                      priceCents={drink.current_price_cents ?? 0}
+                      onClick={() => void handleBook(drink)}
+                      disabled={bookingDrinkId !== null}
+                      isLoading={bookingDrinkId === drink.id}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}

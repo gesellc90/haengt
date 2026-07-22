@@ -1,4 +1,8 @@
-import type { BookingsRepo, BookingWithDrinkName } from '../db/repos/BookingsRepo.js';
+import type {
+  BookingsRepo,
+  BookingWithDrinkName,
+  ConsumptionEntry,
+} from '../db/repos/BookingsRepo.js';
 import type { MembersRepo } from '../db/repos/MembersRepo.js';
 import type { ZeigerRepo } from '../db/repos/ZeigerRepo.js';
 import type { VerbindungenRepo } from '../db/repos/VerbindungenRepo.js';
@@ -39,6 +43,34 @@ export interface MonthlyReport {
   entries: BookingWithDrinkName[];
   /** Aggregiert pro Getränk, alphabetisch sortiert */
   summary: DrinkSummary[];
+  grand_total_cents: number;
+}
+
+/** Ein Getränk innerhalb einer Kategorie in der Verbrauchs-Auswertung. */
+export interface ConsumptionDrinkSummary {
+  drink_id: number;
+  drink_name: string;
+  count: number;
+  total_cents: number;
+}
+
+/** Eine Kategorie-Gruppe mit Zwischensummen in der Verbrauchs-Auswertung. */
+export interface ConsumptionCategoryGroup {
+  category_id: number;
+  category_name: string;
+  sort_order: number;
+  drinks: ConsumptionDrinkSummary[];
+  count: number;
+  total_cents: number;
+}
+
+export interface ConsumptionReport {
+  /** Zeitraumgrenzen (YYYY-MM-DD, inklusiv). */
+  from: string;
+  to: string;
+  /** Kategorien in Anzeige-Reihenfolge, jeweils mit Getränke-Aufstellung. */
+  groups: ConsumptionCategoryGroup[];
+  total_count: number;
   grand_total_cents: number;
 }
 
@@ -111,6 +143,83 @@ export function monthBounds(year: number, month: number): { from: string; to: st
     from: monthStartUtc(year, month),
     to: monthStartUtc(nextYear, nextMonth),
   };
+}
+
+/**
+ * Liefert den UTC-Zeitpunkt lokaler Mitternacht (00:00) eines Kalendertags in
+ * `REPORT_TZ`. Analog zu monthStartUtc, aber für einen beliebigen Tag.
+ */
+function dayStartUtc(year: number, month: number, day: number): string {
+  const naiveUtc = Date.UTC(year, month - 1, day, 0, 0, 0);
+  const offset1 = tzOffsetMs(new Date(naiveUtc), REPORT_TZ);
+  let utc = naiveUtc - offset1;
+  const offset2 = tzOffsetMs(new Date(utc), REPORT_TZ);
+  if (offset2 !== offset1) utc = naiveUtc - offset2;
+  return new Date(utc).toISOString();
+}
+
+/**
+ * Berechnet den halboffenen UTC-Zeitraum [from, to) für einen inklusiven
+ * Datumsbereich (YYYY-MM-DD) in der Vereinszeitzone. Das Ende ist der Beginn
+ * des Folgetags von `toDate`, damit der letzte Tag vollständig enthalten ist.
+ */
+export function dateRangeBounds(fromDate: string, toDate: string): { from: string; to: string } {
+  const [fy, fm, fd] = fromDate.split('-').map(Number) as [number, number, number];
+  const [ty, tm, td] = toDate.split('-').map(Number) as [number, number, number];
+  // Folgetag von toDate (UTC-Kalenderarithmetik reicht für die Tagesgrenze).
+  const next = new Date(Date.UTC(ty, tm - 1, td + 1));
+  return {
+    from: dayStartUtc(fy, fm, fd),
+    to: dayStartUtc(next.getUTCFullYear(), next.getUTCMonth() + 1, next.getUTCDate()),
+  };
+}
+
+/** Aggregiert Verbrauchs-Einzelbuchungen zu nach Kategorie gruppierten Summen. */
+function buildConsumptionGroups(entries: ConsumptionEntry[]): ConsumptionCategoryGroup[] {
+  const groups = new Map<number, ConsumptionCategoryGroup>();
+  const drinkMaps = new Map<number, Map<number, ConsumptionDrinkSummary>>();
+
+  for (const e of entries) {
+    let group = groups.get(e.category_id);
+    if (!group) {
+      group = {
+        category_id: e.category_id,
+        category_name: e.category_name,
+        sort_order: e.category_sort_order,
+        drinks: [],
+        count: 0,
+        total_cents: 0,
+      };
+      groups.set(e.category_id, group);
+      drinkMaps.set(e.category_id, new Map());
+    }
+    group.count++;
+    group.total_cents += e.price_cents;
+
+    const drinkMap = drinkMaps.get(e.category_id)!;
+    const drink = drinkMap.get(e.drink_id);
+    if (drink) {
+      drink.count++;
+      drink.total_cents += e.price_cents;
+    } else {
+      drinkMap.set(e.drink_id, {
+        drink_id: e.drink_id,
+        drink_name: e.drink_name,
+        count: 1,
+        total_cents: e.price_cents,
+      });
+    }
+  }
+
+  const result = [...groups.values()];
+  for (const group of result) {
+    group.drinks = [...drinkMaps.get(group.category_id)!.values()].sort((a, b) =>
+      a.drink_name.localeCompare(b.drink_name, 'de'),
+    );
+  }
+  return result.sort(
+    (a, b) => a.sort_order - b.sort_order || a.category_name.localeCompare(b.category_name, 'de'),
+  );
 }
 
 function buildSummary(entries: BookingWithDrinkName[]): DrinkSummary[] {
@@ -188,6 +297,31 @@ export class ReportService {
       const entries = this.bookings.findWithDrinkName(m.id, from, to);
       return toReport(m.id, m.display_name, year, month, entries);
     });
+  }
+
+  /**
+   * Verbrauchs-Auswertung: Anzahl und Umsatz je Getränk in einem frei wählbaren
+   * Zeitraum, gruppiert nach Kategorie (in Anzeige-Reihenfolge). Berücksichtigt
+   * ALLE nicht-stornierten Buchungen – Personen- und Zeiger-Buchungen.
+   *
+   * `fromDate`/`toDate` sind inklusive Kalendertage (YYYY-MM-DD) in Vereinszeit.
+   */
+  calculateConsumption(fromDate: string, toDate: string): ConsumptionReport {
+    if (fromDate > toDate) {
+      throw new AppError('„Von" darf nicht nach „Bis" liegen', 400, 'INVALID_RANGE');
+    }
+
+    const { from, to } = dateRangeBounds(fromDate, toDate);
+    const entries = this.bookings.findConsumption(from, to);
+    const groups = buildConsumptionGroups(entries);
+
+    return {
+      from: fromDate,
+      to: toDate,
+      groups,
+      total_count: groups.reduce((acc, g) => acc + g.count, 0),
+      grand_total_cents: groups.reduce((acc, g) => acc + g.total_cents, 0),
+    };
   }
 
   /**

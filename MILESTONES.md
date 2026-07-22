@@ -15,6 +15,8 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 | M9  | Allgemein-Konto & Mitglieder-Kategorien       | 3–5 Tage          | M4, M5                      |
 | M10 | Erweitertes Mitglieder-Profil (Bild & E-Mail) | 3–4 Tage          | M3, M5, M7                  |
 | M11 | Zeiger (Couleurbesuch & Verbindungsveranst.)  | 4–6 Tage          | M4, M5, M9                  |
+| M12 | Getränke-Kategorien & Verbrauchs-Auswertung   | 3–4 Tage          | M4, M5, M6                  |
+| M13 | Wirtschaftskommission & Konten-Streichung     | 2–3 Tage          | M4, M5, M9                  |
 
 ---
 
@@ -247,11 +249,11 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 
 ### Datenbank & Backend
 
-- [ ] Migration 007: Spalte `member_status TEXT NOT NULL DEFAULT 'aktiv' CHECK (member_status IN ('aktiv','inaktiv','alter_herr','freund'))` an `members`
-- [ ] Migration 007: Spalte `can_book_for_others INTEGER NOT NULL DEFAULT 0 CHECK (can_book_for_others IN (0,1))` an `members`
-- [ ] Seed: „Allgemein"-Konto anlegen (`username='allgemein'`, `display_name='Allgemein'`, `role='member'`, `can_book_for_others=1`; Passwort wird von einem Admin gesetzt)
-- [ ] `MembersRepo`: neue Felder lesen/schreiben; `findBookable()` — alle bebuchbaren Mitglieder, gruppierbar nach `member_status` (Allgemein-Konto + Admins ausgenommen)
-- [ ] Zod-Schemas: `member_status` in Create-/Update-Member-Schema; `can_book_for_others` nur über Admin-Update setzbar
+- [x] Migration 007: Spalte `member_status TEXT NOT NULL DEFAULT 'aktiv' CHECK (member_status IN ('aktiv','inaktiv','alter_herr','freund'))` an `members`
+- [x] Migration 007: Spalte `can_book_for_others INTEGER NOT NULL DEFAULT 0 CHECK (can_book_for_others IN (0,1))` an `members`
+- [x] Seed: „Allgemein"-Konto anlegen (`username='allgemein'`, `display_name='Allgemein'`, `role='member'`, `can_book_for_others=1`; Passwort wird von einem Admin gesetzt)
+- [x] `MembersRepo`: neue Felder lesen/schreiben; `findBookable()` — alle bebuchbaren Mitglieder, gruppierbar nach `member_status` (Allgemein-Konto + Admins ausgenommen)
+- [x] Zod-Schemas: `member_status` in Create-/Update-Member-Schema; `can_book_for_others` nur über Admin-Update setzbar
 - [x] `POST /bookings` erweitern: optionales `member_id` im Body — wenn gesetzt, nur erlaubt wenn Requester `can_book_for_others=1` (sonst 403 `FORBIDDEN`); ohne `member_id` weiterhin Buchung für sich selbst
 - [x] Buchungen eines bestimmten Mitglieds für den Theken-Screen ladbar machen (`GET /bookings/member/:id`; Allgemein-Konto darf fremde Buchungen lesen, beschränkt auf `member_id`-Filter)
 - [x] `BookingService.void`: Konten mit `can_book_for_others` dürfen die von ihnen für andere angelegten Buchungen innerhalb des 5-Minuten-Fensters stornieren (über neue Spalte `booked_by_id`, Migration 008)
@@ -301,7 +303,7 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 - [x] Zod-Schemas: E-Mail-Format-Validierung (optional, trim, lowercase) im Create-/Update-Member-Schema **und** im neuen Self-Service-Schema
 - [x] **Self-Service-Endpunkt** `PATCH /auth/me`: eingeloggtes Mitglied ändert eigene `email` (Konflikt → 409 `EMAIL_TAKEN`); Audit-Log-Eintrag
 - [x] **Avatar-Upload** `POST /auth/me/avatar` (multipart, `multer`, 5 MB-Limit): Bild via `sharp` auf 256×256 WebP normalisieren, unter `AVATAR_DIR` speichern; `DELETE /auth/me/avatar` entfernt das Bild
-- [ ] Admin-Pendants: `PATCH /members/:id` akzeptiert zusätzlich `email`; Avatar-Verwaltung für beliebige Mitglieder (`POST/DELETE /members/:id/avatar`) _(verschoben auf späteren PR)_
+- [x] Admin-Pendants: `PATCH /members/:id` akzeptiert zusätzlich `email`; Avatar-Verwaltung für beliebige Mitglieder (`POST/DELETE /members/:id/avatar`)
 - [x] **Statische Auslieferung** der Avatare (`GET /avatars/:file` via `express.static`)
 - [x] Konfiguration: ENV-Variable `AVATAR_DIR` (Dev: `./data/avatars`, Prod: `/var/lib/getraenke/avatars`)
 - [x] **Tests:** Supertest — `PATCH /auth/me` (200, E-Mail-Konflikt 409, 400 leerer Body, 401), Avatar-Upload (200, 400 keine Datei, 401), Avatar-Delete (200, idempotent, 401); Vitest — Repo-Eindeutigkeit
@@ -310,15 +312,15 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 
 - [x] `PublicMember`-Typ + API-Client um `email` und `avatar_path` erweitert; `apiUpload()` für Multipart
 - [x] `ProfilePage`: E-Mail anzeigen und bearbeiten, Profilbild hochladen/entfernen, Avatar-Kreis mit Initialen-Fallback
-- [ ] Echtes Profilbild im `Layout`/`WordmarkHeader` _(verschoben auf späteren PR)_
-- [ ] Admin `MembersPage`: E-Mail-Spalte/Editor _(verschoben auf späteren PR)_
+- [x] Echtes Profilbild im `Layout`/`WordmarkHeader`
+- [x] Admin `MembersPage`: E-Mail-Spalte/Editor
 - [x] Konsistent mit Hängt!-Tokens — kein neuer visueller Stil
 
 ### E2E & Doku
 
 - [x] Playwright-E2E `07-profil`: E-Mail setzen + in Karte sehen, Profilbild hochladen + Avatar erscheint, Konflikt-Toast bei doppelter E-Mail
 - [x] `ARCHITECTURE.md`: neue Spalten (`email`, `avatar_path`), Self-Service-/Avatar-Endpunkte, Datei-Speicher-Entscheidung dokumentiert
-- [ ] `docs/DEPLOYMENT.md`: Avatar-Verzeichnis im `StateDirectory` + Backup-Hinweis _(verschoben auf M10 Follow-up)_
+- [x] `docs/DEPLOYMENT.md`: Avatar-Verzeichnis im `StateDirectory` + Backup-Hinweis
 - [x] `CHANGELOG.md`: nutzersichtbare Änderungen unter [Unreleased] gepflegt
 
 **Definition of Done:** Ein eingeloggtes Mitglied kann im Profil seine E-Mail-Adresse setzen/ändern und ein Profilbild hoch- und wieder abladen; das Bild erscheint im Header (Fallback: Initialen). Admins können dieselben Felder für beliebige Mitglieder pflegen. E-Mail-Adressen sind eindeutig. Bilddateien liegen im `StateDirectory` und überleben Deployments. Lint, Unit-, Integrations- und E2E-Tests grün.
@@ -385,6 +387,101 @@ Dieser Plan unterteilt das Projekt in 10 aufeinander aufbauende Meilensteine. Je
 - [x] `CHANGELOG.md`, `MILESTONES.md` aktualisiert
 
 **Definition of Done:** Jedes Mitglied kann einen Zeiger (Couleurbesuch oder Veranstaltung) öffnen, Mitglieder buchen auf offene Zeiger, der Ersteller oder ein Admin schließt den Zeiger. Zeiger-Buchungen tauchen nicht im Personen-Saldo auf. Admins pflegen die Verbindungsliste und exportieren Zeiger-Auswertungen als PDF/CSV. Lint, Unit-, Integrations- und E2E-Tests grün.
+
+---
+
+## M12 — Getränke-Kategorien & Verbrauchs-Auswertung
+
+**Ziel:** Getränke werden vom Admin einer Kategorie zugeordnet (Pflichtfeld) und in der Buchungsansicht nach Kategorie geclustert dargestellt. Der Admin bestimmt die Reihenfolge der Kategorien. Zusätzlich eine neue Admin-Auswertung: Getränkeverbrauch in einem frei wählbaren Zeitraum.
+
+**Abhängigkeit:** M4 (Getränke/Buchungen), M5 (Frontend), M6 (Report-Export).
+
+### Festgelegte Entscheidungen
+
+- **Bestandsdaten:** Migration legt die Standardkategorie „Sonstige" an und ordnet alle bestehenden Getränke ihr zu. Die Kategorie ist auf App-Ebene ein Pflichtfeld; die DB-Spalte bleibt technisch nullable (SQLite-`ALTER TABLE`-Restriktion), enthält durch Backfill + Service-Validierung aber nie NULL.
+- **Löschschutz:** Eine Kategorie lässt sich nur löschen, wenn ihr keine Getränke mehr zugeordnet sind (FK `ON DELETE RESTRICT` + Service-Prüfung → 409 `CATEGORY_NOT_EMPTY`).
+- **Reihenfolge:** Admin-pflegbar über `sort_order`; die Buchungs-/Theken-Ansicht clustert Getränke in genau dieser Reihenfolge.
+- **Verbrauchs-Auswertung:** Anzahl **und** Umsatz je Getränk, nach Kategorie gruppiert, mit Zwischen- und Gesamtsummen. Berücksichtigt **alle** nicht-stornierten Buchungen (Personen- und Zeiger-Buchungen) im gewählten Zeitraum. Export als PDF und CSV, integriert in den bestehenden `ReportService`.
+
+### PR 1 — Datenschicht
+
+- [x] Migration 011: Tabelle `drink_categories` (STRICT), Standardkategorie „Sonstige", `drinks.category_id` (FK `ON DELETE RESTRICT`), Bestand-Backfill, Index
+- [x] `DrinkCategoryRow`, `DrinkRow.category_id` in `db/types.ts`
+- [x] `DrinkCategoriesRepo`: `findAll`/`findById`/`findByName`/`create`/`update`/`delete`/`reorder`/`countDrinks`
+- [x] `DrinksRepo` um `category_id` erweitert (create/update, Listen mit Kategorie-Join)
+- [x] `BookingsRepo.findConsumption(from, to)` mit Kategorie-Join
+- [x] Seed: Demo-Kategorien + Zuordnung der Seed-Getränke
+- [x] Vitest: `DrinkCategoriesRepo`-Unit-Tests
+
+### PR 2 — Kategorie-Backend & Drinks-Anpassung
+
+- [x] `DrinkCategoriesService` mit Audit-Log + Löschschutz
+- [x] `DrinksService`: Pflicht-Kategorie beim Anlegen (validiert), Kategorie-Änderung
+- [x] Schemas + Routen `GET /drink-categories`, `POST/PATCH/DELETE /drink-categories/:id`, `PUT /drink-categories/order`; `drinks`-Schema um `category_id`
+- [x] `app.ts` verdrahtet Repo, Service und Router
+- [x] Supertest-Integrationstests (Kategorie-CRUD, Reorder, Löschschutz)
+
+### PR 3 — Verbrauchs-Auswertung
+
+- [x] `ReportService.calculateConsumption` (nach Kategorie gruppiert, Anzahl + Umsatz)
+- [x] CSV- und PDF-Formatter für die Verbrauchs-Auswertung
+- [x] Route `GET /reports/consumption?from&to&format` (Admin)
+- [x] Unit- und Integrationstests (Aggregation, Zeitraumgrenzen, CSV/PDF, 400/403)
+
+### PR 4 — Frontend
+
+- [x] Admin-Reiter „Kategorien" (`CategoriesPage`): Anlegen, Umbenennen, Löschen, Reihenfolge (Hoch/Runter)
+- [x] `DrinksPage`: Kategorie-Pflichtfeld beim Anlegen, Kategorie-Spalte zum Umhängen
+- [x] Buchungs- und Theken-Ansicht clustern Getränke nach Kategorie (Admin-Reihenfolge)
+- [x] `ReportPage`: Verbrauchs-Auswertung mit frei wählbarem Zeitraum (CSV/PDF)
+- [x] Route + Navigations-Tab, API-Module (`drinkCategories`, erweitertes `drinks`/`reports`)
+
+### PR 5 — Doku
+
+- [x] `CHANGELOG.md` (Unreleased) und `MILESTONES.md` aktualisiert
+- [x] README-Feature-Liste ergänzt
+
+**Definition of Done:** Ein Admin pflegt Kategorien inkl. Reihenfolge, jedes neue Getränk muss einer Kategorie zugeordnet werden, und die Buchungsansicht zeigt Getränke nach Kategorie geclustert in der Admin-Reihenfolge. Kategorien mit zugeordneten Getränken lassen sich nicht löschen. Der Admin exportiert den Getränkeverbrauch (Anzahl + Umsatz, nach Kategorie) für einen frei wählbaren Zeitraum als PDF/CSV. Lint, Unit- und Integrationstests grün.
+
+---
+
+## M13 — Wirtschaftskommission & Konten-Streichung
+
+**Ziel:** Eine neue Konto-Variante „Wirtschaftskommission" (WK) kann Mitglieder-Konten streichen. Ein gestrichenes Konto kann für 2 Wochen keine Getränke gebucht bekommen; alle übrigen Funktionen bleiben verfügbar. Gestrichene Konten erscheinen ausgeblichen in der Auswahl. Die WK kann Konten auch vorzeitig entstreichen.
+
+**Abhängigkeit:** M4 (Mitglieder/Buchungen), M5 (Frontend), M9 (Kategorien/Theken-Konto).
+
+### Festgelegte Entscheidungen
+
+- **WK als Capability-Flag statt neuer Rolle:** `is_wirtschaftskommission` an `members` (analog `can_book_for_others`). Ein Rebuild der `members`-Tabelle zum Erweitern der `role`-CHECK-Constraint wäre wegen der `ON DELETE RESTRICT`-Fremdschlüssel (`bookings.member_id`, `zeiger.created_by`) im Migrations-Runner nicht gefahrlos möglich. Der WK-Bereich ist bewusst schlank: kein Zugriff auf die übrige Admin-Verwaltung.
+- **Wer darf streichen:** WK **und** Admin (Admin bleibt Superset). Umgesetzt über die Middleware `requireWkOrAdmin`; das JWT-Payload trägt `is_wk` (frisch aus der DB, wie die Rolle).
+- **Streich-Modell:** `struck_until` (nullable ISO-Zeitstempel). Streichen setzt jetzt + 14 Tage; ein Zeitpunkt in der Vergangenheit gilt als abgelaufen (automatisch wieder bebuchbar) — kein Cron nötig. Entstreichen setzt `struck_until` zurück.
+- **Buchsperre:** Nur Personenbuchungen auf gestrichene Konten werden blockiert (→ 409 `MEMBER_STRUCK`), betrifft Selbst- und Theken-Buchungen. Zeiger-Buchungen laufen auf die Vereinskasse und bleiben erlaubt.
+- **Darstellung:** Gestrichene Konten stehen ausgeblichen/durchgestrichen und nicht anwählbar in der Theken-Auswahl („gestrichen bis <Datum>"); in der eigenen Stube werden die Getränke-Buttons gesperrt und ein Hinweis eingeblendet.
+
+### PR 1 — Datenschicht & Backend
+
+- [x] Migration 012: `members.is_wirtschaftskommission` (Flag) und `members.struck_until` (nullable)
+- [x] `MemberRow`-Typ, `MembersRepo` (create/update um WK-Flag, `setStruckUntil`)
+- [x] `MembersService.strike`/`unstrike`/`findStrikeable` + Audit-Log; `BookingService` blockiert Buchungen auf gestrichene Konten
+- [x] `AuthService`: `is_wk` im JWT-Payload (frisch aus der DB); Middleware `requireWkOrAdmin`
+- [x] Routen `POST /members/:id/strike`, `POST /members/:id/unstrike`, `GET /members/strikeable`; Schemas um `is_wirtschaftskommission`
+- [x] Seed: Demo-WK-Konto `wiko` (Dev-Passwort `wiko123`)
+- [x] Unit- (MembersRepo) und Integrationstests (Streichen/Entstreichen, Rechte, Buchsperre, Zeiger-Ausnahme)
+
+### PR 2 — Frontend
+
+- [x] Neue Seite „Streichen" (`/wk`) für WK und Admin: Kontenliste nach Kategorie, Streichen (Bestätigung) und Entstreichen
+- [x] `AuthContext` (`isWk`/`canStrike`), `ProtectedRoute` (`role="wk"`), Navigations-Eintrag „Streichen"
+- [x] Theken-Auswahl: gestrichene Konten ausgeblichen + nicht anwählbar; `BookingPage`: Hinweisbanner + gesperrte Buttons
+- [x] Admin-Mitgliederverwaltung: WK-Spalte/Checkbox + WK-Feld im Anlegen-Formular; `members`-API-Modul erweitert
+- [x] Vitest-Komponententests (`StreichenPage`, gestrichenes Konto in `ThekePage`)
+
+### PR 3 — Doku
+
+- [x] `CHANGELOG.md`, `MILESTONES.md`, `ARCHITECTURE.md`, `README.md` aktualisiert
+
+**Definition of Done:** Ein WK-Konto (und Admins) kann Mitglieder-Konten streichen und vorzeitig entstreichen. Auf ein gestrichenes Konto können 2 Wochen lang keine Getränke gebucht werden (Selbst- und Theken-Buchung), Zeiger-Buchungen bleiben möglich; nach Ablauf ist das Konto automatisch wieder bebuchbar. Gestrichene Konten erscheinen ausgeblichen in der Theken-Auswahl. Lint, Unit-, Integrations- und Komponententests grün.
 
 ---
 

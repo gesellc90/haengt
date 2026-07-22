@@ -5,6 +5,7 @@ import type { AuditLogRepo } from '../db/repos/AuditLogRepo.js';
 import type { ZeigerRepo } from '../db/repos/ZeigerRepo.js';
 import type { BookingRow } from '../db/types.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { isStruck } from './MembersService.js';
 
 /** 5 Minuten in Millisekunden – maximales Storno-Fenster */
 const VOID_WINDOW_MS = 5 * 60 * 1000;
@@ -39,6 +40,18 @@ export class BookingService {
       if (!z) throw new AppError('Zeiger nicht gefunden', 404, 'NOT_FOUND');
       if (z.status === 'geschlossen') {
         throw new AppError('Zeiger ist bereits geschlossen', 409, 'ZEIGER_CLOSED');
+      }
+    } else {
+      // Personenbuchung: gestrichene Konten dürfen nicht bebucht werden.
+      // (Zeiger-Buchungen laufen auf die Vereinskasse und sind ausgenommen.)
+      const target = this.members.findById(memberId);
+      if (target && isStruck(target)) {
+        const until = new Date(target.struck_until!).toLocaleDateString('de-DE');
+        throw new AppError(
+          `Konto ist gestrichen – bis ${until} können keine Getränke gebucht werden`,
+          409,
+          'MEMBER_STRUCK',
+        );
       }
     }
 

@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { drinksApi } from '../../api/drinks.js';
+import { drinkCategoriesApi } from '../../api/drinkCategories.js';
 import { ApiError } from '../../api/client.js';
 import { useToast } from '../../contexts/ToastContext.js';
 import Spinner from '../../components/Spinner.js';
-import type { DrinkRow } from '../../types/api.js';
+import { Link } from 'react-router-dom';
+import type { DrinkRow, DrinkCategoryRow } from '../../types/api.js';
 
 // ---------------------------------------------------------------------------
 // Hilfsfunktionen
@@ -105,15 +107,17 @@ const btnSuccess: React.CSSProperties = {
 // ---------------------------------------------------------------------------
 
 interface CreateDrinkFormProps {
+  categories: DrinkCategoryRow[];
   onCreated(drink: DrinkRow): void;
 }
 
-function CreateDrinkForm({ onCreated }: CreateDrinkFormProps) {
+function CreateDrinkForm({ categories, onCreated }: CreateDrinkFormProps) {
   const { showToast } = useToast();
   const [open, setOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [name, setName] = useState('');
   const [priceEuro, setPriceEuro] = useState('');
+  const [categoryId, setCategoryId] = useState<number | ''>('');
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: FormEvent) {
@@ -124,12 +128,21 @@ function CreateDrinkForm({ onCreated }: CreateDrinkFormProps) {
       setError('Bitte gib einen gültigen Preis ein.');
       return;
     }
+    if (categoryId === '') {
+      setError('Bitte wähle eine Kategorie aus.');
+      return;
+    }
     setIsPending(true);
     try {
-      const drink = await drinksApi.create({ name: name.trim(), price_cents });
+      const drink = await drinksApi.create({
+        name: name.trim(),
+        category_id: categoryId,
+        price_cents,
+      });
       onCreated(drink);
       setName('');
       setPriceEuro('');
+      setCategoryId('');
       setOpen(false);
       showToast(`${drink.name} wurde angelegt.`, 'success');
     } catch (err) {
@@ -137,6 +150,18 @@ function CreateDrinkForm({ onCreated }: CreateDrinkFormProps) {
     } finally {
       setIsPending(false);
     }
+  }
+
+  if (categories.length === 0) {
+    return (
+      <p style={{ fontFamily: 'var(--font-sans)', fontSize: 14, color: 'var(--tinte-3)' }}>
+        Lege zuerst eine{' '}
+        <Link to="/admin/kategorien" style={{ color: 'var(--korps-rot)', fontWeight: 600 }}>
+          Kategorie
+        </Link>{' '}
+        an, bevor du Getränke anlegst.
+      </p>
+    );
   }
 
   if (!open) {
@@ -198,6 +223,24 @@ function CreateDrinkForm({ onCreated }: CreateDrinkFormProps) {
             placeholder="z. B. Wasser"
             style={inputStyle}
           />
+        </div>
+        <div style={{ width: 180 }}>
+          <label style={labelStyle}>Kategorie</label>
+          <select
+            required
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value === '' ? '' : Number(e.target.value))}
+            style={inputStyle}
+          >
+            <option value="" disabled>
+              Bitte wählen…
+            </option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
         <div style={{ width: 140 }}>
           <label style={labelStyle}>Preis (€)</label>
@@ -295,16 +338,24 @@ function AddPriceForm({ drinkId, onClose }: AddPriceFormProps) {
 export default function DrinksPage() {
   const { showToast } = useToast();
   const [drinks, setDrinks] = useState<DrinkRow[]>([]);
+  const [categories, setCategories] = useState<DrinkCategoryRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [priceFormId, setPriceFormId] = useState<number | null>(null);
 
   useEffect(() => {
-    drinksApi
-      .getAll()
-      .then(setDrinks)
+    Promise.all([drinksApi.getAll(), drinkCategoriesApi.getAll()])
+      .then(([drinkList, categoryList]) => {
+        setDrinks(drinkList);
+        setCategories(categoryList);
+      })
       .catch(() => showToast('Getränke konnten nicht geladen werden.', 'error'))
       .finally(() => setIsLoading(false));
   }, [showToast]);
+
+  /** Name einer Kategorie über die geladene Liste (Fallback: mitgeliefertes category_name). */
+  function categoryName(drink: DrinkRow): string {
+    return categories.find((c) => c.id === drink.category_id)?.name ?? drink.category_name ?? '–';
+  }
 
   async function toggleAvailable(drink: DrinkRow) {
     const newAvail: 0 | 1 = drink.is_available === 1 ? 0 : 1;
@@ -317,9 +368,23 @@ export default function DrinksPage() {
     }
   }
 
+  async function changeCategory(drink: DrinkRow, categoryId: number) {
+    if (categoryId === drink.category_id) return;
+    try {
+      const updated = await drinksApi.update(drink.id, { category_id: categoryId });
+      setDrinks((prev) => prev.map((d) => (d.id === drink.id ? updated : d)));
+      showToast(`Kategorie von ${drink.name} geändert.`, 'success');
+    } catch (err) {
+      showToast(err instanceof ApiError ? err.message : 'Fehler.', 'error');
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <CreateDrinkForm onCreated={(d) => setDrinks((prev) => [d, ...prev])} />
+      <CreateDrinkForm
+        categories={categories}
+        onCreated={(d) => setDrinks((prev) => [d, ...prev])}
+      />
 
       {isLoading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
@@ -338,7 +403,7 @@ export default function DrinksPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
-                {['Name', 'Status', 'Aktionen'].map((h) => (
+                {['Name', 'Kategorie', 'Status', 'Aktionen'].map((h) => (
                   <th
                     key={h}
                     style={{
@@ -379,6 +444,33 @@ export default function DrinksPage() {
                       {d.name}
                     </td>
                     <td style={{ padding: '10px 16px' }}>
+                      {categories.length > 0 ? (
+                        <select
+                          value={d.category_id}
+                          onChange={(e) => void changeCategory(d, Number(e.target.value))}
+                          aria-label={`Kategorie von ${d.name}`}
+                          style={{
+                            minHeight: 36,
+                            padding: '4px 8px',
+                            borderRadius: 'var(--r-1)',
+                            border: '1px solid var(--line-2)',
+                            background: 'var(--bg)',
+                            color: 'var(--tinte)',
+                            fontFamily: 'var(--font-sans)',
+                            fontSize: 13,
+                          }}
+                        >
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        categoryName(d)
+                      )}
+                    </td>
+                    <td style={{ padding: '10px 16px' }}>
                       <span
                         style={{
                           display: 'inline-block',
@@ -416,7 +508,7 @@ export default function DrinksPage() {
                   {priceFormId === d.id && (
                     <tr key={`${d.id}-price`}>
                       <td
-                        colSpan={3}
+                        colSpan={4}
                         style={{ padding: '4px 16px 14px', borderTop: '1px solid var(--line)' }}
                       >
                         <AddPriceForm drinkId={d.id} onClose={() => setPriceFormId(null)} />

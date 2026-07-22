@@ -31,6 +31,10 @@ interface AuthContextValue extends AuthState {
   isAdmin: boolean;
   /** true = Theken-/Allgemein-Konto, das für andere buchen darf */
   canBookForOthers: boolean;
+  /** true = Konto der Wirtschaftskommission */
+  isWk: boolean;
+  /** true = darf Konten streichen/entstreichen (WK oder Admin) */
+  canStrike: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,6 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: member !== null && member !== undefined,
     isAdmin: member?.role === 'admin',
     canBookForOthers: member?.can_book_for_others === 1,
+    isWk: member?.is_wirtschaftskommission === 1,
+    canStrike: member?.role === 'admin' || member?.is_wirtschaftskommission === 1,
     login,
     logout,
     updateMember,

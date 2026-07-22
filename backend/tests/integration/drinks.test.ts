@@ -60,8 +60,8 @@ async function setupApp(): Promise<{ app: Express; db: Db }> {
   });
 
   // Zwei Getränke anlegen: eines verfügbar, eines deaktiviert
-  drinksRepo.create({ name: 'Cola', initialPriceCents: 150 });
-  drinksRepo.create({ name: 'Wasser', initialPriceCents: 100 });
+  drinksRepo.create({ name: 'Cola', categoryId: 1, initialPriceCents: 150 });
+  drinksRepo.create({ name: 'Wasser', categoryId: 1, initialPriceCents: 100 });
   drinksRepo.deactivate(2); // Wasser deaktivieren
 
   const app = createApp({ logger: silentLogger, db, env: testEnv });
@@ -125,11 +125,32 @@ describe('POST /api/v1/drinks', () => {
     const res = await request(app)
       .post('/api/v1/drinks')
       .set('Authorization', `Bearer ${token}`)
-      .send({ name: 'Bier', price_cents: 200 });
+      .send({ name: 'Bier', category_id: 1, price_cents: 200 });
 
     expect(res.status).toBe(201);
     expect(res.body.name).toBe('Bier');
     expect(res.body.is_available).toBe(1);
+    expect(res.body.category_id).toBe(1);
+  });
+
+  it('gibt 400 bei fehlender Kategorie zurück', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .post('/api/v1/drinks')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Ohne Kategorie', price_cents: 200 });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('gibt 400 bei unbekannter Kategorie zurück', async () => {
+    const token = await getToken(app, 'admin');
+    const res = await request(app)
+      .post('/api/v1/drinks')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Falsche Kategorie', category_id: 9999, price_cents: 200 });
+
+    expect(res.status).toBe(400);
   });
 
   it('gibt 400 bei fehlendem price_cents zurück', async () => {

@@ -13,6 +13,7 @@ import type {
   MonthlyReport,
   DrinkSummary,
   ZeigerSummaryReport,
+  ConsumptionReport,
 } from '../services/ReportService.js';
 
 // ---------------------------------------------------------------------------
@@ -453,6 +454,97 @@ export function generateAllZeigerPdf(reports: ZeigerSummaryReport[]): Promise<Bu
       doc.addPage(PAGE_OPTS);
       writeZeigerPage(doc, report);
     }
+
+    doc.end();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Verbrauchs-Auswertung (Zeitraum, nach Kategorie gruppiert)
+// ---------------------------------------------------------------------------
+
+/** ISO-Datum (YYYY-MM-DD) → deutsches Datum (13.05.2026). */
+function fmtDateOnly(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+export function generateConsumptionPdf(report: ConsumptionReport): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument(PAGE_OPTS);
+    const chunks: Uint8Array[] = [];
+    doc.on('data', (chunk: Uint8Array) => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    const left = doc.page.margins.left;
+    const contentWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+
+    // -- Header ---------------------------------------------------------------
+    doc
+      .font(FONT_BOLD)
+      .fontSize(18)
+      .fillColor(PRIMARY_COLOR)
+      .text('Getränke-Verbrauch', left, doc.page.margins.top);
+    doc
+      .font(FONT_NORMAL)
+      .fontSize(11)
+      .fillColor('#334155')
+      .text(`Zeitraum: ${fmtDateOnly(report.from)} – ${fmtDateOnly(report.to)}`);
+    doc.moveDown(0.5);
+    drawHRule(doc);
+
+    const colGetraenk = { label: 'Getränk', width: contentWidth - 70 - 90 };
+    const colAnzahl = { label: 'Anzahl', width: 70, align: 'right' as const };
+    const colGesamt = { label: 'Gesamt', width: 90, align: 'right' as const };
+
+    if (report.groups.length === 0) {
+      doc
+        .font(FONT_NORMAL)
+        .fontSize(10)
+        .fillColor('#94a3b8')
+        .text('Keine Buchungen im gewählten Zeitraum.', left);
+    }
+
+    // -- Eine Tabelle je Kategorie -------------------------------------------
+    for (const group of report.groups) {
+      doc.font(FONT_BOLD).fontSize(11).fillColor('#1e293b').text(group.category_name, left);
+      doc.moveDown(0.3);
+
+      const rows = group.drinks.map((d) => [d.drink_name, String(d.count), eur(d.total_cents)]);
+      rows.push([`Summe ${group.category_name}`, String(group.count), eur(group.total_cents)]);
+
+      const afterY = drawTable(doc, [colGetraenk, colAnzahl, colGesamt], rows);
+      doc.y = afterY + 12;
+    }
+
+    // -- Gesamtsumme ----------------------------------------------------------
+    if (report.groups.length > 0) {
+      drawHRule(doc, PRIMARY_COLOR);
+      doc
+        .font(FONT_BOLD)
+        .fontSize(11)
+        .fillColor(PRIMARY_COLOR)
+        .text(
+          `Gesamt: ${report.total_count} Getränke · ${eur(report.grand_total_cents)}`,
+          left,
+          doc.y,
+          { width: contentWidth, align: 'right' },
+        );
+    }
+
+    // -- Footer ---------------------------------------------------------------
+    const footerY = doc.page.height - doc.page.margins.bottom - 20;
+    doc
+      .font(FONT_NORMAL)
+      .fontSize(8)
+      .fillColor('#94a3b8')
+      .text(
+        `Erstellt am ${new Date().toLocaleDateString('de-DE')} · Hängt! – Jeder Strich zählt!`,
+        left,
+        footerY,
+        { width: contentWidth, align: 'center' },
+      );
 
     doc.end();
   });

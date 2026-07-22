@@ -52,13 +52,14 @@ SQLite im **WAL-Mode** (Write-Ahead-Logging) für bessere Lese-Performance bei g
 > gespeichert. Die folgende Übersicht ist bewusst verdichtet — bei Abweichungen
 > gelten die Migrationen.
 
-**`members`** (001, erweitert durch 007/009) — Vereinsmitglieder + Admins:
+**`members`** (001, erweitert durch 007/009/012) — Vereinsmitglieder + Admins:
 `id`, `username` (NOCASE UNIQUE), `display_name`, `password_hash` (nullable, bis
 ein Admin es setzt), `role` (`admin`|`member`), `is_active` (0/1, Login-/
 Soft-Delete-Flag), `member_status` (`aktiv`|`inaktiv`|`alter_herr`|`freund`),
-`can_book_for_others` (0/1), `email` (NOCASE, partieller UNIQUE-Index nur wenn
-gesetzt), `avatar_path` (relativer Dateiname), `created_at`, `updated_at`
-(via Trigger aktuell gehalten).
+`can_book_for_others` (0/1), `is_wirtschaftskommission` (0/1, WK-Capability-Flag),
+`struck_until` (nullable ISO-Zeitstempel; gestrichen, solange in der Zukunft),
+`email` (NOCASE, partieller UNIQUE-Index nur wenn gesetzt), `avatar_path`
+(relativer Dateiname), `created_at`, `updated_at` (via Trigger aktuell gehalten).
 
 **`drinks`** (002) — Getränke-Katalog: `id`, `name` (NOCASE UNIQUE),
 `is_available` (0/1), `created_at`, `updated_at`.
@@ -92,6 +93,7 @@ statt auf ein Mitglied laufen). `zeiger.status` ∈ `offen`|`geschlossen`.
 - **`drink_prices` als Historie** — der aktuelle Preis ist der jüngste `valid_from`-Eintrag; alte Preise bleiben für die Nachvollziehbarkeit erhalten.
 - **Abrechnungsmonat in Europe/Berlin** — Monatsgrenzen werden in der Vereinszeitzone berechnet und nach UTC konvertiert (`ReportService.monthBounds`), damit Buchungen um Mitternacht im richtigen Monat landen.
 - **Theken-/Allgemein-Konto (`can_book_for_others`)** — ein Konto mit gesetztem Flag bucht stellvertretend für andere. Das Frontend schaltet nach dem Login allein anhand dieses Flags zwischen der eigenen Stube (`BookingPage`) und der nach `member_status` gruppierten Theken-Übersicht (`ThekePage`) um. Damit die Umschaltung schon unmittelbar nach dem Login greift, liefern sowohl `/auth/login` als auch `/auth/me` das vollständige `PublicMember`-Objekt (inkl. `can_book_for_others`, ohne `password_hash`).
+- **Wirtschaftskommission & Streichen (`is_wirtschaftskommission`, `struck_until`)** — die WK ist ein Capability-Flag auf `members` (wie `can_book_for_others`), kein neuer `role`-Wert: die `role`-CHECK-Constraint via Table-Rebuild zu erweitern wäre wegen der `ON DELETE RESTRICT`-Fremdschlüssel auf `members` (`bookings.member_id`, `zeiger.created_by`) im Migrations-Runner nicht gefahrlos. Streichen dürfen WK **und** Admin (`requireWkOrAdmin`; das JWT trägt `is_wk`, frisch aus der DB wie die Rolle). Eine Streichung ist ein Zeitstempel `struck_until` (jetzt + 14 Tage); ein Zeitpunkt in der Vergangenheit gilt als abgelaufen — die Buchsperre ist eine reine Zeitvergleich-Prüfung ohne Cron. Blockiert werden nur Personenbuchungen (Selbst- + Theken-Buchung → 409 `MEMBER_STRUCK`); Zeiger-Buchungen laufen auf die Vereinskasse und bleiben erlaubt.
 - **Profilbilder im Dateisystem** — Avatare liegen unter `AVATAR_DIR` (Dev: `./data/avatars`, Prod: `/var/lib/getraenke/avatars/`), die DB hält nur den Dateinamen. Upload via `multer` → Normalisierung durch `sharp` (256×256, WebP, Q85). Auslieferung über `GET /avatars/:file` (express.static). Das Verzeichnis muss ins Deployment-Backup aufgenommen werden.
 
 ## API-Übersicht
@@ -111,14 +113,19 @@ Basis-URL: `/api/v1`. Alle geschützten Endpunkte erwarten `Authorization: Beare
 
 ### Mitglieder
 
-| Methode | Pfad                | Auth  | Beschreibung                                                 |
-| ------- | ------------------- | ----- | ------------------------------------------------------------ |
-| GET     | `/members`          | Admin | Alle Mitglieder                                              |
-| POST    | `/members`          | Admin | Neues Mitglied anlegen                                       |
-| GET     | `/members/bookable` | User  | Bebuchbare Mitglieder (nur Konten mit `can_book_for_others`) |
-| GET     | `/members/:id`      | Admin | Einzelnes Mitglied                                           |
-| PATCH   | `/members/:id`      | Admin | Mitglied aktualisieren                                       |
-| DELETE  | `/members/:id`      | Admin | Mitglied deaktivieren (soft)                                 |
+| Methode | Pfad                    | Auth     | Beschreibung                                                       |
+| ------- | ----------------------- | -------- | ------------------------------------------------------------------ |
+| GET     | `/members`              | Admin    | Alle Mitglieder                                                    |
+| POST    | `/members`              | Admin    | Neues Mitglied anlegen (inkl. `is_wirtschaftskommission`)          |
+| GET     | `/members/bookable`     | User     | Bebuchbare Mitglieder (nur Konten mit `can_book_for_others`)       |
+| GET     | `/members/strikeable`   | WK/Admin | Streichbare Personen-Konten inkl. bereits gestrichener             |
+| GET     | `/members/:id`          | Admin    | Einzelnes Mitglied                                                 |
+| PATCH   | `/members/:id`          | Admin    | Mitglied aktualisieren (inkl. `email`, `is_wirtschaftskommission`) |
+| POST    | `/members/:id/avatar`   | Admin    | Profilbild eines Mitglieds setzen (max 5 MB → 256×256 WebP)        |
+| DELETE  | `/members/:id/avatar`   | Admin    | Profilbild eines Mitglieds entfernen                               |
+| POST    | `/members/:id/strike`   | WK/Admin | Konto für 2 Wochen streichen (keine Buchungen)                     |
+| POST    | `/members/:id/unstrike` | WK/Admin | Konto vorzeitig entstreichen                                       |
+| DELETE  | `/members/:id`          | Admin    | Mitglied deaktivieren (soft)                                       |
 
 ### Getränke
 

@@ -5,9 +5,11 @@ Lokale Web-App zur Getränkeabrechnung einer Verbindung. Mitglieder buchen ihre 
 ## Features
 
 - 🔐 Login für Mitglieder (PIN oder Passwort)
-- 🍺 Schnelle Getränkebuchung mit Tap-Bedienung (mobilfreundlich)
-- 👤 Admin-Bereich für Mitglieder-, Getränke- und Preisverwaltung
+- 🍺 Schnelle Getränkebuchung mit Tap-Bedienung (mobilfreundlich), nach Kategorien geclustert
+- 👤 Admin-Bereich für Mitglieder-, Getränke-, Kategorie- und Preisverwaltung
+- 🚫 Wirtschaftskommission: Konten streichen (2 Wochen keine Buchungen) & vorzeitig entstreichen
 - 📊 Monatsabrechnung pro Mitglied als PDF und CSV
+- 📈 Verbrauchs-Auswertung (Anzahl & Umsatz je Getränk) für frei wählbare Zeiträume
 - 📜 Buchungshistorie & Stornierung innerhalb eines Zeitfensters
 - 📱 Responsive UI (Tablet, Smartphone, Desktop)
 
@@ -68,13 +70,15 @@ Backend läuft anschließend unter `http://localhost:3001`, Frontend unter `http
 
 ### Standard-Logindaten (Seed)
 
-Der Seed legt die Mitglieder `admin`, `anna`, `bernd` und das Theken-Konto
-`allgemein` an. In der Entwicklungsumgebung (`NODE_ENV=development`) setzt der
-Seed automatisch ein Passwort **nur für den Admin**:
+Der Seed legt die Mitglieder `admin`, `anna`, `bernd`, das Theken-Konto
+`allgemein` und das Wirtschaftskommissions-Konto `wiko` an. In der
+Entwicklungsumgebung (`NODE_ENV=development`) setzt der Seed automatisch ein
+Passwort für den Admin **und** das WK-Konto:
 
-| Rolle | Benutzer | Passwort   |
-| ----- | -------- | ---------- |
-| Admin | `admin`  | `admin123` |
+| Rolle                 | Benutzer | Passwort   |
+| --------------------- | -------- | ---------- |
+| Admin                 | `admin`  | `admin123` |
+| Wirtschaftskommission | `wiko`   | `wiko123`  |
 
 Die übrigen Mitglieder haben zunächst **kein** Passwort — ein Admin vergibt es
 über die Mitgliederverwaltung. (Die E2E-Suite setzt eigene Test-Passwörter,

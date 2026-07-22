@@ -46,7 +46,7 @@ jobs:
 
       - name: Playwright-Browser cachen
         id: pw-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: pw-${{ runner.os }}-${{ hashFiles('e2e/package.json', 'package-lock.json') }}

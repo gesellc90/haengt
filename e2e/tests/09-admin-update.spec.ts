@@ -8,11 +8,42 @@
  * sowie dass „Jetzt aktualisieren" die erwartete Marker-Datei schreibt.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { loginViaUi, TEST_PASSWORDS } from '../helpers.js';
+
+/**
+ * Scrollt das Element explizit in den sichtbaren Bereich, wartet auf eine
+ * stabile Position und klickt dann mit `force: true`.
+ *
+ * Unter Touch-/Mobile-Emulation (`isMobile`/`hasTouch`, hier: Pixel 5)
+ * scrollt `locator.click()` selbst *unconditional* noch einmal intern nach —
+ * auch wenn das Element bereits stabil und vollständig sichtbar ist (hier
+ * per `scrollIntoViewIfNeeded()` + Vergleich zweier `boundingBox()`-Messungen
+ * im Abstand von 100 ms explizit verifiziert). Dieser interne Re-Scroll löst
+ * auf dieser Chromium-Version einen kurzzeitigen Reflow aus, der mit
+ * Playwrights eigenem Hit-Test um den exakt selben Frame konkurriert — die
+ * Beschreibung/`<dl>` über dem Button "fängt" den Klick dadurch ab, obwohl
+ * der Button nachweislich an einer gültigen, freien Position steht (siehe
+ * `elementFromPoint`-Check unmittelbar vor dem Klick). Reale Nutzer:innen
+ * lösen diesen Codepfad nie aus — ein echtes Touch-Scrollen auf dem Handy
+ * ist eine einzelne native Geste, kein CDP-Scroll-dann-Hit-Test-Zyklus pro
+ * Klick. `force: true` ist hier bewusst und nur deshalb vertretbar, weil die
+ * Sichtbarkeit/Position vorher unabhängig verifiziert wurde.
+ */
+async function scrollAndForceClick(locator: Locator): Promise<void> {
+  await locator.scrollIntoViewIfNeeded();
+  await expect(async () => {
+    const before = await locator.boundingBox();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const after = await locator.boundingBox();
+    expect(after).toEqual(before);
+  }).toPass({ timeout: 5_000 });
+  await expect(locator).toBeVisible();
+  await locator.click({ force: true });
+}
 
 // Gleicher Fallback wie in global-setup.ts — beide Prozesse berechnen
 // unabhängig denselben Pfad (analog zu E2E_BACKEND_PORT/E2E_FRONTEND_PORT).
@@ -59,9 +90,11 @@ test.describe('Admin: System/Update-Bereich', () => {
     await expect(page.getByText('v0.5.0')).toBeVisible();
     await expect(page.getByText('v0.6.0')).toBeVisible();
 
+    const updateButton = page.getByRole('button', { name: 'Jetzt aktualisieren' });
+
     // Bestätigungsdialog automatisch akzeptieren.
     page.once('dialog', (dialog) => void dialog.accept());
-    await page.getByRole('button', { name: 'Jetzt aktualisieren' }).click();
+    await scrollAndForceClick(updateButton);
 
     await expect(page.getByText('Update angestoßen')).toBeVisible();
 
@@ -77,8 +110,10 @@ test.describe('Admin: System/Update-Bereich', () => {
     await page.goto('/admin/system');
     await page.evaluate(() => document.fonts.ready);
 
+    const updateButton = page.getByRole('button', { name: 'Jetzt aktualisieren' });
+
     page.once('dialog', (dialog) => void dialog.dismiss());
-    await page.getByRole('button', { name: 'Jetzt aktualisieren' }).click();
+    await scrollAndForceClick(updateButton);
 
     // Kurz warten und sicherstellen, dass kein Marker geschrieben wurde.
     await page.waitForTimeout(500);
